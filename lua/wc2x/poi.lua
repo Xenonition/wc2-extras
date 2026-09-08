@@ -33,6 +33,59 @@ poi.types = {
 	},
 }
 
+local FALLBACK_MERC_TYPES = {
+	"Orcish Crossbowman", "Troll", "Ogre", "Swordsman", "Pikeman",
+	"Javelineer", "Longbowman", "White Mage", "Red Mage",
+	"Elvish Ranger", "Elvish Marksman", "Elvish Captain",
+	"Dwarvish Steelclad", "Dwarvish Thunderguard",
+	"Orcish Warrior", "Goblin Knight", "Revenant", "Deathblade",
+}
+
+local merc_pool_cache = nil
+
+function poi.get_mercenary_pool()
+	if merc_pool_cache then return merc_pool_cache end
+
+	local seen = {}
+	local pool = {}
+
+	local function add_advances_of(recruit_str)
+		local recruits = stringx.split(recruit_str or "")
+		for _, name in ipairs(recruits) do
+			name = stringx.strip(name)
+			local utype = wesnoth.unit_types[name]
+			if utype then
+				for _, adv_name in ipairs(utype.advances_to) do
+					local adv = wesnoth.unit_types[adv_name]
+					if adv and adv.level == 2 and not seen[adv_name] then
+						seen[adv_name] = true
+						table.insert(pool, adv_name)
+					end
+				end
+			end
+		end
+	end
+
+	local n_groups = wml.variables["wc2_enemy_army.group.length"] or 0
+	if n_groups > 0 then
+		for g = 0, n_groups - 1 do
+			add_advances_of(wml.variables[string.format("wc2_enemy_army.group[%d].recruit", g)])
+		end
+	end
+
+	if #pool < 6 then
+		for _, name in ipairs(FALLBACK_MERC_TYPES) do
+			if not seen[name] and wesnoth.unit_types[name] then
+				seen[name] = true
+				table.insert(pool, name)
+			end
+		end
+	end
+
+	merc_pool_cache = pool
+	return pool
+end
+
 local function adjacent_hexes(loc_or_x, y)
 	return { wesnoth.map.get_adjacent_hexes(loc_or_x, y) }
 end
@@ -200,36 +253,76 @@ function poi.activate(unit, poi_type, index)
 		}
 
 	elseif poi_type == "mercenary_camp" then
-		local merc_types = { "Orcish Crossbowman", "Troll", "Ogre", "Assassin", "Rogue", "Huntsman" }
-		local merc_type = merc_types[mathx.random(#merc_types)]
-		local utype = wesnoth.unit_types[merc_type]
-		local merc_cost = utype.cost
+		local pool = poi.get_mercenary_pool()
+		if #pool == 0 then return end
 
-		if side.gold < merc_cost then
+		local indices = {}
+		for i = 1, #pool do table.insert(indices, i) end
+		mathx.shuffle(indices)
+		local offer_count = math.min(3, #indices)
+
+		local offers = {}
+		for i = 1, offer_count do
+			local name = pool[indices[i]]
+			local utype = wesnoth.unit_types[name]
+			if utype then
+				table.insert(offers, { type_id = name, utype = utype, cost = utype.cost })
+			end
+		end
+
+		if #offers == 0 then return end
+
+		local any_affordable = false
+		for _, o in ipairs(offers) do
+			if side.gold >= o.cost then any_affordable = true; break end
+		end
+
+		if not any_affordable then
+			local names = {}
+			for _, o in ipairs(offers) do
+				table.insert(names, string.format("%s (%dg)", tostring(o.utype.name), o.cost))
+			end
 			wesnoth.wml_actions.message {
 				speaker = "narrator", caption = _ "Mercenary Camp",
-				message = string.format(tostring(_ "A %s offers their services for %d gold, but you cannot afford them."), utype.name, merc_cost),
+				message = string.format(tostring(_ "Mercenaries are available — %s — but you cannot afford any of them."), table.concat(names, ", ")),
 				image = "scenery/tent-fancy-red.png",
 			}
 			return
 		end
 
-		wesnoth.wml_actions.message {
+		local menu_cfg = {
 			speaker = "narrator", caption = _ "Mercenary Camp",
-			message = string.format(tostring(_ "A %s offers to join your cause for %d gold."), utype.name, merc_cost),
+			message = string.format(tostring(_ "Sellswords offer their services. You have %d gold."), side.gold),
 			image = "scenery/tent-fancy-red.png",
-			wml.tag.option { label = string.format(tostring(_ "Hire (%dg)"), merc_cost) },
-			wml.tag.option { label = _ "Decline" },
 		}
-		if wml.variables.value == 0 then
+		local option_map = {}
+		for _, o in ipairs(offers) do
+			local affordable = side.gold >= o.cost
+			local label = affordable
+				and string.format("%s — %dg", tostring(o.utype.name), o.cost)
+				or string.format("%s — %dg (can't afford)", tostring(o.utype.name), o.cost)
+			table.insert(menu_cfg, wml.tag.option {
+				label = label,
+				image = o.utype.image,
+			})
+			table.insert(option_map, affordable and o or false)
+		end
+		table.insert(menu_cfg, wml.tag.option { label = _ "Decline" })
+		table.insert(option_map, false)
+
+		wesnoth.wml_actions.message(menu_cfg)
+		local choice = wml.variables.value or (#option_map - 1)
+		local picked = option_map[choice + 1]
+
+		if picked then
 			for _, hex in ipairs(adjacent_hexes(unit)) do
 				if not wesnoth.units.get(hex.x, hex.y) then
 					wesnoth.wml_actions.unit {
-						side = unit.side, type = merc_type,
+						side = unit.side, type = picked.type_id,
 						x = hex.x, y = hex.y,
 						generate_name = true, random_traits = true, moves = 0,
 					}
-					side.gold = side.gold - merc_cost
+					side.gold = side.gold - picked.cost
 					break
 				end
 			end
