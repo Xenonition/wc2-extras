@@ -94,20 +94,34 @@ function poi.find_placement_candidates(min_distance_from_keep)
 	min_distance_from_keep = min_distance_from_keep or 6
 	local candidates = {}
 	local keeps = wesnoth.map.find { terrain = "K*,*^K*" }
+	local map_w, map_h = wesnoth.current.map.playable_width, wesnoth.current.map.playable_height
+	local border = wesnoth.current.map.border_size or 1
 	local all_hexes = wesnoth.map.find {
 		terrain = "G*,Hh*,Mm*,Dd*,Ss*,Aa*,Rb*,Rd*,Re*,Rr*,Rp*",
-		wml.tag["not"] { terrain = "*^V*,C*,K*" },
+		wml.tag["not"] { terrain = "*^V*,C*,K*,X*,Q*" },
 	}
 	for _, hex in ipairs(all_hexes) do
-		local too_close = false
-		for _, keep in ipairs(keeps) do
-			if wesnoth.map.distance_between(hex, keep) < min_distance_from_keep then
-				too_close = true
-				break
+		if hex.x > border and hex.y > border and hex.x <= map_w and hex.y <= map_h then
+			local too_close = false
+			for _, keep in ipairs(keeps) do
+				if wesnoth.map.distance_between(hex, keep) < min_distance_from_keep then
+					too_close = true
+					break
+				end
 			end
-		end
-		if not too_close then
-			table.insert(candidates, hex)
+			if not too_close then
+				local adj = { wesnoth.map.get_adjacent_hexes(hex) }
+				local reachable = 0
+				for _, a in ipairs(adj) do
+					local t = wesnoth.current.map[a]
+					if t and not tostring(t):match("[XQ]") then
+						reachable = reachable + 1
+					end
+				end
+				if reachable >= 3 then
+					table.insert(candidates, hex)
+				end
+			end
 		end
 	end
 	return candidates
@@ -209,7 +223,7 @@ on_event("moveto", function(cx)
 		local py = wml.variables[key .. ".y"]
 		local active = wml.variables[key .. ".active"]
 
-		if active and cx.x1 == px and cx.y1 == py then
+		if active and wesnoth.map.distance_between(cx.x1, cx.y1, px, py) <= 1 then
 			local guards_alive = false
 			for _, adj in ipairs(adjacent_hexes(px, py)) do
 				local guard = wesnoth.units.get(adj.x, adj.y)

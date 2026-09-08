@@ -117,10 +117,12 @@ function shop.show_for_side(side_num)
 	local side = wesnoth.sides[side_num]
 	local discount = shop.get_discount()
 
+	local consumables = shop.build_consumable_list()
+
 	local shopping = true
 	while shopping do
 		local all_items = {}
-		for _, item in ipairs(shop.build_consumable_list()) do
+		for _, item in ipairs(consumables) do
 			table.insert(all_items, item)
 		end
 		for _, item in ipairs(shop.build_upgrade_list(side_num)) do
@@ -201,6 +203,12 @@ function shop.show_for_side(side_num)
 					local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
 					if leader and wc2_artifacts then
 						wc2_artifacts.give_item(leader, item.id, true)
+					end
+					for ci = #consumables, 1, -1 do
+						if consumables[ci].id == item.id then
+							table.remove(consumables, ci)
+							break
+						end
 					end
 				elseif item.category == "upgrade" then
 					side.gold = side.gold - price
