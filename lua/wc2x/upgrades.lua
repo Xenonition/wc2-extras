@@ -235,6 +235,7 @@ end)
 
 -- Unit discount refund
 on_event("recruit", function(cx)
+	if not cx.x1 or not cx.y1 then return end
 	local side_num = wesnoth.current.side
 	if not wc2_scenario.is_human_side(side_num) then return end
 	local u = wesnoth.units.get(cx.x1, cx.y1)

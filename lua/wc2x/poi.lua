@@ -163,7 +163,7 @@ function poi.place_all()
 		wml.variables[key .. ".type"] = poi_type.id
 		wml.variables[key .. ".active"] = true
 	end
-	wml.variables["wc2x_poi.length"] = math.min(config.poi_count_per_map, #available_types, #candidates)
+	wml.variables["wc2x_poi_count"] = math.min(config.poi_count_per_map, #available_types, #candidates)
 
 	for i = 1, config.creep_count_per_map do
 		if placed >= #candidates then break end
@@ -198,10 +198,11 @@ function poi.place_caravan(loc)
 end
 
 on_event("moveto", function(cx)
+	if not cx.x1 or not cx.y1 then return end
 	local u = wesnoth.units.get(cx.x1, cx.y1)
 	if not u or not wc2_scenario.is_human_side(u.side) then return end
 
-	local poi_count = wml.variables["wc2x_poi.length"] or 0
+	local poi_count = wml.variables["wc2x_poi_count"] or 0
 	for i = 0, poi_count - 1 do
 		local key = string.format("wc2x_poi[%d]", i)
 		local px = wml.variables[key .. ".x"]
@@ -347,6 +348,7 @@ end
 
 -- Caravan arrival
 on_event("moveto", function(cx)
+	if not cx.x1 or not cx.y1 then return end
 	if not wml.variables["wc2x_caravan.active"] then return end
 	local u = wesnoth.units.get(cx.x1, cx.y1)
 	if not u or not u.variables.wc2x_is_caravan then return end
