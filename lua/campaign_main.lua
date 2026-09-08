@@ -1,5 +1,4 @@
--- WC2 Extras — forked campaign main
--- Based on World Conquest II, with income-based economy, POIs, shop, and upgrades.
+-- World Conquest III — forked campaign main
 
 T = wml.tag
 on_event = wesnoth.game_events.add_repeating
@@ -8,7 +7,7 @@ wesnoth.dofile("./game_mechanics/_load.lua")
 
 wc2_era = wesnoth.require("./era/era.lua")
 
--- Load WC2X modules before enemy/scenario (they hook into the same events)
+-- Load WC3 modules before enemy/scenario (they hook into the same events)
 wc2x = {}
 wc2x.config = wesnoth.dofile("./wc2x/config.lua")
 wc2x.upgrades = wesnoth.dofile("./wc2x/upgrades.lua")

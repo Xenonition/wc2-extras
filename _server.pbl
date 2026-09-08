@@ -1,5 +1,5 @@
-title="WC2 Extras"
+title="World Conquest III"
 author="William"
 version="0.1.0"
-description="Custom artifacts, trainers and tweaks for World Conquest II"
+description="A standalone fork of World Conquest II with income-based enemy economy, points of interest, between-map shop, and permanent upgrades."
 type="modification"
