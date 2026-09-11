@@ -100,30 +100,8 @@ function debug_panel.show(x, y)
 	end)
 
 	if unit then
-		add("Unit: +50 XP", function()
-			unit.experience = unit.experience + 50
-			msg(string.format("%s +50 XP (%d/%d)", unit.name, unit.experience, unit.max_experience))
-			wesnoth.wml_actions.advance_unit { x = unit.x, y = unit.y, animate = false }
-		end)
-
-		add("Unit: Full Heal", function()
-			unit.hitpoints = unit.max_hitpoints
-			unit.moves = unit.max_moves
-			unit.status.poisoned = false
-			unit.status.slowed = false
-			msg(string.format("%s fully healed", unit.name))
-		end)
-
-		add("Unit: Max Level", function()
-			while unit.experience < unit.max_experience do
-				unit.experience = unit.max_experience
-				wesnoth.wml_actions.advance_unit { x = unit.x, y = unit.y, animate = false }
-				unit = wesnoth.units.get(x, y)
-				if not unit then break end
-			end
-			if unit then
-				msg(string.format("%s advanced to %s", unit.name, unit.type))
-			end
+		add("Unit: Modify", function()
+			debug_panel.show_unit_menu(unit, x, y, side_num)
 		end)
 	end
 
@@ -154,6 +132,151 @@ function debug_panel.show(x, y)
 			x, y, side_num, wesnoth.sides[side_num].gold)
 
 	local choice = pick_option("WC3 Debug", header, option_strings)
+
+	if choice >= 1 and choice <= #entries then
+		entries[choice].action()
+	end
+end
+
+function debug_panel.show_unit_menu(unit, x, y, side_num)
+	local entries = {}
+	local function add(label, action)
+		table.insert(entries, { label = label, action = action })
+	end
+
+	add("+50 XP", function()
+		unit.experience = unit.experience + 50
+		msg(string.format("%s +50 XP (%d/%d)", unit.name, unit.experience, unit.max_experience))
+		wesnoth.wml_actions.advance_unit { x = x, y = y, animate = false }
+	end)
+
+	add("Max Level", function()
+		while unit.experience < unit.max_experience do
+			unit.experience = unit.max_experience
+			wesnoth.wml_actions.advance_unit { x = x, y = y, animate = false }
+			unit = wesnoth.units.get(x, y)
+			if not unit then break end
+		end
+		if unit then msg(string.format("%s advanced to %s", unit.name, unit.type)) end
+	end)
+
+	add("Full Heal", function()
+		unit.hitpoints = unit.max_hitpoints
+		unit.moves = unit.max_moves
+		unit.status.poisoned = false
+		unit.status.slowed = false
+		msg(string.format("%s fully healed", unit.name))
+	end)
+
+	add("+10% Damage (all attacks)", function()
+		unit:add_modification("object", {
+			id = "wc3_dbg_dmg_" .. tostring(mathx.random(9999)),
+			wml.tag.effect { apply_to = "attack", increase_damage = "10%" },
+		})
+		msg(string.format("%s: +10%% damage", unit.name))
+	end)
+
+	add("+1 Strike (all attacks)", function()
+		unit:add_modification("object", {
+			id = "wc3_dbg_strikes_" .. tostring(mathx.random(9999)),
+			wml.tag.effect { apply_to = "attack", increase_attacks = 1 },
+		})
+		msg(string.format("%s: +1 strike", unit.name))
+	end)
+
+	add("+10 Max HP", function()
+		unit:add_modification("object", {
+			id = "wc3_dbg_hp_" .. tostring(mathx.random(9999)),
+			wml.tag.effect { apply_to = "hitpoints", increase_total = 10 },
+		})
+		unit.hitpoints = unit.hitpoints + 10
+		msg(string.format("%s: +10 HP (%d/%d)", unit.name, unit.hitpoints, unit.max_hitpoints))
+	end)
+
+	add("+2 Movement", function()
+		unit:add_modification("object", {
+			id = "wc3_dbg_mv_" .. tostring(mathx.random(9999)),
+			wml.tag.effect { apply_to = "movement", increase = 2 },
+		})
+		msg(string.format("%s: +2 movement (%d)", unit.name, unit.max_moves))
+	end)
+
+	add("Add Alternative Damage Type", function()
+		local types = { "blade", "pierce", "impact", "fire", "cold", "arcane" }
+		local pick = pick_option("Damage Type", "Add which alternative type?", types)
+		if pick >= 1 and pick <= #types then
+			unit:add_modification("object", {
+				id = "wc3_dbg_dt_" .. types[pick],
+				wml.tag.effect {
+					apply_to = "attack",
+					wml.tag.set_specials {
+						mode = "append",
+						wml.tag.damage_type {
+							id = "wc3_dbg_alt_" .. types[pick],
+							alternative_type = types[pick],
+						},
+					},
+				},
+			})
+			msg(string.format("%s: +%s alternative type", unit.name, types[pick]))
+		end
+	end)
+
+	add("Add Trait: Strong", function()
+		unit:add_modification("trait", {
+			id = "strong",
+			name = "strong",
+			wml.tag.effect { apply_to = "attack", increase_damage = 1 },
+			wml.tag.effect { apply_to = "hitpoints", increase_total = 2 },
+		})
+		msg(string.format("%s: added Strong trait", unit.name))
+	end)
+
+	add("Add Trait: Resilient", function()
+		unit:add_modification("trait", {
+			id = "resilient",
+			name = "resilient",
+			wml.tag.effect { apply_to = "hitpoints", increase_total = "7" },
+		})
+		msg(string.format("%s: added Resilient trait", unit.name))
+	end)
+
+	add("Add Trait: Quick", function()
+		unit:add_modification("trait", {
+			id = "quick",
+			name = "quick",
+			wml.tag.effect { apply_to = "movement", increase = 1 },
+			wml.tag.effect { apply_to = "hitpoints", increase_total = "-5%" },
+		})
+		msg(string.format("%s: added Quick trait", unit.name))
+	end)
+
+	add("Add Trait: Intelligent", function()
+		unit:add_modification("trait", {
+			id = "intelligent",
+			name = "intelligent",
+			wml.tag.effect { apply_to = "max_experience", increase = "-20%" },
+		})
+		msg(string.format("%s: added Intelligent trait", unit.name))
+	end)
+
+	add("Set Upkeep: Free", function()
+		unit.upkeep = "free"
+		msg(string.format("%s: upkeep set to free", unit.name))
+	end)
+
+	add("Back", function() end)
+
+	local option_strings = {}
+	for _, e in ipairs(entries) do
+		table.insert(option_strings, e.label)
+	end
+
+	local header = string.format("%s [%s] — HP %d/%d — XP %d/%d — Moves %d",
+		unit.name, unit.type, unit.hitpoints, unit.max_hitpoints,
+		unit.experience, unit.max_experience, unit.max_moves)
+
+	local choice = pick_option("Unit: " .. tostring(unit.name), header, option_strings)
 
 	if choice >= 1 and choice <= #entries then
 		entries[choice].action()
