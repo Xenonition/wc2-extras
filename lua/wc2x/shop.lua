@@ -237,7 +237,7 @@ function shop.show_for_side(side_num)
 		gui.show_dialog(d_wml, preshow)
 
 		return { purchases = purchases }
-	end)
+	end, side_num)
 
 	local purchases = res.purchases or {}
 	for _, buy in ipairs(purchases) do
