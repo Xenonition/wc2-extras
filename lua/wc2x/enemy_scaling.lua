@@ -65,6 +65,7 @@ function enemy_scaling.expand_recruits(side_num)
 		end
 		local pool = {}
 		for t in pairs(unique) do table.insert(pool, t) end
+		table.sort(pool)
 		mathx.shuffle(pool)
 		for i = 1, math.min(config.enemy_recruit_l2_count, #pool) do
 			table.insert(to_add, pool[i])
@@ -79,6 +80,7 @@ function enemy_scaling.expand_recruits(side_num)
 		end
 		local pool = {}
 		for t in pairs(unique) do table.insert(pool, t) end
+		table.sort(pool)
 		mathx.shuffle(pool)
 		for i = 1, math.min(config.enemy_recruit_l3_count, #pool) do
 			table.insert(to_add, pool[i])

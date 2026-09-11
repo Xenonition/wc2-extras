@@ -162,7 +162,7 @@ function shop.show_for_side(side_num)
 
 	local res = wesnoth.sync.evaluate_single(_ "WC3 Shop", function()
 		local gold_remaining = side.gold
-		local purchases = {}
+		local purchase_strings = {}
 
 		local function format_item(item)
 			local price = shop.discounted_price(item.price)
@@ -217,7 +217,7 @@ function shop.show_for_side(side_num)
 				if gold_remaining < price then return end
 
 				gold_remaining = gold_remaining - price
-				table.insert(purchases, { category = item.category, id = item.id, price = price })
+				table.insert(purchase_strings, item.category .. ":" .. tostring(item.id) .. ":" .. price)
 
 				if item.category == "upgrade" then
 					item.owned = (item.owned or 0) + 1
@@ -233,34 +233,39 @@ function shop.show_for_side(side_num)
 		end
 
 		local d_wml = wml.get_child(dialog_wml, 'resolution')
-		if not d_wml then return { purchases = {} } end
+		if not d_wml then return { purchases = "" } end
 		gui.show_dialog(d_wml, preshow)
 
-		return { purchases = purchases }
+		return { purchases = table.concat(purchase_strings, ";") }
 	end, side_num)
 
-	local purchases = res.purchases or {}
-	for _, buy in ipairs(purchases) do
-		side.gold = side.gold - buy.price
+	local purchases_str = res.purchases or ""
+	if purchases_str == "" then return end
+	for entry in purchases_str:gmatch("[^;]+") do
+		local category, id_str, price_str = entry:match("^(.-):(.-):(.+)$")
+		local price = tonumber(price_str)
+		local id = tonumber(id_str) or id_str
 
-		if buy.category == "artifact" then
+		side.gold = side.gold - price
+
+		if category == "artifact" then
 			local existing = side.variables["wc2x_pending_artifacts"] or ""
 			local pending = existing ~= "" and stringx.split(existing) or {}
-			table.insert(pending, tostring(buy.id))
+			table.insert(pending, tostring(id))
 			side.variables["wc2x_pending_artifacts"] = table.concat(pending, ",")
-		elseif buy.category == "training" then
-			if wc2_training and wc2_training.available(side_num, buy.id) then
-				wc2_training.inc_level(side_num, buy.id, 1)
-				local msg = wc2_training.generate_message(buy.id, wc2_training.get_level(side_num, buy.id))
+		elseif category == "training" then
+			if wc2_training and wc2_training.available(side_num, id) then
+				wc2_training.inc_level(side_num, id, 1)
+				local msg = wc2_training.generate_message(id, wc2_training.get_level(side_num, id))
 				wesnoth.wml_actions.message(msg)
 			end
-		elseif buy.category == "hero" then
+		elseif category == "hero" then
 			local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
 			if leader then
-				wc2_heroes.place(buy.id, side_num, leader.x, leader.y)
+				wc2_heroes.place(id, side_num, leader.x, leader.y)
 			end
-		elseif buy.category == "upgrade" then
-			shop.upgrades.purchase(side_num, buy.id)
+		elseif category == "upgrade" then
+			shop.upgrades.purchase(side_num, id)
 		end
 	end
 end

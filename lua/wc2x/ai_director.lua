@@ -610,6 +610,7 @@ local function weighted_pick(tactics_table, sit)
 		end
 	end
 	if total == 0 then return nil end
+	table.sort(weights, function(a, b) return a.name < b.name end)
 
 	local roll = rand_float(0, total)
 	local cumulative = 0
