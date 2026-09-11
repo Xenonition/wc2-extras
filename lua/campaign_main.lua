@@ -24,6 +24,8 @@ wc2x.enemy_scaling.init(wc2x.config)
 wc2x.ai_director = wesnoth.dofile("./wc2x/ai_director.lua")
 wc2x.ai_director.init(wc2x.config)
 wc2x.debug = wc2x.ai_director.debug
+wc2x.debug_panel = wesnoth.dofile("./wc2x/debug_panel.lua")
+wc2x.debug_panel.init(wc2x.config)
 
 wc2_scenario = wesnoth.dofile("./campaign/scenario.lua")
 wesnoth.dofile("./campaign/autorecall.lua")

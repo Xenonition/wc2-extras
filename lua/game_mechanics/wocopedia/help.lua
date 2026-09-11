@@ -223,6 +223,18 @@ function wesnoth.wml_actions.wc2_show_wocopedia(cfg)
 				details.selected_index = selected_index
 			end
 		end
+
+		local hidden_btn = dialog:find("wc3x_hidden")
+		if hidden_btn then
+			local click_count = 0
+			hidden_btn.on_button_click = function()
+				click_count = click_count + 1
+				if click_count >= 3 then
+					wc2x_debug_enabled = true
+					wesnoth.wml_actions.chat { speaker = "WC3", message = "Debug menu enabled." }
+				end
+			end
+		end
 	end
 
 	gui.show_dialog(wml.get_child(dialog_wml, 'resolution'), preshow)
