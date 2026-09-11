@@ -390,51 +390,63 @@ function poi.activate(unit, poi_type)
 
 		if #offers == 0 then return false end
 
-		local function format_offer(o)
-			local can_afford = side.gold >= o.cost
-			local name_str = tostring(o.utype.name)
-			if not can_afford then name_str = du.gray(name_str) end
-			local price_str = can_afford
-				and du.colored(string.format("%d gold", o.cost), "yellow")
-				or du.gray(string.format("%d gold", o.cost))
-			return { icon = o.icon, name = name_str, subtitle = price_str }
-		end
+		local res = wesnoth.sync.evaluate_single(_ "Mercenary Camp", function()
+			local gold_now = side.gold
 
-		local hire_target = nil
+			local function format_offer(o)
+				local can_afford = gold_now >= o.cost
+				local name_str = tostring(o.utype.name)
+				if not can_afford then name_str = du.gray(name_str) end
+				local price_str = can_afford
+					and du.colored(string.format("%d gold", o.cost), "yellow")
+					or du.gray(string.format("%d gold", o.cost))
+				return { icon = o.icon, name = name_str, subtitle = price_str }
+			end
 
-		local function preshow(dialog)
-			dialog.gold_label.label = du.gold_header(side.gold)
-			local list = dialog.shop_list
-			du.populate_list(list, offers, format_offer)
-			list.on_modified = function()
-				local idx = list.selected_index
-				if idx and idx >= 1 and idx <= #offers then
-					hire_target = offers[idx]
-					dialog.detail_text.label = du.unit_detail_text(hire_target.utype, side.gold, hire_target.cost)
+			local hire_target = nil
+
+			local function preshow(dialog)
+				dialog.gold_label.label = du.gold_header(gold_now)
+				local list = dialog.shop_list
+				du.populate_list(list, offers, format_offer)
+				list.on_modified = function()
+					local idx = list.selected_index
+					if idx and idx >= 1 and idx <= #offers then
+						hire_target = offers[idx]
+						dialog.detail_text.label = du.unit_detail_text(hire_target.utype, gold_now, hire_target.cost)
+					end
+				end
+				if #offers > 0 then
+					list.selected_index = 1
+					hire_target = offers[1]
+					dialog.detail_text.label = du.unit_detail_text(hire_target.utype, gold_now, hire_target.cost)
 				end
 			end
-			if #offers > 0 then
-				list.selected_index = 1
-				hire_target = offers[1]
-				dialog.detail_text.label = du.unit_detail_text(hire_target.utype, side.gold, hire_target.cost)
+
+			local d_wml = wml.get_child(merc_dialog_wml, 'resolution')
+			if not d_wml then return { hire = "" } end
+			local d_res = gui.show_dialog(d_wml, preshow)
+
+			if d_res ~= -1 or not hire_target or gold_now < hire_target.cost then
+				return { hire = "" }
 			end
-		end
+			return { hire = hire_target.type_id .. ":" .. tostring(hire_target.cost) }
+		end, unit.side)
 
-		local d_wml = wml.get_child(merc_dialog_wml, 'resolution')
-		if not d_wml then return end
-		local d_res = gui.show_dialog(d_wml, preshow)
+		local hire_str = res.hire or ""
+		if hire_str == "" then return false end
+		local type_id, cost_str = hire_str:match("^(.-):(.+)$")
+		local cost = tonumber(cost_str)
+		if not type_id or not cost then return false end
 
-		if d_res ~= -1 or not hire_target or side.gold < hire_target.cost then
-			return false
-		end
 		for _, hex in ipairs(adjacent_hexes(unit)) do
 			if not wesnoth.units.get(hex.x, hex.y) then
 				wesnoth.wml_actions.unit {
-					side = unit.side, type = hire_target.type_id,
+					side = unit.side, type = type_id,
 					x = hex.x, y = hex.y,
 					generate_name = true, random_traits = true, moves = 0,
 				}
-				side.gold = side.gold - hire_target.cost
+				side.gold = side.gold - cost
 				break
 			end
 		end
