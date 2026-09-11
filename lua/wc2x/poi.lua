@@ -1,7 +1,10 @@
 -- WC2 Extras — points of interest
+-- Uses WC2's [item] + wc2_drop_pickup pattern for pickup detection.
 
 local on_event = wesnoth.game_events.add_repeating
 local _ = wesnoth.textdomain 'wesnoth-wc'
+
+local merc_dialog_wml = wml.load "~add-ons/wc2-extras/gui/merc_dialog.cfg"
 
 local poi = {}
 
@@ -14,8 +17,11 @@ poi.types = {
 		id = "ruins",
 		name = _ "Ancient Ruins",
 		image = "scenery/castle-ruins.png",
-		guard_types = { "Skeleton", "Skeleton Archer", "Ghost", "Ghoul" },
-		guard_count = { 1, 2 },
+		guard_types = nil,
+		guard_count = { 0, 0 },
+		ambush_types = { "Skeleton", "Skeleton Archer", "Ghost", "Ghoul" },
+		ambush_count = { 1, 3 },
+		weight = 3,
 	},
 	{
 		id = "mercenary_camp",
@@ -23,6 +29,7 @@ poi.types = {
 		image = "scenery/tent-fancy-red.png",
 		guard_types = nil,
 		guard_count = { 0, 0 },
+		weight = 2,
 	},
 	{
 		id = "shrine",
@@ -30,6 +37,16 @@ poi.types = {
 		image = "scenery/temple1.png",
 		guard_types = { "Fire Guardian", "Elvish Druid", "Elvish Sorceress", "Mage" },
 		guard_count = { 2, 3 },
+		weight = 2,
+	},
+	{
+		id = "caravan",
+		name = _ "Trade Caravan",
+		image = "units/human-peasants/ruffian.png",
+		guard_types = nil,
+		guard_count = { 0, 0 },
+		weight = 1,
+		min_scenario = 2,
 	},
 }
 
@@ -52,7 +69,7 @@ function poi.get_mercenary_pool()
 	local function add_advances_of(recruit_str)
 		local recruits = stringx.split(recruit_str or "")
 		for _, name in ipairs(recruits) do
-			name = stringx.strip(name)
+			name = tostring(name):match("^%s*(.-)%s*$")
 			local utype = wesnoth.unit_types[name]
 			if utype then
 				for _, adv_name in ipairs(utype.advances_to) do
@@ -87,7 +104,14 @@ function poi.get_mercenary_pool()
 end
 
 local function adjacent_hexes(loc_or_x, y)
-	return { wesnoth.map.get_adjacent_hexes(loc_or_x, y) }
+	if not loc_or_x then return {} end
+	if type(loc_or_x) == "number" then
+		return { wesnoth.map.get_adjacent_hexes(loc_or_x, y) }
+	end
+	if loc_or_x.x and loc_or_x.y then
+		return { wesnoth.map.get_adjacent_hexes(loc_or_x.x, loc_or_x.y) }
+	end
+	return { wesnoth.map.get_adjacent_hexes(loc_or_x) }
 end
 
 function poi.find_placement_candidates(min_distance_from_keep)
@@ -127,8 +151,41 @@ function poi.find_placement_candidates(min_distance_from_keep)
 	return candidates
 end
 
+local function resolve_guard_tier(poi_id, scenario_num)
+	local scaling = poi.config.poi_guard_scaling
+	if not scaling or not scaling[poi_id] then return nil end
+	local tiers = scaling[poi_id]
+	local best = nil
+	for _, tier in ipairs(tiers) do
+		if scenario_num >= tier.scenario then best = tier end
+	end
+	return best
+end
+
+local function weighted_pick(pool)
+	local total = 0
+	for _, entry in ipairs(pool) do total = total + entry.weight end
+	local roll = mathx.random(total)
+	local sum = 0
+	for i, entry in ipairs(pool) do
+		sum = sum + entry.weight
+		if roll <= sum then return i, entry end
+	end
+	return #pool, pool[#pool]
+end
+
 function poi.place_all()
-	poi.neutral_side = #wesnoth.sides
+	local player_count = wml.variables.wc2_player_count or 1
+	if player_count < 3 then
+		poi.neutral_side = player_count + 1
+	else
+		poi.neutral_side = #wesnoth.sides
+	end
+	wesnoth.wml_actions.modify_side {
+		side = poi.neutral_side,
+		team_name = "wc2_enemy",
+		hidden = true,
+	}
 	local config = poi.config
 	local candidates = poi.find_placement_candidates()
 	if #candidates == 0 then return end
@@ -137,20 +194,34 @@ function poi.place_all()
 	local scenario_num = wc2_scenario.scenario_num()
 	local placed = 0
 
-	local available_types = {}
-	for _, t in ipairs(poi.types) do table.insert(available_types, t) end
-	mathx.shuffle(available_types)
+	local pool = {}
+	for _, t in ipairs(poi.types) do
+		if not t.min_scenario or scenario_num >= t.min_scenario then
+			table.insert(pool, { poi_type = t, weight = t.weight or 1 })
+		end
+	end
 
-	for i = 1, math.min(config.poi_count_per_map, #available_types, #candidates) do
-		local poi_type = available_types[i]
+	local poi_count = config.poi_base_count + math.floor((scenario_num - 1) * config.poi_per_scenario)
+	poi_count = math.min(poi_count, #candidates)
+
+	for _ = 1, poi_count do
+		if #pool == 0 or placed >= #candidates then break end
+		local _, pick = weighted_pick(pool)
+		local poi_type = pick.poi_type
 		placed = placed + 1
 		local loc = candidates[placed]
 
-		wesnoth.wml_actions.item { x = loc.x, y = loc.y, image = poi_type.image, z_order = 10 }
+		wesnoth.wml_actions.item {
+			x = loc.x, y = loc.y, image = poi_type.image, z_order = 10,
+			wml.tag.variables { wc2x_poi_type = poi_type.id },
+		}
 		wesnoth.wml_actions.label { x = loc.x, y = loc.y, text = poi_type.name }
 
-		if poi_type.guard_types and #poi_type.guard_types > 0 then
-			local num_guards = mathx.random(poi_type.guard_count[1], poi_type.guard_count[2])
+		local tier = resolve_guard_tier(poi_type.id, scenario_num)
+		local guard_types = tier and tier.types or poi_type.guard_types
+		local guard_count = tier and tier.count or poi_type.guard_count
+		if guard_types and #guard_types > 0 then
+			local num_guards = mathx.random(guard_count[1], guard_count[2])
 			local adj = adjacent_hexes(loc)
 			mathx.shuffle(adj)
 			local g = 0
@@ -161,23 +232,17 @@ function poi.place_all()
 					if terr and not tostring(terr):match("[XQ]") then
 						wesnoth.wml_actions.unit {
 							side = poi.neutral_side,
-							type = poi_type.guard_types[mathx.random(#poi_type.guard_types)],
+							type = guard_types[mathx.random(#guard_types)],
 							x = a.x, y = a.y,
 							generate_name = true, random_traits = true, upkeep = "free",
+							wml.tag.ai { ai_special = "guardian" },
 						}
 						g = g + 1
 					end
 				end
 			end
 		end
-
-		local key = string.format("wc2x_poi[%d]", i - 1)
-		wml.variables[key .. ".x"] = loc.x
-		wml.variables[key .. ".y"] = loc.y
-		wml.variables[key .. ".type"] = poi_type.id
-		wml.variables[key .. ".active"] = true
 	end
-	wml.variables["wc2x_poi_count"] = math.min(config.poi_count_per_map, #available_types, #candidates)
 
 	for i = 1, config.creep_count_per_map do
 		if placed >= #candidates then break end
@@ -188,59 +253,85 @@ function poi.place_all()
 			type = config.creep_types[mathx.random(#config.creep_types)],
 			x = loc.x, y = loc.y,
 			generate_name = true, random_traits = true, upkeep = "free",
+			wml.tag.ai { ai_special = "guardian" },
 		}
 	end
+end
 
-	if scenario_num >= 2 and placed < #candidates then
-		placed = placed + 1
-		poi.place_caravan(candidates[placed])
+-- Pickup via WC2's dropping.lua wc2_drop_pickup event.
+-- dropping.lua fires this when any unit steps on an [item].
+on_event("wc2_drop_pickup", function(ec)
+	local item = wc2_dropping.current_item
+	if not item or not item.variables.wc2x_poi_type then return end
+
+	local side_num = wesnoth.current.side
+	if not wc2_scenario.is_human_side(side_num) then return end
+
+	local cx = wesnoth.current.event_context
+	local x, y = cx.x1, cx.y1
+	if not x or not y then return end
+
+	local poi_type_id = item.variables.wc2x_poi_type
+
+	-- Guard check: if any neutral guards adjacent to POI hex, block pickup
+	for _, adj in ipairs(adjacent_hexes(x, y)) do
+		local guard = wesnoth.units.get(adj.x, adj.y)
+		if guard and guard.side == poi.neutral_side then
+			return
+		end
 	end
-end
 
-function poi.place_caravan(loc)
-	wesnoth.wml_actions.unit {
-		side = 1, type = "Ruffian",
-		x = loc.x, y = loc.y,
-		name = _ "Trade Caravan", generate_name = false,
-		canrecruit = false, upkeep = "free", max_moves = 4,
-		wml.tag.modifications {
-			wml.tag.object { wml.tag.effect { apply_to = "hitpoints", increase_total = 10 } },
-		},
-		wml.tag.variables { wc2x_is_caravan = true },
-	}
-	wml.variables["wc2x_caravan.active"] = true
-end
+	local unit = wesnoth.units.get(x, y)
+	if not unit then return end
 
-on_event("moveto", function(cx)
-	if not cx.x1 or not cx.y1 then return end
-	local u = wesnoth.units.get(cx.x1, cx.y1)
-	if not u or not wc2_scenario.is_human_side(u.side) then return end
-
-	local poi_count = wml.variables["wc2x_poi_count"] or 0
-	for i = 0, poi_count - 1 do
-		local key = string.format("wc2x_poi[%d]", i)
-		local px = wml.variables[key .. ".x"]
-		local py = wml.variables[key .. ".y"]
-		local active = wml.variables[key .. ".active"]
-
-		if active and wesnoth.map.distance_between(cx.x1, cx.y1, px, py) <= 1 then
-			local guards_alive = false
-			for _, adj in ipairs(adjacent_hexes(px, py)) do
-				local guard = wesnoth.units.get(adj.x, adj.y)
-				if guard and guard.side == poi.neutral_side then
-					guards_alive = true
-					break
+	-- Ambush: spawn guards on first contact, block pickup until they're dead
+	local poi_def = nil
+	for _, t in ipairs(poi.types) do
+		if t.id == poi_type_id then poi_def = t; break end
+	end
+	if poi_def and poi_def.ambush_types and not item.variables.wc2x_ambush_triggered then
+		item.variables.wc2x_ambush_triggered = true
+		local scenario_num = wc2_scenario.scenario_num()
+		local tier = resolve_guard_tier(poi_def.id, scenario_num)
+		local ambush_types = tier and tier.types or poi_def.ambush_types
+		local ambush_count = tier and tier.count or poi_def.ambush_count
+		local num = mathx.random(ambush_count[1], ambush_count[2])
+		local adj = adjacent_hexes(x, y)
+		mathx.shuffle(adj)
+		local spawned = 0
+		for _, a in ipairs(adj) do
+			if spawned >= num then break end
+			if not wesnoth.units.get(a.x, a.y) then
+				local terr = wesnoth.current.map[a]
+				if terr and not tostring(terr):match("[XQ]") then
+					wesnoth.wml_actions.unit {
+						side = poi.neutral_side,
+						type = ambush_types[mathx.random(#ambush_types)],
+						x = a.x, y = a.y,
+						generate_name = true, random_traits = true, upkeep = "free",
+						wml.tag.ai { ai_special = "guardian" },
+					}
+					spawned = spawned + 1
 				end
 			end
-			if not guards_alive then
-				poi.activate(u, wml.variables[key .. ".type"], i)
-				wml.variables[key .. ".active"] = false
-			end
 		end
+		if spawned > 0 then
+			wesnoth.wml_actions.message {
+				speaker = "narrator", caption = poi_def.name,
+				message = _ "The dead stir as you disturb the ruins!",
+				image = poi_def.image,
+			}
+		end
+	end
+
+	local consumed = poi.activate(unit, poi_type_id)
+	if consumed ~= false then
+		wc2_dropping.remove_current_item()
+		wesnoth.wml_actions.label { x = x, y = y, text = "" }
 	end
 end)
 
-function poi.activate(unit, poi_type, index)
+function poi.activate(unit, poi_type)
 	local config = poi.config
 	local scenario_num = wc2_scenario.scenario_num()
 	local side = wesnoth.sides[unit.side]
@@ -251,12 +342,23 @@ function poi.activate(unit, poi_type, index)
 			local artifact_list = wc2_artifacts.get_artifact_list()
 			if #artifact_list > 0 then
 				local artifact_id = mathx.random(#artifact_list)
+				local drop_hex = nil
+				for _, hex in ipairs(adjacent_hexes(unit)) do
+					if not wesnoth.units.get(hex.x, hex.y) then
+						local terr = wesnoth.current.map[hex]
+						if terr and not tostring(terr):match("[XQ]") then
+							drop_hex = hex
+							break
+						end
+					end
+				end
+				if not drop_hex then drop_hex = { x = unit.x, y = unit.y } end
 				wesnoth.wml_actions.message {
 					speaker = "narrator", caption = _ "Ancient Ruins",
 					message = _ "Among the rubble, you discover a relic of power!",
 					image = "scenery/castle-ruins.png",
 				}
-				wc2_artifacts.give_item(unit, artifact_id, true)
+				wc2_artifacts.place_item(drop_hex.x, drop_hex.y, artifact_id)
 				return
 			end
 		end
@@ -269,7 +371,8 @@ function poi.activate(unit, poi_type, index)
 
 	elseif poi_type == "mercenary_camp" then
 		local pool = poi.get_mercenary_pool()
-		if #pool == 0 then return end
+		if #pool == 0 then return false end
+		local du = wc2x.dialog_utils
 
 		local indices = {}
 		for i = 1, #pool do table.insert(indices, i) end
@@ -281,115 +384,275 @@ function poi.activate(unit, poi_type, index)
 			local name = pool[indices[i]]
 			local utype = wesnoth.unit_types[name]
 			if utype then
-				table.insert(offers, { type_id = name, utype = utype, cost = utype.cost })
+				table.insert(offers, { type_id = name, utype = utype, cost = utype.cost, icon = utype.image })
 			end
 		end
 
-		if #offers == 0 then return end
+		if #offers == 0 then return false end
 
-		local any_affordable = false
-		for _, o in ipairs(offers) do
-			if side.gold >= o.cost then any_affordable = true; break end
+		local function format_offer(o)
+			local can_afford = side.gold >= o.cost
+			local name_str = tostring(o.utype.name)
+			if not can_afford then name_str = du.gray(name_str) end
+			local price_str = can_afford
+				and du.colored(string.format("%d gold", o.cost), "yellow")
+				or du.gray(string.format("%d gold", o.cost))
+			return { icon = o.icon, name = name_str, subtitle = price_str }
 		end
 
-		if not any_affordable then
-			local names = {}
-			for _, o in ipairs(offers) do
-				table.insert(names, string.format("%s (%dg)", tostring(o.utype.name), o.cost))
+		local hire_target = nil
+
+		local function preshow(dialog)
+			dialog.gold_label.label = du.gold_header(side.gold)
+			local list = dialog.shop_list
+			du.populate_list(list, offers, format_offer)
+			list.on_modified = function()
+				local idx = list.selected_index
+				if idx and idx >= 1 and idx <= #offers then
+					hire_target = offers[idx]
+					dialog.detail_text.label = du.unit_detail_text(hire_target.utype, side.gold, hire_target.cost)
+				end
 			end
-			wesnoth.wml_actions.message {
-				speaker = "narrator", caption = _ "Mercenary Camp",
-				message = string.format(tostring(_ "Mercenaries are available — %s — but you cannot afford any of them."), table.concat(names, ", ")),
-				image = "scenery/tent-fancy-red.png",
-			}
-			return
+			if #offers > 0 then
+				list.selected_index = 1
+				hire_target = offers[1]
+				dialog.detail_text.label = du.unit_detail_text(hire_target.utype, side.gold, hire_target.cost)
+			end
 		end
 
-		local menu_cfg = {
-			speaker = "narrator", caption = _ "Mercenary Camp",
-			message = string.format(tostring(_ "Sellswords offer their services. You have %d gold."), side.gold),
-			image = "scenery/tent-fancy-red.png",
+		local d_wml = wml.get_child(merc_dialog_wml, 'resolution')
+		if not d_wml then return end
+		local d_res = gui.show_dialog(d_wml, preshow)
+
+		if d_res ~= -1 or not hire_target or side.gold < hire_target.cost then
+			return false
+		end
+		for _, hex in ipairs(adjacent_hexes(unit)) do
+			if not wesnoth.units.get(hex.x, hex.y) then
+				wesnoth.wml_actions.unit {
+					side = unit.side, type = hire_target.type_id,
+					x = hex.x, y = hex.y,
+					generate_name = true, random_traits = true, moves = 0,
+				}
+				side.gold = side.gold - hire_target.cost
+				break
+			end
+		end
+
+	elseif poi_type == "caravan" then
+		wesnoth.wml_actions.message {
+			speaker = "narrator", caption = _ "Trade Caravan",
+			message = _ "A merchant caravan asks for your protection. Escort them to your castle for a reward!",
+			image = "units/human-peasants/ruffian.png",
 		}
-		local option_map = {}
-		for _, o in ipairs(offers) do
-			local affordable = side.gold >= o.cost
-			local label = affordable
-				and string.format("%s — %dg", tostring(o.utype.name), o.cost)
-				or string.format("%s — %dg (can't afford)", tostring(o.utype.name), o.cost)
-			table.insert(menu_cfg, wml.tag.option {
-				label = label,
-				image = o.utype.image,
-			})
-			table.insert(option_map, affordable and o or false)
-		end
-		table.insert(menu_cfg, wml.tag.option { label = _ "Decline" })
-		table.insert(option_map, false)
-
-		wesnoth.wml_actions.message(menu_cfg)
-		local choice = wml.variables.value or (#option_map - 1)
-		local picked = option_map[choice + 1]
-
-		if picked then
-			for _, hex in ipairs(adjacent_hexes(unit)) do
-				if not wesnoth.units.get(hex.x, hex.y) then
-					wesnoth.wml_actions.unit {
-						side = unit.side, type = picked.type_id,
-						x = hex.x, y = hex.y,
-						generate_name = true, random_traits = true, moves = 0,
-					}
-					side.gold = side.gold - picked.cost
+		local spawn_hex = nil
+		for _, hex in ipairs(adjacent_hexes(unit)) do
+			if not wesnoth.units.get(hex.x, hex.y) then
+				local terr = wesnoth.current.map[hex]
+				if terr and not tostring(terr):match("[XQ]") then
+					spawn_hex = hex
 					break
 				end
 			end
 		end
+		if not spawn_hex then spawn_hex = { x = unit.x, y = unit.y } end
+		wesnoth.wml_actions.unit {
+			side = unit.side, type = "Ruffian",
+			x = spawn_hex.x, y = spawn_hex.y,
+			name = _ "Trade Caravan", generate_name = false,
+			canrecruit = false, upkeep = "free", max_moves = 4, moves = 0,
+			wml.tag.modifications {
+				wml.tag.object { wml.tag.effect { apply_to = "hitpoints", increase_total = 10 } },
+			},
+			wml.tag.variables { wc2x_is_caravan = true },
+		}
 
 	elseif poi_type == "shrine" then
-		local buffs = {
-			{ name = _ "+1 Melee Damage", effect = { apply_to = "attack", range = "melee", increase_damage = 1 } },
-			{ name = _ "+1 Ranged Damage", effect = { apply_to = "attack", range = "ranged", increase_damage = 1 } },
-			{ name = _ "+4 Hitpoints", effect = { apply_to = "hitpoints", increase_total = 4 } },
-			{ name = _ "+1 Movement", effect = { apply_to = "movement", increase = 1 } },
-		}
-		local buff = buffs[mathx.random(#buffs)]
+		local buffs = config.shrine_buffs
+		if not buffs or #buffs == 0 then return end
+		local total_w = 0
+		for _, b in ipairs(buffs) do total_w = total_w + b.weight end
+		local roll = mathx.random(total_w)
+		local sum = 0
+		local buff
+		for _, b in ipairs(buffs) do
+			sum = sum + b.weight
+			if roll <= sum then buff = b; break end
+		end
+		if not buff then buff = buffs[#buffs] end
 		wesnoth.wml_actions.message {
 			speaker = "narrator", caption = _ "Ancient Shrine",
-			message = string.format(tostring(_ "The shrine's power flows into %s: %s!"), unit.name, tostring(buff.name)),
+			message = string.format(tostring(_ "The shrine's power flows into %s: %s!"), unit.name, buff.name),
 			image = "scenery/temple1.png",
 		}
-		unit:add_modification("object", { wml.tag.effect(buff.effect) })
+		if buff.trait then
+			unit:add_modification("trait", buff.trait)
+		else
+			unit:add_modification("object", { wml.tag.effect(buff.effect) })
+		end
 	end
 end
 
--- Caravan arrival
+-- Caravan arrival: when the caravan unit moves onto a castle/keep hex near a leader
 on_event("moveto", function(cx)
 	if not cx.x1 or not cx.y1 then return end
-	if not wml.variables["wc2x_caravan.active"] then return end
 	local u = wesnoth.units.get(cx.x1, cx.y1)
 	if not u or not u.variables.wc2x_is_caravan then return end
 
 	local terrain = tostring(wesnoth.current.map[{cx.x1, cx.y1}])
-	if terrain:match("K") or terrain:match("C") then
-		local nearby_leader = wesnoth.units.find_on_map({
-			canrecruit = true, side = "1,2,3,4",
-			wml.tag.filter_location { x = cx.x1, y = cx.y1, radius = 3 },
-		})[1]
-		if nearby_leader then
-			local config = poi.config
-			local gold = config.caravan_gold_reward_base + (wc2_scenario.scenario_num() * config.caravan_gold_reward_per_scenario)
-			wesnoth.sides[nearby_leader.side].gold = wesnoth.sides[nearby_leader.side].gold + gold
+	if not (terrain:match("K") or terrain:match("C")) then return end
+
+	local nearby_leader = wesnoth.units.find_on_map({
+		canrecruit = true, side = u.side,
+		wml.tag.filter_location { x = cx.x1, y = cx.y1, radius = 3 },
+	})[1]
+	if not nearby_leader then return end
+
+	local config = poi.config
+	local side = wesnoth.sides[u.side]
+	local scenario_num = wc2_scenario.scenario_num()
+	local weights = config.caravan_reward_weights
+	local total = weights.gold + weights.artifact + weights.training
+	local roll = mathx.random(total)
+
+	if roll <= weights.gold then
+		local gold = config.caravan_gold_reward_base + (scenario_num * config.caravan_gold_reward_per_scenario)
+		side.gold = side.gold + gold
+		wesnoth.wml_actions.message {
+			speaker = "narrator", caption = _ "Caravan Arrived!",
+			message = string.format(tostring(_ "The caravan reached safety! The merchants pay you %d gold for your protection."), gold),
+			image = "units/human-peasants/ruffian.png",
+		}
+	elseif roll <= weights.gold + weights.artifact and wc2_artifacts then
+		local artifact_list = wc2_artifacts.get_artifact_list()
+		if #artifact_list > 0 then
+			local artifact_id = mathx.random(#artifact_list)
 			wesnoth.wml_actions.message {
 				speaker = "narrator", caption = _ "Caravan Arrived!",
-				message = string.format(tostring(_ "The trade caravan has reached safety. You receive %d gold!"), gold),
+				message = _ "The caravan reached safety! The merchants reward you with a rare artifact.",
 				image = "units/human-peasants/ruffian.png",
 			}
-			u:erase()
-			wml.variables["wc2x_caravan.active"] = false
+			wc2_artifacts.give_item(nearby_leader, artifact_id, true)
+		else
+			local gold = config.caravan_gold_reward_base + (scenario_num * config.caravan_gold_reward_per_scenario)
+			side.gold = side.gold + gold
+			wesnoth.wml_actions.message {
+				speaker = "narrator", caption = _ "Caravan Arrived!",
+				message = string.format(tostring(_ "The caravan reached safety! The merchants pay you %d gold for your protection."), gold),
+				image = "units/human-peasants/ruffian.png",
+			}
 		end
+	else
+		local gave_training = false
+		if wc2_training then
+			local traintype, amount = wc2_training.pick_bonus(u.side)
+			if traintype then
+				wesnoth.wml_actions.message {
+					speaker = "narrator", caption = _ "Caravan Arrived!",
+					message = _ "The caravan reached safety! A traveling master among the merchants offers to train your troops.",
+					image = "units/human-peasants/ruffian.png",
+				}
+				wc2_training.give_bonus(u.side, { x1 = cx.x1, y1 = cx.y1 }, amount, traintype)
+				gave_training = true
+			end
+		end
+		if not gave_training then
+			local gold = config.caravan_gold_reward_base + (scenario_num * config.caravan_gold_reward_per_scenario)
+			side.gold = side.gold + gold
+			wesnoth.wml_actions.message {
+				speaker = "narrator", caption = _ "Caravan Arrived!",
+				message = string.format(tostring(_ "The caravan reached safety! The merchants pay you %d gold for your protection."), gold),
+				image = "units/human-peasants/ruffian.png",
+			}
+		end
+	end
+
+	u:erase()
+end)
+
+on_event("die", function()
+	if wml.variables["unit.variables.wc2x_is_caravan"] then
+		wesnoth.wml_actions.message {
+			speaker = "narrator", caption = _ "Caravan Lost",
+			message = _ "The trade caravan has been destroyed. The merchants and their goods are lost.",
+			image = "units/human-peasants/ruffian.png",
+		}
 	end
 end)
 
+function poi.capture_villages_for_enemies()
+	local config = poi.config
+	local scenario_num = wc2_scenario.scenario_num()
+	local pct = math.min(
+		config.enemy_village_base_pct + (scenario_num - 1) * config.enemy_village_pct_per_scenario,
+		config.enemy_village_max_pct
+	)
+	if pct <= 0 then return end
+
+	local player_count = wml.variables.wc2_player_count or 1
+	local enemy_sides = {}
+	for i = player_count + 1, #wesnoth.sides do
+		local s = wesnoth.sides[i]
+		if s and s.controller == "ai" then
+			table.insert(enemy_sides, i)
+		end
+	end
+	if #enemy_sides == 0 then return end
+
+	local player_keeps = {}
+	for side_num = 1, player_count do
+		local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
+		if leader then
+			table.insert(player_keeps, { x = leader.x, y = leader.y })
+		end
+	end
+
+	local all_villages = wesnoth.map.find { terrain = "*^V*" }
+	local capturable = {}
+	for _, v in ipairs(all_villages) do
+		local too_close = false
+		for _, keep in ipairs(player_keeps) do
+			if wesnoth.map.distance_between(v, keep) < config.enemy_village_safe_radius then
+				too_close = true
+				break
+			end
+		end
+		if not too_close then
+			table.insert(capturable, v)
+		end
+	end
+
+	local villages_per_side = math.floor(#capturable * pct / 100 / #enemy_sides)
+	if villages_per_side < 1 then return end
+
+	local enemy_leaders = {}
+	for _, side_num in ipairs(enemy_sides) do
+		local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
+		if leader then
+			table.insert(enemy_leaders, { side = side_num, x = leader.x, y = leader.y })
+		end
+	end
+	if #enemy_leaders == 0 then return end
+
+	local claimed = {}
+	for _, el in ipairs(enemy_leaders) do
+		local dists = {}
+		for i, v in ipairs(capturable) do
+			if not claimed[i] then
+				table.insert(dists, { idx = i, d = wesnoth.map.distance_between(v, el) })
+			end
+		end
+		table.sort(dists, function(a, b) return a.d < b.d end)
+		for j = 1, math.min(villages_per_side, #dists) do
+			claimed[dists[j].idx] = true
+			wesnoth.map.set_owner(capturable[dists[j].idx], el.side, false)
+		end
+	end
+end
+
 on_event("start", function(cx)
 	poi.place_all()
+	poi.capture_villages_for_enemies()
 end)
 
 return poi

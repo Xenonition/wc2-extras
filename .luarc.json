@@ -1,0 +1,54 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "runtime": {
+    "version": "Lua 5.3",
+    "path": [
+      "lua/?.lua",
+      "lua/?/init.lua"
+    ]
+  },
+  "workspace": {
+    "library": [
+      "types"
+    ],
+    "ignoreDir": [
+      ".luacheckrc",
+      "lua/campaign",
+      "lua/era",
+      "lua/game_mechanics",
+      "lua/map",
+      "lua/optional_mechanics",
+      "lua/shared_utils",
+      "lua/on_event.lua",
+      "lua/main.lua"
+    ]
+  },
+  "diagnostics": {
+    "globals": [
+      "T",
+      "on_event",
+      "wc2_era",
+      "wc2_enemy",
+      "wc2_scenario",
+      "wc2_artifacts",
+      "wc2_heroes",
+      "wc2_training",
+      "wc2_dropping",
+      "wc2_invest",
+      "wc2_color",
+      "wc2_utils",
+      "wc2_random_names",
+      "wc2_convert",
+      "wc2_show_invest_dialog",
+      "wc2_show_invest_dialog_impl",
+      "wc2x",
+      "std_print"
+    ],
+    "disable": [
+      "lowercase-global"
+    ]
+  },
+  "type": {
+    "castNumberToInteger": true
+  }
+}

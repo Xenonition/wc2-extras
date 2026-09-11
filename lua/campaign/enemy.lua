@@ -215,7 +215,12 @@ function enemy.do_gold(cfg, side)
 		local nplayers = cfg.nplayers or 1
 		local scenario_num = wc2_scenario.scenario_num()
 		local avg_player_gold = 100 + (scenario_num * 25)
-		local starting_gold = math.ceil(avg_player_gold * wc2x_cfg.enemy_gold_multiplier * difficulty_scale)
+		local variance = 1.0
+		if wc2x_cfg.enemy_gold_variance then
+			local lo, hi = wc2x_cfg.enemy_gold_variance[1], wc2x_cfg.enemy_gold_variance[2]
+			variance = lo + (mathx.random(1000) - 1) / 999 * (hi - lo)
+		end
+		local starting_gold = math.ceil(avg_player_gold * wc2x_cfg.enemy_gold_multiplier * difficulty_scale * variance)
 		side.gold = side.gold + starting_gold
 		local base_income = math.max(
 			wc2x_cfg.enemy_min_gold_per_turn * nplayers,

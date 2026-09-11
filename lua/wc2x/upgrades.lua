@@ -1,9 +1,14 @@
 -- WC2 Extras — persistent upgrades
 -- State stored in side variables (wc2x_upgrades.*), persists via savegame.
+-- Fortification hex positions are ephemeral (rebuilt each scenario).
 
+local _ = wesnoth.textdomain 'wesnoth-wc'
 local on_event = wesnoth.game_events.add_repeating
 
 local upgrades = {}
+
+-- Ephemeral per-scenario fortification locations: { [side_num] = { barracks = {{x,y},...}, training = {{x,y},...} } }
+local fortifications = {}
 
 function upgrades.init(config)
 	upgrades.config = config
@@ -29,11 +34,13 @@ end
 
 function upgrades.apply_for_side(side_num)
 	local side = wesnoth.sides[side_num]
-	local config = upgrades.config
 
-	local gold_count = upgrades.get_count(side_num, "starting_gold")
-	if gold_count > 0 then
-		side.gold = side.gold + (gold_count * 15)
+	local income_count = upgrades.get_count(side_num, "base_income")
+	if income_count > 0 then
+		wesnoth.wml_actions.modify_side {
+			side = side_num,
+			income = income_count * 3,
+		}
 	end
 
 	local vision_count = upgrades.get_count(side_num, "vision_radius")
@@ -49,11 +56,6 @@ function upgrades.apply_for_side(side_num)
 		end
 	end
 
-	local recall_count = upgrades.get_count(side_num, "recall_discount")
-	if recall_count > 0 then
-		side.recall_cost = math.max(side.recall_cost - (recall_count * 3), 1)
-	end
-
 	local reinf_count = upgrades.get_count(side_num, "reinforcements")
 	if reinf_count > 0 then
 		upgrades.pending_reinforcements = upgrades.pending_reinforcements or {}
@@ -62,7 +64,8 @@ function upgrades.apply_for_side(side_num)
 end
 
 function upgrades.apply_castle_hexes(side_num)
-	local config = upgrades.config
+	fortifications[side_num] = { barracks = {}, training = {} }
+
 	local castle_count = upgrades.get_count(side_num, "castle_hex")
 	local supply_count = upgrades.get_count(side_num, "supply_village")
 	local barracks_count = upgrades.get_count(side_num, "barracks")
@@ -109,6 +112,12 @@ function upgrades.apply_castle_hexes(side_num)
 		local loc = expansion_candidates[placed]
 		wesnoth.current.map[loc] = "Ch^Vov"
 		wesnoth.map.set_owner(loc, side_num, false)
+		wesnoth.wml_actions.item {
+			x = loc.x, y = loc.y,
+			image = "scenery/well.png",
+			z_order = -5,
+		}
+		wesnoth.wml_actions.label { x = loc.x, y = loc.y, text = _ "Supply" }
 	end
 
 	for i = 1, barracks_count do
@@ -116,15 +125,13 @@ function upgrades.apply_castle_hexes(side_num)
 		placed = placed + 1
 		local loc = expansion_candidates[placed]
 		wesnoth.current.map[loc] = "Ch"
-		local side = wesnoth.sides[side_num]
-		local key = string.format("wc2x_barracks.%d", i)
-		side.variables[key .. ".x"] = loc.x
-		side.variables[key .. ".y"] = loc.y
+		table.insert(fortifications[side_num].barracks, { x = loc.x, y = loc.y })
 		wesnoth.wml_actions.item {
 			x = loc.x, y = loc.y,
-			image = "scenery/castle-ruins.png",
+			image = "scenery/tent-shop-weapons.png",
 			z_order = -5,
 		}
+		wesnoth.wml_actions.label { x = loc.x, y = loc.y, text = _ "Barracks" }
 	end
 
 	for i = 1, training_count do
@@ -132,15 +139,13 @@ function upgrades.apply_castle_hexes(side_num)
 		placed = placed + 1
 		local loc = expansion_candidates[placed]
 		wesnoth.current.map[loc] = "Ch"
-		local side = wesnoth.sides[side_num]
-		local key = string.format("wc2x_training_ground.%d", i)
-		side.variables[key .. ".x"] = loc.x
-		side.variables[key .. ".y"] = loc.y
+		table.insert(fortifications[side_num].training, { x = loc.x, y = loc.y })
 		wesnoth.wml_actions.item {
 			x = loc.x, y = loc.y,
-			image = "scenery/tent-fancy-red.png",
+			image = "items/dummy.png",
 			z_order = -5,
 		}
+		wesnoth.wml_actions.label { x = loc.x, y = loc.y, text = _ "Training" }
 	end
 
 	for i = 1, castle_count do
@@ -152,12 +157,58 @@ end
 
 -- Apply at scenario start
 on_event("wc2_start", function(cx)
+	fortifications = {}
 	upgrades.pending_reinforcements = {}
 	for side_num = 1, (wml.variables.wc2_player_count or 1) do
 		upgrades.apply_castle_hexes(side_num)
 		upgrades.apply_for_side(side_num)
+		upgrades.place_pending_artifacts(side_num)
 	end
 end)
+
+function upgrades.place_pending_artifacts(side_num)
+	local side = wesnoth.sides[side_num]
+	local pending_str = side.variables["wc2x_pending_artifacts"] or ""
+	if pending_str == "" then return end
+
+	local artifact_ids = stringx.split(pending_str)
+	side.variables["wc2x_pending_artifacts"] = ""
+
+	if not wc2_artifacts then return end
+
+	local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
+	if not leader then return end
+
+	local adj = { wesnoth.map.get_adjacent_hexes(leader) }
+	local castle_hexes = {}
+	for _, hex in ipairs(adj) do
+		local terr = tostring(wesnoth.current.map[hex])
+		if terr and (terr:match("C") or terr:match("K")) then
+			table.insert(castle_hexes, hex)
+		end
+	end
+
+	local placed_hexes = {}
+	for _, id_str in ipairs(artifact_ids) do
+		local artifact_id = tonumber(id_str)
+		if artifact_id then
+			local placed = false
+			for _, hex in ipairs(castle_hexes) do
+				local key = hex.x .. "," .. hex.y
+				if not placed_hexes[key] and not wesnoth.units.get(hex.x, hex.y)
+					and not (hex.x == leader.x and hex.y == leader.y) then
+					placed_hexes[key] = true
+					wc2_artifacts.place_item(hex.x, hex.y, artifact_id)
+					placed = true
+					break
+				end
+			end
+			if not placed then
+				wc2_artifacts.give_item(leader, artifact_id, true)
+			end
+		end
+	end
+end
 
 -- Spawn reinforcements on turn 1
 on_event("turn 1", function(cx)
@@ -165,8 +216,8 @@ on_event("turn 1", function(cx)
 	for side_num, count in pairs(upgrades.pending_reinforcements) do
 		local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
 		if leader then
-			local adj_hexes = { wesnoth.map.get_adjacent_hexes(leader) }
-			local recruit_list = stringx.split(wesnoth.sides[side_num].recruit)
+			local adj_hexes = { wesnoth.map.get_adjacent_hexes(leader.x, leader.y) }
+			local recruit_list = wesnoth.sides[side_num].recruit
 			local spawned = 0
 			for _, hex in ipairs(adj_hexes) do
 				if spawned >= count then break end
@@ -189,20 +240,15 @@ end)
 on_event("side turn end", function(cx)
 	local side_num = wesnoth.current.side
 	if not wc2_scenario.is_human_side(side_num) then return end
-	local side = wesnoth.sides[side_num]
+	local forts = fortifications[side_num]
+	if not forts then return end
 	local config = upgrades.config
-	local training_count = upgrades.get_count(side_num, "training_ground")
-	for i = 1, training_count do
-		local key = string.format("wc2x_training_ground.%d", i)
-		local tx = side.variables[key .. ".x"]
-		local ty = side.variables[key .. ".y"]
-		if tx and ty then
-			local u = wesnoth.units.get(tx, ty)
-			if u and u.side == side_num and not u.canrecruit then
-				u.experience = u.experience + config.training_ground_xp_per_turn
-				u:advance(true, true)
-				wesnoth.interface.float_label(tx, ty, string.format("+%d XP", config.training_ground_xp_per_turn))
-			end
+	for _, loc in ipairs(forts.training) do
+		local u = wesnoth.units.get(loc.x, loc.y)
+		if u and u.side == side_num and not u.canrecruit then
+			u.experience = u.experience + config.training_ground_xp_per_turn
+			u:advance(true, true)
+			wesnoth.interface.float_label(loc.x, loc.y, string.format("+%d XP", config.training_ground_xp_per_turn))
 		end
 	end
 end)
@@ -213,36 +259,20 @@ on_event("side turn", function(cx)
 	if not wc2_scenario.is_human_side(side_num) then return end
 	local config = upgrades.config
 	if wesnoth.current.turn % config.barracks_spawn_interval ~= 0 then return end
-	local side = wesnoth.sides[side_num]
-	local barracks_count = upgrades.get_count(side_num, "barracks")
-	local recruit_list = stringx.split(side.recruit)
+	local forts = fortifications[side_num]
+	if not forts then return end
+	local recruit_list = wesnoth.sides[side_num].recruit
 	if #recruit_list == 0 then return end
-	for i = 1, barracks_count do
-		local key = string.format("wc2x_barracks.%d", i)
-		local bx = side.variables[key .. ".x"]
-		local by = side.variables[key .. ".y"]
-		if bx and by and not wesnoth.units.get(bx, by) then
+	for _, loc in ipairs(forts.barracks) do
+		if not wesnoth.units.get(loc.x, loc.y) then
 			wesnoth.wml_actions.unit {
 				side = side_num,
 				type = recruit_list[mathx.random(#recruit_list)],
-				x = bx, y = by,
+				x = loc.x, y = loc.y,
 				moves = 0, generate_name = true,
 			}
-			wesnoth.interface.float_label(bx, by, "Barracks recruit!")
+			wesnoth.interface.float_label(loc.x, loc.y, "Barracks recruit!")
 		end
-	end
-end)
-
--- Unit discount refund
-on_event("recruit", function(cx)
-	if not cx.x1 or not cx.y1 then return end
-	local side_num = wesnoth.current.side
-	if not wc2_scenario.is_human_side(side_num) then return end
-	local u = wesnoth.units.get(cx.x1, cx.y1)
-	if not u then return end
-	local discount = wesnoth.sides[side_num].variables["wc2x_unit_discount." .. u.type] or 0
-	if discount > 0 then
-		wesnoth.sides[side_num].gold = wesnoth.sides[side_num].gold + discount
 	end
 end)
 

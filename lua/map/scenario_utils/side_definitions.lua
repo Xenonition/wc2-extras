@@ -22,8 +22,8 @@ local function add_enemy_side(scenario, gold, starting_pos)
 	-- recruits and leader gets overwritten later by [wc2_enemy] implementation
 	local side = {
 		wml.tag.ai {
-			villages_per_scout=20,
-			caution=0.1,
+			villages_per_scout=8,
+			caution=0.25,
 		},
 		side = side_num,
 		type = "Peasant",
@@ -35,7 +35,7 @@ local function add_enemy_side(scenario, gold, starting_pos)
 		team_name = "wc2_enemy",
 		user_team_name = _ "Enemies",
 		fog = true,
-		village_gold = 2,
+		village_gold = 5,
 		terrain_liked = "",
 		allow_player = false,
 		disallow_observers = true,

@@ -50,6 +50,18 @@ function wc2_show_invest_dialog_impl(dialog_args)
 			return node, details_page
 		end
 
+		local du = wc2x and wc2x.dialog_utils
+		if du then
+			local status_node = root_node:add_invest_category(_ "Current Status")
+			local subnode, page = status_node:add_invest_item {
+				icon = "icons/coins_gold.png",
+				name = _ "View Current Bonuses",
+				desc = du.gray(tostring(_ "Your team's acquired bonuses")),
+				result = { pick = "status" }
+			}
+			page.info_label.label = du.build_invest_summary(side_num)
+		end
+
 		local cati_current = 0
 		if show_artifacts then
 			local node = root_node:add_invest_category(_ "Artifacts")
@@ -158,8 +170,8 @@ function wc2_show_invest_dialog_impl(dialog_args)
 			local selected_data = index_map[table.concat(selected, '_')]
 			if selected_data ~= nil then
 				details.selected_index = selected_data.page_num
+				res = selected_data.res
 			end
-			res = selected_data.res
 		end
 
 		root_node.on_modified = set_result
@@ -171,10 +183,9 @@ function wc2_show_invest_dialog_impl(dialog_args)
 end
 
 function wc2_show_invest_dialog(args)
-	--do it in a loop to disable esc.
 	while true do
 		local d_res, res = wc2_show_invest_dialog_impl(args)
-		if d_res ~= -2 then
+		if d_res ~= -2 and res and res.pick ~= "status" then
 			return res
 		end
 	end
