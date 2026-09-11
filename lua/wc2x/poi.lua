@@ -176,16 +176,21 @@ end
 
 function poi.place_all()
 	local player_count = wml.variables.wc2_player_count or 1
-	if player_count < 3 then
-		poi.neutral_side = player_count + 1
-	else
+	-- Use the first actual enemy AI side for POI guards, not the null placeholder.
+	-- In a 2p game: sides 1-2 are players, side 3 is an empty null-controller
+	-- placeholder, sides 4+ are enemy AI. Spawning on the null side made guards
+	-- passive (no AI to run guardian behavior) and sometimes wrong-teamed.
+	poi.neutral_side = nil
+	for i = player_count + 1, #wesnoth.sides do
+		local s = wesnoth.sides[i]
+		if s and s.controller == "ai" then
+			poi.neutral_side = i
+			break
+		end
+	end
+	if not poi.neutral_side then
 		poi.neutral_side = #wesnoth.sides
 	end
-	wesnoth.wml_actions.modify_side {
-		side = poi.neutral_side,
-		team_name = "wc2_enemy",
-		hidden = true,
-	}
 	local config = poi.config
 	local candidates = poi.find_placement_candidates()
 	if #candidates == 0 then return end
