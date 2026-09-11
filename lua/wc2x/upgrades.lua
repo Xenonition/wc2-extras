@@ -213,7 +213,11 @@ end
 -- Spawn reinforcements on turn 1
 on_event("turn 1", function(cx)
 	if not upgrades.pending_reinforcements then return end
-	for side_num, count in pairs(upgrades.pending_reinforcements) do
+	local sorted_sides = {}
+	for side_num in pairs(upgrades.pending_reinforcements) do table.insert(sorted_sides, side_num) end
+	table.sort(sorted_sides)
+	for _, side_num in ipairs(sorted_sides) do
+		local count = upgrades.pending_reinforcements[side_num]
 		local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
 		if leader then
 			local adj_hexes = { wesnoth.map.get_adjacent_hexes(leader.x, leader.y) }
