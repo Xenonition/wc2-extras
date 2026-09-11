@@ -160,112 +160,107 @@ function shop.show_for_side(side_num)
 
 	if #all_items == 0 then return end
 
-	local artifact_picks = {}
-	local training_picks = {}
-	local hero_picks = {}
+	local res = wesnoth.sync.evaluate_single(_ "WC3 Shop", function()
+		local gold_remaining = side.gold
+		local purchases = {}
 
-	local function format_item(item)
-		local price = shop.discounted_price(item.price)
-		local can_afford = side.gold >= price
-		local name_str = tostring(item.name)
-		if item.sold then
-			return { icon = item.icon, name = du.gray(name_str .. " — SOLD"), subtitle = "" }
-		end
-		if item.owned and item.owned > 0 then
-			name_str = name_str .. du.colored(string.format(" [x%d]", item.owned), "#aaaaff")
-		end
-		if not can_afford then name_str = du.gray(name_str) end
-		local price_str = can_afford
-			and du.colored(string.format("%d gold", price), "yellow")
-			or du.gray(string.format("%d gold", price))
-		return { icon = item.icon or "items/chest.png", name = name_str, subtitle = price_str }
-	end
-
-	local function preshow(dialog)
-		dialog.gold_label.label = du.gold_header(side.gold)
-		if discount > 0 then
-			dialog.discount_label.label = du.colored(string.format(tostring(_ "Discount: %d%%"), discount), "green")
-		else
-			dialog.discount_label.label = ""
+		local function format_item(item)
+			local price = shop.discounted_price(item.price)
+			local can_afford = gold_remaining >= price
+			local name_str = tostring(item.name)
+			if item.sold then
+				return { icon = item.icon, name = du.gray(name_str .. " — SOLD"), subtitle = "" }
+			end
+			if item.owned and item.owned > 0 then
+				name_str = name_str .. du.colored(string.format(" [x%d]", item.owned), "#aaaaff")
+			end
+			if not can_afford then name_str = du.gray(name_str) end
+			local price_str = can_afford
+				and du.colored(string.format("%d gold", price), "yellow")
+				or du.gray(string.format("%d gold", price))
+			return { icon = item.icon or "items/chest.png", name = name_str, subtitle = price_str }
 		end
 
-		dialog.detail_text.label = du.build_upgrades_summary(side_num)
+		local function preshow(dialog)
+			dialog.gold_label.label = du.gold_header(gold_remaining)
+			if discount > 0 then
+				dialog.discount_label.label = du.colored(string.format(tostring(_ "Discount: %d%%"), discount), "green")
+			else
+				dialog.discount_label.label = ""
+			end
 
-		local list = dialog.shop_list
-		local rows = du.populate_list(list, all_items, format_item)
+			dialog.detail_text.label = du.build_upgrades_summary(side_num)
 
-		local function update_detail()
-			local idx = list.selected_index
-			if idx and idx >= 1 and idx <= #all_items then
-				local item = all_items[idx]
-				if item.sold then
-					dialog.detail_text.label = du.gray(tostring(_ "Already purchased."))
-				else
-					local price = shop.discounted_price(item.price)
-					dialog.detail_text.label = shop.build_detail_text(item, price, side.gold >= price, discount)
+			local list = dialog.shop_list
+			local rows = du.populate_list(list, all_items, format_item)
+
+			local function update_detail()
+				local idx = list.selected_index
+				if idx and idx >= 1 and idx <= #all_items then
+					local item = all_items[idx]
+					if item.sold then
+						dialog.detail_text.label = du.gray(tostring(_ "Already purchased."))
+					else
+						local price = shop.discounted_price(item.price)
+						dialog.detail_text.label = shop.build_detail_text(item, price, gold_remaining >= price, discount)
+					end
 				end
 			end
-		end
-		list.on_modified = update_detail
+			list.on_modified = update_detail
 
-		dialog.buy_btn.on_button_click = function()
-			local idx = list.selected_index
-			if not idx or idx < 1 or idx > #all_items then return end
-			local item = all_items[idx]
-			if item.sold then return end
-			local price = shop.discounted_price(item.price)
-			if side.gold < price then return end
+			dialog.buy_btn.on_button_click = function()
+				local idx = list.selected_index
+				if not idx or idx < 1 or idx > #all_items then return end
+				local item = all_items[idx]
+				if item.sold then return end
+				local price = shop.discounted_price(item.price)
+				if gold_remaining < price then return end
 
-			if item.category == "artifact" then
-				side.gold = side.gold - price
-				table.insert(artifact_picks, item.id)
-				item.sold = true
-			elseif item.category == "training" then
-				side.gold = side.gold - price
-				table.insert(training_picks, item.id)
-				item.sold = true
-			elseif item.category == "hero" then
-				side.gold = side.gold - price
-				table.insert(hero_picks, item.id)
-				item.sold = true
-			elseif item.category == "upgrade" then
-				side.gold = side.gold - price
-				shop.upgrades.purchase(side_num, item.id)
-				item.owned = (item.owned or 0) + 1
-				item.price = shop.upgrades.get_price(side_num, item.id)
+				gold_remaining = gold_remaining - price
+				table.insert(purchases, { category = item.category, id = item.id, price = price })
+
+				if item.category == "upgrade" then
+					item.owned = (item.owned or 0) + 1
+					item.price = math.ceil(item.price * shop.config.upgrade_price_escalation)
+				else
+					item.sold = true
+				end
+
+				dialog.gold_label.label = du.gold_header(gold_remaining)
+				du.refresh_rows(rows, all_items, format_item)
+				update_detail()
 			end
-
-			dialog.gold_label.label = du.gold_header(side.gold)
-			du.refresh_rows(rows, all_items, format_item)
-			update_detail()
 		end
-	end
 
-	local d_wml = wml.get_child(dialog_wml, 'resolution')
-	if not d_wml then return end
-	gui.show_dialog(d_wml, preshow)
+		local d_wml = wml.get_child(dialog_wml, 'resolution')
+		if not d_wml then return { purchases = {} } end
+		gui.show_dialog(d_wml, preshow)
 
-	if #artifact_picks > 0 then
-		local existing = side.variables["wc2x_pending_artifacts"] or ""
-		local pending = existing ~= "" and stringx.split(existing) or {}
-		for _, artifact_id in ipairs(artifact_picks) do
-			table.insert(pending, tostring(artifact_id))
-		end
-		side.variables["wc2x_pending_artifacts"] = table.concat(pending, ",")
-	end
+		return { purchases = purchases }
+	end)
 
-	for _, trainer_idx in ipairs(training_picks) do
-		if wc2_training and wc2_training.available(side_num, trainer_idx) then
-			wc2_training.inc_level(side_num, trainer_idx, 1)
-			local msg = wc2_training.generate_message(trainer_idx, wc2_training.get_level(side_num, trainer_idx))
-			wesnoth.wml_actions.message(msg)
-		end
-	end
+	local purchases = res.purchases or {}
+	for _, buy in ipairs(purchases) do
+		side.gold = side.gold - buy.price
 
-	for _, hero_id in ipairs(hero_picks) do
-		local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
-		if leader then
-			wc2_heroes.place(hero_id, side_num, leader.x, leader.y)
+		if buy.category == "artifact" then
+			local existing = side.variables["wc2x_pending_artifacts"] or ""
+			local pending = existing ~= "" and stringx.split(existing) or {}
+			table.insert(pending, tostring(buy.id))
+			side.variables["wc2x_pending_artifacts"] = table.concat(pending, ",")
+		elseif buy.category == "training" then
+			if wc2_training and wc2_training.available(side_num, buy.id) then
+				wc2_training.inc_level(side_num, buy.id, 1)
+				local msg = wc2_training.generate_message(buy.id, wc2_training.get_level(side_num, buy.id))
+				wesnoth.wml_actions.message(msg)
+			end
+		elseif buy.category == "hero" then
+			local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
+			if leader then
+				wc2_heroes.place(buy.id, side_num, leader.x, leader.y)
+			end
+		elseif buy.category == "upgrade" then
+			shop.upgrades.purchase(side_num, buy.id)
 		end
 	end
 end
