@@ -53,11 +53,12 @@ config.upgrade_price_escalation = 1.6
 config.barracks_spawn_interval = 4
 config.training_ground_xp_per_turn = 4
 
--- Enemy recruit expansion (add L2/L3 to recruit list in later scenarios)
-config.enemy_recruit_l2_start = 2      -- scenario where L2 recruits unlock
-config.enemy_recruit_l2_count = 3      -- how many random L2 types to add
-config.enemy_recruit_l3_start = 4      -- scenario where L3 recruits unlock
-config.enemy_recruit_l3_count = 2      -- how many random L3 types to add
+-- Enemy recruit expansion (add higher-level units to recruit list in later scenarios)
+config.enemy_recruit_tiers = {
+	{ level = 2, start_scenario = 2, count = 3 },
+	{ level = 3, start_scenario = 4, count = 2 },
+	{ level = 4, start_scenario = 6, count = 1 },
+}
 
 -- Assassin spawns (enemy units that target player leaders)
 config.assassin_start_scenario = 2     -- scenario where assassins can appear

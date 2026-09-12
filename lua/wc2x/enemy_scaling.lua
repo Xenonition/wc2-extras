@@ -23,6 +23,29 @@ function enemy_scaling.init(config)
 	end)
 end
 
+local function find_types_at_level(base_recruits, level)
+	local found = {}
+	local visited = {}
+	local function walk(type_id)
+		if visited[type_id] then return end
+		visited[type_id] = true
+		local ut = wesnoth.unit_types[type_id]
+		if not ut then return end
+		if ut.level == level then
+			found[type_id] = true
+		else
+			for _, adv in ipairs(ut.advances_to) do
+				walk(adv)
+			end
+		end
+	end
+	for _, t in ipairs(base_recruits) do walk(t) end
+	local result = {}
+	for t in pairs(found) do table.insert(result, t) end
+	table.sort(result)
+	return result
+end
+
 function enemy_scaling.expand_recruits(side_num)
 	local config = enemy_scaling.config
 	local scenario = wc2_scenario.scenario_num()
@@ -53,37 +76,30 @@ function enemy_scaling.expand_recruits(side_num)
 	local group = wml.variables[string.format("wc2_enemy_army.group[%d]", group_id)]
 	if not group then return end
 	local recall = wml.get_child(group, "recall")
-	if not recall then return end
+	local base_recruits = stringx.split(group.recruit or "")
 
 	local to_add = {}
 
-	if scenario >= config.enemy_recruit_l2_start then
-		local l2_types = stringx.split(recall.level2 or "")
-		local unique = {}
-		for _, t in ipairs(l2_types) do
-			if not unique[t] then unique[t] = true end
-		end
-		local pool = {}
-		for t in pairs(unique) do table.insert(pool, t) end
-		table.sort(pool)
-		mathx.shuffle(pool)
-		for i = 1, math.min(config.enemy_recruit_l2_count, #pool) do
-			table.insert(to_add, pool[i])
-		end
-	end
-
-	if scenario >= config.enemy_recruit_l3_start then
-		local l3_types = stringx.split(recall.level3 or "")
-		local unique = {}
-		for _, t in ipairs(l3_types) do
-			if not unique[t] then unique[t] = true end
-		end
-		local pool = {}
-		for t in pairs(unique) do table.insert(pool, t) end
-		table.sort(pool)
-		mathx.shuffle(pool)
-		for i = 1, math.min(config.enemy_recruit_l3_count, #pool) do
-			table.insert(to_add, pool[i])
+	for _, tier in ipairs(config.enemy_recruit_tiers or {}) do
+		if scenario >= tier.start_scenario then
+			local pool = {}
+			if recall then
+				local explicit = stringx.split(recall["level" .. tier.level] or "")
+				for _, t in ipairs(explicit) do
+					if not pool[t] then pool[t] = true end
+				end
+			end
+			if not next(pool) then
+				local discovered = find_types_at_level(base_recruits, tier.level)
+				for _, t in ipairs(discovered) do pool[t] = true end
+			end
+			local sorted = {}
+			for t in pairs(pool) do table.insert(sorted, t) end
+			table.sort(sorted)
+			mathx.shuffle(sorted)
+			for i = 1, math.min(tier.count, #sorted) do
+				table.insert(to_add, sorted[i])
+			end
 		end
 	end
 
