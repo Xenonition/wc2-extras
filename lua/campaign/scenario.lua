@@ -13,7 +13,7 @@ end
 function wc2_scenario.experience_penalty()
 	return  wml.tag.effect {
 		apply_to = "max_experience",
-		increase = wml.variables["wc2_difficulty.experience_penalty"] .. "%",
+		increase = (wml.variables["wc2_difficulty.experience_penalty"] or 0) .. "%",
 	}
 end
 
@@ -33,7 +33,7 @@ function wesnoth.wml_actions.wc2_start_units(cfg)
 	u:add_modification("trait", wc2_heroes.trait_heroic )
 	u.hitpoints = u.max_hitpoints
 	u.moves = u.max_moves
-	for i = 1, wml.variables["wc2_difficulty.heroes"] do
+	for i = 1, (wml.variables["wc2_difficulty.heroes"] or 0) do
 		wesnoth.wml_actions.wc2_random_hero {
 			x = u.x,
 			y = u.y,
@@ -71,7 +71,7 @@ on_event("wc2_start", function(cx)
 			}
 		end
 
-		if wml.variables.wc2_difficulty.extra_training then
+		if wml.variables["wc2_difficulty.extra_training"] then
 			for side_num = 1, wml.variables.wc2_player_count do
 				wesnoth.wml_actions.wc2_give_random_training {
 					among="2,3,4,5,6",

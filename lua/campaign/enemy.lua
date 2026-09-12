@@ -62,7 +62,7 @@ on_event("recruit", function(ec)
 	local item_id = enemy.pick_suitable_enemy_item(unit)
 	wc2_artifacts.give_item(unit, item_id, false)
 	if true then
-		unit.experience = unit.experience + scenario_num  * (16 + wml.variables["wc2_difficulty.enemy_power"])
+		unit.experience = unit.experience + scenario_num  * (16 + (wml.variables["wc2_difficulty.enemy_power"] or 6))
 		unit:advance(true, true)
 	end
 	wesnoth.allow_undo(false)
