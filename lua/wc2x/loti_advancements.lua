@@ -2,6 +2,10 @@
 -- [modify_unit_type] only works at config parse time, not inside events.
 -- LotI unit types aren't loaded yet at our parse time, so we apply
 -- advancement changes per-unit via Lua events at runtime instead.
+--
+-- Table sourced from: Legend_of_the_Invincibles/extra_advancements.cfg
+-- LotI version synced: 4.4.1 (2026-09-12)
+-- To update: diff that file against the adv_mods table below.
 
 local on_event = wesnoth.require("on_event")
 
