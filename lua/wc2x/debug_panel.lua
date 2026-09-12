@@ -148,7 +148,7 @@ end
 -- Unit submenu — nested by category
 ---------------------------------------------------------------------------
 local function show_unit_menu(unit, x, y)
-	local categories = { "Progression", "Stats", "Combat", "Traits", "Misc", "Back" }
+	local categories = { "Progression", "Stats", "Combat", "Traits", "Abilities", "Misc", "Back" }
 	local header = string.format("%s [%s] — HP %d/%d — XP %d/%d",
 		unit.name, unit.type, unit.hitpoints, unit.max_hitpoints,
 		unit.experience, unit.max_experience)
@@ -279,7 +279,98 @@ local function show_unit_menu(unit, x, y)
 			msg(string.format("%s: added %s trait", unit.name, trait_defs[pick].name))
 		end
 
-	elseif cat == 5 then -- Misc
+	elseif cat == 5 then -- Abilities
+		local opts = {
+			"Regenerates (+8 HP/turn)",
+			"Skirmisher (ignore ZOC)",
+			"Ambush (invisible in forest)",
+			"Submerge (invisible in water)",
+			"Nightstalk (invisible at night)",
+			"Leadership (+25% to adjacent)",
+			"Heals +4 (heals adjacent allies)",
+			"Drain (absorb 50% damage dealt)",
+			"Poison (melee attacks poison)",
+			"Backstab (double flanking damage)",
+			"Marksman (60% ranged on offense)",
+			"Charge (double melee on offense)",
+			"Berserk (fight until death)",
+			"First Strike (melee always first)",
+			"Back",
+		}
+		local pick = pick_option("Abilities", header, opts)
+		local ability_objects = {
+			{ id = "wc3_dbg_regen", wml.tag.effect { apply_to = "new_ability",
+				wml.tag.abilities { wml.tag.regenerate { id = "regenerates", name = "regenerates",
+					description = "Heals 8 HP per turn at the start of every turn",
+					value = 8, poison = "cured" } } } },
+			{ id = "wc3_dbg_skirmisher", wml.tag.effect { apply_to = "new_ability",
+				wml.tag.abilities { wml.tag.skirmisher { id = "skirmisher", name = "skirmisher",
+					description = "This unit can move through enemy ZOC without penalty" } } } },
+			{ id = "wc3_dbg_ambush", wml.tag.effect { apply_to = "new_ability",
+				wml.tag.abilities { wml.tag.hides { id = "ambush", name = "ambush",
+					description = "Invisible in forest terrain",
+					wml.tag.filter_self { wml.tag.filter_location { terrain = "*^F*" } } } } } },
+			{ id = "wc3_dbg_submerge", wml.tag.effect { apply_to = "new_ability",
+				wml.tag.abilities { wml.tag.hides { id = "submerge", name = "submerge",
+					description = "Invisible in shallow and deep water",
+					wml.tag.filter_self { wml.tag.filter_location { terrain = "W*,S*" } } } } } },
+			{ id = "wc3_dbg_nightstalk", wml.tag.effect { apply_to = "new_ability",
+				wml.tag.abilities { wml.tag.hides { id = "nightstalk", name = "nightstalk",
+					description = "Invisible at night",
+					wml.tag.filter_self { wml.tag.filter_location {
+						time_of_day_id = "dusk,first_watch,second_watch" } } } } } },
+			{ id = "wc3_dbg_leadership", wml.tag.effect { apply_to = "new_ability",
+				wml.tag.abilities { wml.tag.leadership { id = "leadership", name = "leadership",
+					description = "+25% damage to adjacent lower-level allies",
+					value = 25 } } } },
+			{ id = "wc3_dbg_heals4", wml.tag.effect { apply_to = "new_ability",
+				wml.tag.abilities { wml.tag.heals { id = "healing", name = "heals +4",
+					description = "Heals adjacent allies 4 HP per turn",
+					value = 4, affect_allies = true, affect_self = false } } } },
+			{ id = "wc3_dbg_drain", wml.tag.effect { apply_to = "attack",
+				wml.tag.set_specials { mode = "append",
+					wml.tag.drains { id = "drain", name = "drain",
+						description = "Absorbs 50% of damage dealt", value = 50 } } } },
+			{ id = "wc3_dbg_poison", wml.tag.effect { apply_to = "attack",
+				wml.tag.set_specials { mode = "append",
+					wml.tag.poison { id = "poison", name = "poison",
+						description = "Attacks poison the target" } } } },
+			{ id = "wc3_dbg_backstab", wml.tag.effect { apply_to = "attack",
+				wml.tag.filter_attack { range = "melee" },
+				wml.tag.set_specials { mode = "append",
+					wml.tag.backstab { id = "backstab", name = "backstab",
+						description = "Double damage when enemy is flanked", multiply = 2 } } } },
+			{ id = "wc3_dbg_marksman", wml.tag.effect { apply_to = "attack",
+				wml.tag.filter_attack { range = "ranged" },
+				wml.tag.set_specials { mode = "append",
+					wml.tag.chance_to_hit { id = "marksman", name = "marksman",
+						description = "Always 60% chance to hit on offense",
+						value = 60, active_on = "offense", cumulative = true } } } },
+			{ id = "wc3_dbg_charge", wml.tag.effect { apply_to = "attack",
+				wml.tag.filter_attack { range = "melee" },
+				wml.tag.set_specials { mode = "append",
+					wml.tag.damage { id = "charge", name = "charge",
+						description = "Double damage on offense (both attacker and defender)",
+						multiply = 2, active_on = "offense", apply_to = "both" } } } },
+			{ id = "wc3_dbg_berserk", wml.tag.effect { apply_to = "attack",
+				wml.tag.filter_attack { range = "melee" },
+				wml.tag.set_specials { mode = "append",
+					wml.tag.berserk { id = "berserk", name = "berserk",
+						description = "Fight to the death in melee",
+						value = 30 } } } },
+			{ id = "wc3_dbg_firststrike", wml.tag.effect { apply_to = "attack",
+				wml.tag.filter_attack { range = "melee" },
+				wml.tag.set_specials { mode = "append",
+					wml.tag.firststrike { id = "firststrike", name = "first strike",
+						description = "Always strikes first in melee" } } } },
+		}
+		if pick >= 1 and pick <= #ability_objects then
+			unit:add_modification("object", ability_objects[pick])
+			local label = opts[pick]:match("^(.-)%s*%(") or opts[pick]
+			msg(string.format("%s: added %s", unit.name, label))
+		end
+
+	elseif cat == 6 then -- Misc
 		local opts = { "Set Upkeep: Free", "Set Upkeep: Full", "Add Hero Overlay", "Back" }
 		local pick = pick_option("Misc", header, opts)
 		if pick == 1 then
