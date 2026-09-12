@@ -125,7 +125,8 @@ local ABILITY_NAMES = {
 ---------------------------------------------------------------------------
 -- Helpers
 ---------------------------------------------------------------------------
-local function msg(text)
+local function msg(text, acting_side)
+	if acting_side and wesnoth.interface.get_viewing_side() ~= acting_side then return end
 	wesnoth.wml_actions.chat { speaker = "WC3", message = text }
 end
 
@@ -144,23 +145,24 @@ local NO_ACTION = { action = "" }
 ---------------------------------------------------------------------------
 local function apply_action(data)
 	if not data or data.action == "" then return end
+	local s = data.acting_side
 
 	if data.action == "gold" then
 		wesnoth.sides[data.side].gold = wesnoth.sides[data.side].gold + data.amount
-		msg(string.format("+%d gold to side %d", data.amount, data.side))
+		msg(string.format("+%d gold to side %d", data.amount, data.side), s)
 
 	elseif data.action == "unit_xp" then
 		local unit = wesnoth.units.get(data.x, data.y)
 		if not unit then return end
 		unit.experience = unit.experience + data.amount
-		msg(string.format("%s +%d XP (%d/%d)", unit.name, data.amount, unit.experience, unit.max_experience))
+		msg(string.format("%s +%d XP (%d/%d)", unit.name, data.amount, unit.experience, unit.max_experience), s)
 		if unit.experience >= unit.max_experience then
 			wesnoth.wml_actions.advance_unit {
 				wml.tag.filter { x = data.x, y = data.y },
 				animate = false,
 			}
 			unit = wesnoth.units.get(data.x, data.y)
-			if unit then msg(string.format("  → advanced to %s", unit.type)) end
+			if unit then msg(string.format("  → advanced to %s", unit.type), s) end
 		end
 
 	elseif data.action == "unit_maxlevel" then
@@ -176,7 +178,7 @@ local function apply_action(data)
 			unit = wesnoth.units.get(data.x, data.y)
 			safety = safety + 1
 		end
-		if unit then msg(string.format("%s → %s (max level)", unit.name, unit.type)) end
+		if unit then msg(string.format("%s → %s (max level)", unit.name, unit.type), s) end
 
 	elseif data.action == "unit_hp" then
 		local unit = wesnoth.units.get(data.x, data.y)
@@ -187,7 +189,7 @@ local function apply_action(data)
 			wml.tag.effect { apply_to = "hitpoints", increase_total = data.amount },
 		})
 		unit.hitpoints = math.min(unit.hitpoints + data.amount, unit.max_hitpoints)
-		msg(string.format("%s: +%d HP (%d/%d)", unit.name, data.amount, unit.hitpoints, unit.max_hitpoints))
+		msg(string.format("%s: +%d HP (%d/%d)", unit.name, data.amount, unit.hitpoints, unit.max_hitpoints), s)
 
 	elseif data.action == "unit_mv" then
 		local unit = wesnoth.units.get(data.x, data.y)
@@ -197,7 +199,7 @@ local function apply_action(data)
 			id = "wc3_dbg_mv_" .. dbg_counter,
 			wml.tag.effect { apply_to = "movement", increase = data.amount },
 		})
-		msg(string.format("%s: +%d movement (%d)", unit.name, data.amount, unit.max_moves))
+		msg(string.format("%s: +%d movement (%d)", unit.name, data.amount, unit.max_moves), s)
 
 	elseif data.action == "unit_heal" then
 		local unit = wesnoth.units.get(data.x, data.y)
@@ -206,7 +208,7 @@ local function apply_action(data)
 		unit.moves = unit.max_moves
 		unit.status.poisoned = false
 		unit.status.slowed = false
-		msg(string.format("%s fully healed", unit.name))
+		msg(string.format("%s fully healed", unit.name), s)
 
 	elseif data.action == "unit_dmg" then
 		local unit = wesnoth.units.get(data.x, data.y)
@@ -216,7 +218,7 @@ local function apply_action(data)
 			id = "wc3_dbg_dmg_" .. dbg_counter,
 			wml.tag.effect { apply_to = "attack", increase_damage = data.pct },
 		})
-		msg(string.format("%s: +%s damage", unit.name, data.pct))
+		msg(string.format("%s: +%s damage", unit.name, data.pct), s)
 
 	elseif data.action == "unit_strikes" then
 		local unit = wesnoth.units.get(data.x, data.y)
@@ -226,7 +228,7 @@ local function apply_action(data)
 			id = "wc3_dbg_strikes_" .. dbg_counter,
 			wml.tag.effect { apply_to = "attack", increase_attacks = data.amount },
 		})
-		msg(string.format("%s: +%d strikes", unit.name, data.amount))
+		msg(string.format("%s: +%d strikes", unit.name, data.amount), s)
 
 	elseif data.action == "unit_altdmg" then
 		local unit = wesnoth.units.get(data.x, data.y)
@@ -244,7 +246,7 @@ local function apply_action(data)
 				},
 			},
 		})
-		msg(string.format("%s: +%s alternative type", unit.name, data.dtype))
+		msg(string.format("%s: +%s alternative type", unit.name, data.dtype), s)
 
 	elseif data.action == "unit_trait" then
 		local unit = wesnoth.units.get(data.x, data.y)
@@ -252,7 +254,7 @@ local function apply_action(data)
 		local def = TRAIT_DEFS[data.idx]
 		if not def then return end
 		unit:add_modification("trait", def)
-		msg(string.format("%s: added %s trait", unit.name, def.name))
+		msg(string.format("%s: added %s trait", unit.name, def.name), s)
 
 	elseif data.action == "unit_ability" then
 		local unit = wesnoth.units.get(data.x, data.y)
@@ -260,13 +262,13 @@ local function apply_action(data)
 		local def = ABILITY_DEFS[data.idx]
 		if not def then return end
 		unit:add_modification("object", def)
-		msg(string.format("%s: added %s", unit.name, ABILITY_NAMES[data.idx] or "ability"))
+		msg(string.format("%s: added %s", unit.name, ABILITY_NAMES[data.idx] or "ability"), s)
 
 	elseif data.action == "unit_upkeep" then
 		local unit = wesnoth.units.get(data.x, data.y)
 		if not unit then return end
 		unit.upkeep = data.value
-		msg(string.format("%s: upkeep → %s", unit.name, data.value))
+		msg(string.format("%s: upkeep → %s", unit.name, data.value), s)
 
 	elseif data.action == "unit_overlay" then
 		local unit = wesnoth.units.get(data.x, data.y)
@@ -275,15 +277,15 @@ local function apply_action(data)
 			id = "wc3_dbg_hero_overlay",
 			wml.tag.effect { apply_to = "overlay", add = "misc/hero-icon.png" },
 		})
-		msg(string.format("%s: hero overlay added", unit.name))
+		msg(string.format("%s: hero overlay added", unit.name), s)
 
 	elseif data.action == "upgrade" then
 		wc2x.upgrades.purchase(data.side, data.upgrade_id)
-		msg(string.format("Granted %s to side %d", data.upgrade_id, data.side))
+		msg(string.format("Granted %s to side %d", data.upgrade_id, data.side), s)
 
 	elseif data.action == "force_tactic" then
 		wc2x.ai_director.debug.force(data.side, data.slot, data.tactic)
-		msg(string.format("Forced side %d %s → %s", data.side, data.slot, data.tactic))
+		msg(string.format("Forced side %d %s → %s", data.side, data.slot, data.tactic), s)
 	end
 end
 
@@ -523,7 +525,11 @@ end
 function debug_panel.show(x, y)
 	local acting_side = wesnoth.current.side
 	local res = wesnoth.sync.evaluate_single(_ "Debug Panel", function()
-		return collect_action(x, y)
+		local data = collect_action(x, y)
+		if data.action ~= "" then
+			data.acting_side = acting_side
+		end
+		return data
 	end, acting_side)
 	apply_action(res)
 end
