@@ -4,7 +4,7 @@
 local config = {}
 
 -- Enemy economy
-config.enemy_gold_multiplier = 0.7
+config.enemy_gold_multiplier = 0.5
 config.enemy_gold_variance = { 0.7, 1.3 }    -- random multiplier on starting gold per side
 config.enemy_min_gold_per_turn = 10
 
@@ -18,8 +18,8 @@ config.difficulty_gold_scale = {
 -- POI settings
 config.poi_base_count = 3
 config.poi_per_scenario = 0.5
-config.poi_gold_reward_base = 20
-config.poi_gold_reward_per_scenario = 10
+config.poi_gold_reward_base = { 40, 80 }
+config.poi_gold_reward_per_scenario = { 10, 20 }
 
 config.creep_count_per_map = 4
 config.creep_types = {

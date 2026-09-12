@@ -342,7 +342,11 @@ function poi.activate(unit, poi_type)
 	local side = wesnoth.sides[unit.side]
 
 	if poi_type == "ruins" then
-		local gold = config.poi_gold_reward_base + (scenario_num * config.poi_gold_reward_per_scenario)
+		local base = config.poi_gold_reward_base
+		local per_sc = config.poi_gold_reward_per_scenario
+		local gold_base = type(base) == "table" and mathx.random(base[1], base[2]) or base
+		local gold_scale = type(per_sc) == "table" and mathx.random(per_sc[1], per_sc[2]) or per_sc
+		local gold = gold_base + (scenario_num * gold_scale)
 		if mathx.random(2) == 1 and wc2_artifacts then
 			local artifact_list = wc2_artifacts.get_artifact_list()
 			if #artifact_list > 0 then
