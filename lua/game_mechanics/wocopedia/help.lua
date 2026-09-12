@@ -213,6 +213,11 @@ function wesnoth.wml_actions.wc2_show_wocopedia(cfg)
 			function page.checkbox_show_pickup_confirmation.on_modified()
 				wc2_utils.global_vars.skip_pickup_dialog = not page.checkbox_show_pickup_confirmation.selected
 			end
+
+			page.wc3x_debug_toggle.selected = wc2x_debug_enabled or false
+			function page.wc3x_debug_toggle.on_modified()
+				wc2x_debug_enabled = page.wc3x_debug_toggle.selected
+			end
 		end
 
 		root_node:focus()
@@ -221,14 +226,6 @@ function wesnoth.wml_actions.wc2_show_wocopedia(cfg)
 			local selected_index = index_map[table.concat(root_node.selected_item_path, '_')]
 			if selected_index ~= nil then
 				details.selected_index = selected_index
-			end
-		end
-
-		local ok, dbg_toggle = pcall(dialog.find, dialog, "wc3x_debug_toggle")
-		if ok and dbg_toggle then
-			dbg_toggle.selected = wc2x_debug_enabled or false
-			dbg_toggle.on_modified = function()
-				wc2x_debug_enabled = dbg_toggle.selected
 			end
 		end
 	end
