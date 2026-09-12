@@ -1,4 +1,6 @@
 -- WC3 Debug Panel — hidden context menu activated via Wocopedia easter egg
+-- All state-changing actions go through evaluate_single for MP sync safety.
+-- Dialog flow runs on the acting client only; mutations run on both clients.
 
 local _ = wesnoth.textdomain 'wesnoth-wc'
 
@@ -6,23 +8,123 @@ local debug_panel = {}
 
 wc2x_debug_enabled = false
 
-function debug_panel.init(config)
-	debug_panel.config = config
+local dbg_counter = 0
 
-	wc2_utils.menu_item {
-		id = "9_WC3_Debug_Panel",
-		description = "WC3 Debug",
-		image = "icons/action/editor-tool-unit_25.png",
-		synced = false,
-		filter = function()
-			return wc2x_debug_enabled == true
-		end,
-		handler = function(cx)
-			debug_panel.show(cx.x1, cx.y1)
-		end,
-	}
-end
+---------------------------------------------------------------------------
+-- Shared definitions — both clients reference these by index
+---------------------------------------------------------------------------
+local UPGRADE_IDS = { "castle_hex", "supply_village", "base_income", "vision_radius", "reinforcements", "barracks", "training_ground" }
 
+local TRAIT_DEFS = {
+	{ id = "strong", name = "strong",
+		wml.tag.effect { apply_to = "attack", increase_damage = 1 },
+		wml.tag.effect { apply_to = "hitpoints", increase_total = 2 } },
+	{ id = "resilient", name = "resilient",
+		wml.tag.effect { apply_to = "hitpoints", increase_total = "7" } },
+	{ id = "quick", name = "quick",
+		wml.tag.effect { apply_to = "movement", increase = 1 },
+		wml.tag.effect { apply_to = "hitpoints", increase_total = "-5%" } },
+	{ id = "intelligent", name = "intelligent",
+		wml.tag.effect { apply_to = "max_experience", increase = "-20%" } },
+	{ id = "dextrous", name = "dextrous",
+		wml.tag.effect { apply_to = "attack", increase_damage = 1,
+			wml.tag.filter_attack { range = "ranged" } } },
+	{ id = "healthy", name = "healthy",
+		wml.tag.effect { apply_to = "hitpoints", increase_total = 2 },
+		wml.tag.effect { apply_to = "hitpoints", times = "per level", increase_total = 1 } },
+}
+local TRAIT_NAMES = { "Strong", "Resilient", "Quick", "Intelligent", "Dextrous", "Healthy" }
+
+local ABILITY_DEFS = {
+	{ id = "wc3_dbg_regen", wml.tag.effect { apply_to = "new_ability",
+		wml.tag.abilities { wml.tag.regenerate { id = "regenerates", name = "regenerates",
+			description = "Heals 8 HP per turn at the start of every turn",
+			value = 8, poison = "cured" } } } },
+	{ id = "wc3_dbg_skirmisher", wml.tag.effect { apply_to = "new_ability",
+		wml.tag.abilities { wml.tag.skirmisher { id = "skirmisher", name = "skirmisher",
+			description = "This unit can move through enemy ZOC without penalty" } } } },
+	{ id = "wc3_dbg_ambush", wml.tag.effect { apply_to = "new_ability",
+		wml.tag.abilities { wml.tag.hides { id = "ambush", name = "ambush",
+			description = "Invisible in forest terrain",
+			wml.tag.filter_self { wml.tag.filter_location { terrain = "*^F*" } } } } } },
+	{ id = "wc3_dbg_submerge", wml.tag.effect { apply_to = "new_ability",
+		wml.tag.abilities { wml.tag.hides { id = "submerge", name = "submerge",
+			description = "Invisible in shallow and deep water",
+			wml.tag.filter_self { wml.tag.filter_location { terrain = "W*,S*" } } } } } },
+	{ id = "wc3_dbg_nightstalk", wml.tag.effect { apply_to = "new_ability",
+		wml.tag.abilities { wml.tag.hides { id = "nightstalk", name = "nightstalk",
+			description = "Invisible at night",
+			wml.tag.filter_self { wml.tag.filter_location {
+				time_of_day = "chaotic" } } } } } },
+	{ id = "wc3_dbg_teleport", wml.tag.effect { apply_to = "new_ability",
+		wml.tag.abilities { wml.tag.teleport { id = "teleport", name = "teleport",
+			description = "Teleport between owned villages",
+			wml.tag.tunnel { id = "wc3_dbg_tp",
+				wml.tag.source { terrain = "*^V*" },
+				wml.tag.target { terrain = "*^V*" },
+				wml.tag.filter { ability = "teleport" },
+			} } } } },
+	{ id = "wc3_dbg_steadfast", wml.tag.effect { apply_to = "new_ability",
+		wml.tag.abilities { wml.tag.resistance {
+			id = "steadfast", name = "steadfast",
+			description = "Double resistance when defending (max 50%)",
+			multiply = 2, max_value = 50, active_on = "defense",
+			apply_to = "blade,pierce,impact,fire,cold,arcane",
+			wml.tag.filter_base_value { greater_than = 0, less_than = 50 } } } } },
+	{ id = "wc3_dbg_leadership", wml.tag.effect { apply_to = "new_ability",
+		wml.tag.abilities { wml.tag.leadership { id = "leadership", name = "leadership",
+			description = "+25% damage to adjacent lower-level allies",
+			value = 25 } } } },
+	{ id = "wc3_dbg_heals4", wml.tag.effect { apply_to = "new_ability",
+		wml.tag.abilities { wml.tag.heals { id = "healing", name = "heals +4",
+			description = "Heals adjacent allies 4 HP per turn",
+			value = 4, affect_allies = true, affect_self = false } } } },
+	{ id = "wc3_dbg_drain", wml.tag.effect { apply_to = "attack",
+		wml.tag.set_specials { mode = "append",
+			wml.tag.drains { id = "drain", name = "drain",
+				description = "Absorbs 50% of damage dealt", value = 50 } } } },
+	{ id = "wc3_dbg_poison", wml.tag.effect { apply_to = "attack",
+		wml.tag.set_specials { mode = "append",
+			wml.tag.poison { id = "poison", name = "poison",
+				description = "Attacks poison the target" } } } },
+	{ id = "wc3_dbg_backstab", wml.tag.effect { apply_to = "attack",
+		wml.tag.filter_attack { range = "melee" },
+		wml.tag.set_specials { mode = "append",
+			wml.tag.backstab { id = "backstab", name = "backstab",
+				description = "Double damage when enemy is flanked", multiply = 2 } } } },
+	{ id = "wc3_dbg_marksman", wml.tag.effect { apply_to = "attack",
+		wml.tag.filter_attack { range = "ranged" },
+		wml.tag.set_specials { mode = "append",
+			wml.tag.chance_to_hit { id = "marksman", name = "marksman",
+				description = "Always 60% chance to hit on offense",
+				value = 60, active_on = "offense", cumulative = true } } } },
+	{ id = "wc3_dbg_charge", wml.tag.effect { apply_to = "attack",
+		wml.tag.filter_attack { range = "melee" },
+		wml.tag.set_specials { mode = "append",
+			wml.tag.damage { id = "charge", name = "charge",
+				description = "Double damage on offense (both attacker and defender)",
+				multiply = 2, active_on = "offense", apply_to = "both" } } } },
+	{ id = "wc3_dbg_berserk", wml.tag.effect { apply_to = "attack",
+		wml.tag.filter_attack { range = "melee" },
+		wml.tag.set_specials { mode = "append",
+			wml.tag.berserk { id = "berserk", name = "berserk",
+				description = "Fight to the death in melee",
+				value = 30 } } } },
+	{ id = "wc3_dbg_firststrike", wml.tag.effect { apply_to = "attack",
+		wml.tag.filter_attack { range = "melee" },
+		wml.tag.set_specials { mode = "append",
+			wml.tag.firststrike { id = "firststrike", name = "first strike",
+				description = "Always strikes first in melee" } } } },
+}
+local ABILITY_NAMES = {
+	"Regenerates", "Skirmisher", "Ambush", "Submerge", "Nightstalk",
+	"Teleport", "Steadfast", "Leadership", "Heals +4",
+	"Drain", "Poison", "Backstab", "Marksman", "Charge", "Berserk", "First Strike",
+}
+
+---------------------------------------------------------------------------
+-- Helpers
+---------------------------------------------------------------------------
 local function msg(text)
 	wesnoth.wml_actions.chat { speaker = "WC3", message = text }
 end
@@ -35,10 +137,161 @@ local function show_info(title, text)
 	gui.show_narration({ title = title, message = text })
 end
 
+local NO_ACTION = { action = "" }
+
 ---------------------------------------------------------------------------
--- AI submenu
+-- Apply action — runs on BOTH clients after sync
 ---------------------------------------------------------------------------
-local function show_ai_menu(side_num)
+local function apply_action(data)
+	if not data or data.action == "" then return end
+
+	if data.action == "gold" then
+		wesnoth.sides[data.side].gold = wesnoth.sides[data.side].gold + data.amount
+		msg(string.format("+%d gold to side %d", data.amount, data.side))
+
+	elseif data.action == "unit_xp" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		unit.experience = unit.experience + data.amount
+		msg(string.format("%s +%d XP (%d/%d)", unit.name, data.amount, unit.experience, unit.max_experience))
+		if unit.experience >= unit.max_experience then
+			wesnoth.wml_actions.advance_unit {
+				wml.tag.filter { x = data.x, y = data.y },
+				animate = false,
+			}
+			unit = wesnoth.units.get(data.x, data.y)
+			if unit then msg(string.format("  → advanced to %s", unit.type)) end
+		end
+
+	elseif data.action == "unit_maxlevel" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		local safety = 0
+		while unit and unit.experience < unit.max_experience and safety < 20 do
+			unit.experience = unit.max_experience
+			wesnoth.wml_actions.advance_unit {
+				wml.tag.filter { x = data.x, y = data.y },
+				animate = false,
+			}
+			unit = wesnoth.units.get(data.x, data.y)
+			safety = safety + 1
+		end
+		if unit then msg(string.format("%s → %s (max level)", unit.name, unit.type)) end
+
+	elseif data.action == "unit_hp" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		dbg_counter = dbg_counter + 1
+		unit:add_modification("object", {
+			id = "wc3_dbg_hp_" .. dbg_counter,
+			wml.tag.effect { apply_to = "hitpoints", increase_total = data.amount },
+		})
+		unit.hitpoints = math.min(unit.hitpoints + data.amount, unit.max_hitpoints)
+		msg(string.format("%s: +%d HP (%d/%d)", unit.name, data.amount, unit.hitpoints, unit.max_hitpoints))
+
+	elseif data.action == "unit_mv" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		dbg_counter = dbg_counter + 1
+		unit:add_modification("object", {
+			id = "wc3_dbg_mv_" .. dbg_counter,
+			wml.tag.effect { apply_to = "movement", increase = data.amount },
+		})
+		msg(string.format("%s: +%d movement (%d)", unit.name, data.amount, unit.max_moves))
+
+	elseif data.action == "unit_heal" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		unit.hitpoints = unit.max_hitpoints
+		unit.moves = unit.max_moves
+		unit.status.poisoned = false
+		unit.status.slowed = false
+		msg(string.format("%s fully healed", unit.name))
+
+	elseif data.action == "unit_dmg" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		dbg_counter = dbg_counter + 1
+		unit:add_modification("object", {
+			id = "wc3_dbg_dmg_" .. dbg_counter,
+			wml.tag.effect { apply_to = "attack", increase_damage = data.pct },
+		})
+		msg(string.format("%s: +%s damage", unit.name, data.pct))
+
+	elseif data.action == "unit_strikes" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		dbg_counter = dbg_counter + 1
+		unit:add_modification("object", {
+			id = "wc3_dbg_strikes_" .. dbg_counter,
+			wml.tag.effect { apply_to = "attack", increase_attacks = data.amount },
+		})
+		msg(string.format("%s: +%d strikes", unit.name, data.amount))
+
+	elseif data.action == "unit_altdmg" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		unit:add_modification("object", {
+			id = "wc3_dbg_dt_" .. data.dtype,
+			wml.tag.effect {
+				apply_to = "attack",
+				wml.tag.set_specials {
+					mode = "append",
+					wml.tag.damage_type {
+						id = "wc3_dbg_alt_" .. data.dtype,
+						alternative_type = data.dtype,
+					},
+				},
+			},
+		})
+		msg(string.format("%s: +%s alternative type", unit.name, data.dtype))
+
+	elseif data.action == "unit_trait" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		local def = TRAIT_DEFS[data.idx]
+		if not def then return end
+		unit:add_modification("trait", def)
+		msg(string.format("%s: added %s trait", unit.name, def.name))
+
+	elseif data.action == "unit_ability" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		local def = ABILITY_DEFS[data.idx]
+		if not def then return end
+		unit:add_modification("object", def)
+		msg(string.format("%s: added %s", unit.name, ABILITY_NAMES[data.idx] or "ability"))
+
+	elseif data.action == "unit_upkeep" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		unit.upkeep = data.value
+		msg(string.format("%s: upkeep → %s", unit.name, data.value))
+
+	elseif data.action == "unit_overlay" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		unit:add_modification("object", {
+			id = "wc3_dbg_hero_overlay",
+			wml.tag.effect { apply_to = "overlay", add = "misc/hero-icon.png" },
+		})
+		msg(string.format("%s: hero overlay added", unit.name))
+
+	elseif data.action == "upgrade" then
+		wc2x.upgrades.purchase(data.side, data.upgrade_id)
+		msg(string.format("Granted %s to side %d", data.upgrade_id, data.side))
+
+	elseif data.action == "force_tactic" then
+		wc2x.ai_director.debug.force(data.side, data.slot, data.tactic)
+		msg(string.format("Forced side %d %s → %s", data.side, data.slot, data.tactic))
+	end
+end
+
+---------------------------------------------------------------------------
+-- Dialog collection — runs on acting client only (inside evaluate_single)
+-- Returns a flat action table; NO_ACTION for read-only / cancelled.
+---------------------------------------------------------------------------
+local function collect_ai_action(side_num)
 	local player_count = wml.variables.wc2_player_count or 1
 	local ai_sides = {}
 	for i = player_count + 1, #wesnoth.sides do
@@ -46,7 +299,7 @@ local function show_ai_menu(side_num)
 			table.insert(ai_sides, i)
 		end
 	end
-	if #ai_sides == 0 then msg("No AI sides found"); return end
+	if #ai_sides == 0 then return NO_ACTION end
 
 	local options = {
 		"View All Tactics",
@@ -60,27 +313,23 @@ local function show_ai_menu(side_num)
 	local choice = pick_option("AI Director", "Side count: " .. #ai_sides, options)
 
 	if choice == 1 then
-		local text = wc2x.ai_director.debug.get_tactics_text()
-		show_info("AI Tactics", text)
-
+		show_info("AI Tactics", wc2x.ai_director.debug.get_tactics_text())
 	elseif choice == 2 then
 		local side_opts = {}
 		for _, s in ipairs(ai_sides) do table.insert(side_opts, "Side " .. s) end
 		local pick = pick_option("Pick Side", "Show weights for:", side_opts)
 		if pick >= 1 and pick <= #ai_sides then
-			local text = wc2x.ai_director.debug.get_weights_text(ai_sides[pick])
-			show_info("AI Weights — Side " .. ai_sides[pick], text)
+			show_info("AI Weights — Side " .. ai_sides[pick],
+				wc2x.ai_director.debug.get_weights_text(ai_sides[pick]))
 		end
-
 	elseif choice == 3 then
 		local side_opts = {}
 		for _, s in ipairs(ai_sides) do table.insert(side_opts, "Side " .. s) end
 		local pick = pick_option("Pick Side", "Show personality for:", side_opts)
 		if pick >= 1 and pick <= #ai_sides then
-			local text = wc2x.ai_director.debug.get_personality_text(ai_sides[pick])
-			show_info("AI Personality — Side " .. ai_sides[pick], text)
+			show_info("AI Personality — Side " .. ai_sides[pick],
+				wc2x.ai_director.debug.get_personality_text(ai_sides[pick]))
 		end
-
 	elseif choice == 4 then
 		local side_opts = {}
 		for _, s in ipairs(ai_sides) do table.insert(side_opts, "Side " .. s) end
@@ -93,29 +342,22 @@ local function show_ai_menu(side_num)
 				local slot = slot_opts[slot_pick]
 				local names = wc2x.ai_director.debug.get_tactic_names()
 				local tactic_list = names[slot]
-				if #tactic_list == 0 then msg("No tactics for slot " .. slot); return end
+				if #tactic_list == 0 then return NO_ACTION end
 				local t_pick = pick_option("Force Tactic", "Side " .. target .. " " .. slot .. ":", tactic_list)
 				if t_pick >= 1 and t_pick <= #tactic_list then
-					wc2x.ai_director.debug.force(target, slot, tactic_list[t_pick])
-					msg(string.format("Forced side %d %s → %s", target, slot, tactic_list[t_pick]))
+					return { action = "force_tactic", side = target, slot = slot, tactic = tactic_list[t_pick] }
 				end
 			end
 		end
-
 	elseif choice == 5 then
 		wc2x.ai_director.debug.labels()
-
 	elseif choice == 6 then
 		wc2x.ai_director.debug.tactics()
 	end
+	return NO_ACTION
 end
 
----------------------------------------------------------------------------
--- Upgrades submenu
----------------------------------------------------------------------------
-local UPGRADE_IDS = { "castle_hex", "supply_village", "base_income", "vision_radius", "reinforcements", "barracks", "training_ground" }
-
-local function show_upgrades_menu(side_num)
+local function collect_upgrades_action(side_num)
 	local options = { "View All Sides", "Grant Upgrade", "Back" }
 	local choice = pick_option("Upgrades", "Your side: " .. side_num, options)
 
@@ -134,20 +376,16 @@ local function show_upgrades_menu(side_num)
 			if not any then table.insert(lines, "  (none)") end
 		end
 		show_info("Upgrades", table.concat(lines, "\n"))
-
 	elseif choice == 2 then
 		local pick = pick_option("Grant Upgrade", "Grant to side " .. side_num .. ":", UPGRADE_IDS)
 		if pick >= 1 and pick <= #UPGRADE_IDS then
-			wc2x.upgrades.purchase(side_num, UPGRADE_IDS[pick])
-			msg(string.format("Granted %s to side %d", UPGRADE_IDS[pick], side_num))
+			return { action = "upgrade", side = side_num, upgrade_id = UPGRADE_IDS[pick] }
 		end
 	end
+	return NO_ACTION
 end
 
----------------------------------------------------------------------------
--- Unit submenu — nested by category
----------------------------------------------------------------------------
-local function show_unit_menu(unit, x, y)
+local function collect_unit_action(unit, x, y)
 	local categories = { "Progression", "Stats", "Combat", "Traits", "Abilities", "Misc", "Back" }
 	local header = string.format("%s [%s] — HP %d/%d — XP %d/%d",
 		unit.name, unit.type, unit.hitpoints, unit.max_hitpoints,
@@ -158,56 +396,19 @@ local function show_unit_menu(unit, x, y)
 	if cat == 1 then -- Progression
 		local opts = { "+50 XP", "+100 XP", "Max Level", "Back" }
 		local pick = pick_option("Progression", header, opts)
-		if pick == 1 or pick == 2 then
-			local amount = pick == 1 and 50 or 100
-			unit.experience = unit.experience + amount
-			msg(string.format("%s +%d XP (%d/%d)", unit.name, amount, unit.experience, unit.max_experience))
-			if unit.experience >= unit.max_experience then
-				wesnoth.wml_actions.advance_unit {
-					wml.tag.filter { x = x, y = y },
-					animate = false,
-				}
-				unit = wesnoth.units.get(x, y)
-				if unit then msg(string.format("  → advanced to %s", unit.type)) end
-			end
-		elseif pick == 3 then
-			local safety = 0
-			while unit and unit.experience < unit.max_experience and safety < 20 do
-				unit.experience = unit.max_experience
-				wesnoth.wml_actions.advance_unit {
-					wml.tag.filter { x = x, y = y },
-					animate = false,
-				}
-				unit = wesnoth.units.get(x, y)
-				safety = safety + 1
-			end
-			if unit then msg(string.format("%s → %s (max level)", unit.name, unit.type)) end
+		if pick == 1 then return { action = "unit_xp", x = x, y = y, amount = 50 }
+		elseif pick == 2 then return { action = "unit_xp", x = x, y = y, amount = 100 }
+		elseif pick == 3 then return { action = "unit_maxlevel", x = x, y = y }
 		end
 
 	elseif cat == 2 then -- Stats
 		local opts = { "+10 Max HP", "+20 Max HP", "+2 Movement", "+4 Movement", "Full Heal", "Back" }
 		local pick = pick_option("Stats", header, opts)
-		if pick == 1 or pick == 2 then
-			local amount = pick == 1 and 10 or 20
-			unit:add_modification("object", {
-				id = "wc3_dbg_hp_" .. tostring(mathx.random(9999)),
-				wml.tag.effect { apply_to = "hitpoints", increase_total = amount },
-			})
-			unit.hitpoints = math.min(unit.hitpoints + amount, unit.max_hitpoints)
-			msg(string.format("%s: +%d HP (%d/%d)", unit.name, amount, unit.hitpoints, unit.max_hitpoints))
-		elseif pick == 3 or pick == 4 then
-			local amount = pick == 3 and 2 or 4
-			unit:add_modification("object", {
-				id = "wc3_dbg_mv_" .. tostring(mathx.random(9999)),
-				wml.tag.effect { apply_to = "movement", increase = amount },
-			})
-			msg(string.format("%s: +%d movement (%d)", unit.name, amount, unit.max_moves))
-		elseif pick == 5 then
-			unit.hitpoints = unit.max_hitpoints
-			unit.moves = unit.max_moves
-			unit.status.poisoned = false
-			unit.status.slowed = false
-			msg(string.format("%s fully healed", unit.name))
+		if pick == 1 then return { action = "unit_hp", x = x, y = y, amount = 10 }
+		elseif pick == 2 then return { action = "unit_hp", x = x, y = y, amount = 20 }
+		elseif pick == 3 then return { action = "unit_mv", x = x, y = y, amount = 2 }
+		elseif pick == 4 then return { action = "unit_mv", x = x, y = y, amount = 4 }
+		elseif pick == 5 then return { action = "unit_heal", x = x, y = y }
 		end
 
 	elseif cat == 3 then -- Combat
@@ -218,65 +419,25 @@ local function show_unit_menu(unit, x, y)
 			"Back",
 		}
 		local pick = pick_option("Combat", header, opts)
-		if pick == 1 or pick == 2 then
-			local pct = pick == 1 and "10%" or "25%"
-			unit:add_modification("object", {
-				id = "wc3_dbg_dmg_" .. tostring(mathx.random(9999)),
-				wml.tag.effect { apply_to = "attack", increase_damage = pct },
-			})
-			msg(string.format("%s: +%s damage", unit.name, pct))
-		elseif pick == 3 or pick == 4 then
-			local amount = pick == 3 and 1 or 2
-			unit:add_modification("object", {
-				id = "wc3_dbg_strikes_" .. tostring(mathx.random(9999)),
-				wml.tag.effect { apply_to = "attack", increase_attacks = amount },
-			})
-			msg(string.format("%s: +%d strikes", unit.name, amount))
+		if pick == 1 then return { action = "unit_dmg", x = x, y = y, pct = "10%" }
+		elseif pick == 2 then return { action = "unit_dmg", x = x, y = y, pct = "25%" }
+		elseif pick == 3 then return { action = "unit_strikes", x = x, y = y, amount = 1 }
+		elseif pick == 4 then return { action = "unit_strikes", x = x, y = y, amount = 2 }
 		elseif pick == 5 then
 			local types = { "blade", "pierce", "impact", "fire", "cold", "arcane" }
 			local tp = pick_option("Damage Type", "Add alternative type:", types)
 			if tp >= 1 and tp <= #types then
-				unit:add_modification("object", {
-					id = "wc3_dbg_dt_" .. types[tp],
-					wml.tag.effect {
-						apply_to = "attack",
-						wml.tag.set_specials {
-							mode = "append",
-							wml.tag.damage_type {
-								id = "wc3_dbg_alt_" .. types[tp],
-								alternative_type = types[tp],
-							},
-						},
-					},
-				})
-				msg(string.format("%s: +%s alternative type", unit.name, types[tp]))
+				return { action = "unit_altdmg", x = x, y = y, dtype = types[tp] }
 			end
 		end
 
 	elseif cat == 4 then -- Traits
-		local opts = { "Strong", "Resilient", "Quick", "Intelligent", "Dextrous", "Healthy", "Back" }
+		local opts = {}
+		for _, n in ipairs(TRAIT_NAMES) do table.insert(opts, n) end
+		table.insert(opts, "Back")
 		local pick = pick_option("Traits", header, opts)
-		local trait_defs = {
-			{ id = "strong", name = "strong",
-				wml.tag.effect { apply_to = "attack", increase_damage = 1 },
-				wml.tag.effect { apply_to = "hitpoints", increase_total = 2 } },
-			{ id = "resilient", name = "resilient",
-				wml.tag.effect { apply_to = "hitpoints", increase_total = "7" } },
-			{ id = "quick", name = "quick",
-				wml.tag.effect { apply_to = "movement", increase = 1 },
-				wml.tag.effect { apply_to = "hitpoints", increase_total = "-5%" } },
-			{ id = "intelligent", name = "intelligent",
-				wml.tag.effect { apply_to = "max_experience", increase = "-20%" } },
-			{ id = "dextrous", name = "dextrous",
-				wml.tag.effect { apply_to = "attack", increase_damage = 1,
-					wml.tag.filter_attack { range = "ranged" } } },
-			{ id = "healthy", name = "healthy",
-				wml.tag.effect { apply_to = "hitpoints", increase_total = 2 },
-				wml.tag.effect { apply_to = "hitpoints", times = "per level", increase_total = 1 } },
-		}
-		if pick >= 1 and pick <= #trait_defs then
-			unit:add_modification("trait", trait_defs[pick])
-			msg(string.format("%s: added %s trait", unit.name, trait_defs[pick].name))
+		if pick >= 1 and pick <= #TRAIT_DEFS then
+			return { action = "unit_trait", x = x, y = y, idx = pick }
 		end
 
 	elseif cat == 5 then -- Abilities
@@ -300,117 +461,26 @@ local function show_unit_menu(unit, x, y)
 			"Back",
 		}
 		local pick = pick_option("Abilities", header, opts)
-		local ability_objects = {
-			{ id = "wc3_dbg_regen", wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.regenerate { id = "regenerates", name = "regenerates",
-					description = "Heals 8 HP per turn at the start of every turn",
-					value = 8, poison = "cured" } } } },
-			{ id = "wc3_dbg_skirmisher", wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.skirmisher { id = "skirmisher", name = "skirmisher",
-					description = "This unit can move through enemy ZOC without penalty" } } } },
-			{ id = "wc3_dbg_ambush", wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.hides { id = "ambush", name = "ambush",
-					description = "Invisible in forest terrain",
-					wml.tag.filter_self { wml.tag.filter_location { terrain = "*^F*" } } } } } },
-			{ id = "wc3_dbg_submerge", wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.hides { id = "submerge", name = "submerge",
-					description = "Invisible in shallow and deep water",
-					wml.tag.filter_self { wml.tag.filter_location { terrain = "W*,S*" } } } } } },
-			{ id = "wc3_dbg_nightstalk", wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.hides { id = "nightstalk", name = "nightstalk",
-					description = "Invisible at night",
-					wml.tag.filter_self { wml.tag.filter_location {
-						time_of_day = "chaotic" } } } } } },
-			{ id = "wc3_dbg_teleport", wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.teleport { id = "teleport", name = "teleport",
-					description = "Teleport between owned villages",
-					wml.tag.tunnel { id = "wc3_dbg_tp",
-						wml.tag.source { terrain = "*^V*" },
-						wml.tag.target { terrain = "*^V*" },
-						wml.tag.filter { ability = "teleport" },
-					} } } } },
-			{ id = "wc3_dbg_steadfast", wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.resistance {
-					id = "steadfast", name = "steadfast",
-					description = "Double resistance when defending (max 50%)",
-					multiply = 2, max_value = 50, active_on = "defense",
-					apply_to = "blade,pierce,impact,fire,cold,arcane",
-					wml.tag.filter_base_value { greater_than = 0, less_than = 50 } } } } },
-			{ id = "wc3_dbg_leadership", wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.leadership { id = "leadership", name = "leadership",
-					description = "+25% damage to adjacent lower-level allies",
-					value = 25 } } } },
-			{ id = "wc3_dbg_heals4", wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.heals { id = "healing", name = "heals +4",
-					description = "Heals adjacent allies 4 HP per turn",
-					value = 4, affect_allies = true, affect_self = false } } } },
-			{ id = "wc3_dbg_drain", wml.tag.effect { apply_to = "attack",
-				wml.tag.set_specials { mode = "append",
-					wml.tag.drains { id = "drain", name = "drain",
-						description = "Absorbs 50% of damage dealt", value = 50 } } } },
-			{ id = "wc3_dbg_poison", wml.tag.effect { apply_to = "attack",
-				wml.tag.set_specials { mode = "append",
-					wml.tag.poison { id = "poison", name = "poison",
-						description = "Attacks poison the target" } } } },
-			{ id = "wc3_dbg_backstab", wml.tag.effect { apply_to = "attack",
-				wml.tag.filter_attack { range = "melee" },
-				wml.tag.set_specials { mode = "append",
-					wml.tag.backstab { id = "backstab", name = "backstab",
-						description = "Double damage when enemy is flanked", multiply = 2 } } } },
-			{ id = "wc3_dbg_marksman", wml.tag.effect { apply_to = "attack",
-				wml.tag.filter_attack { range = "ranged" },
-				wml.tag.set_specials { mode = "append",
-					wml.tag.chance_to_hit { id = "marksman", name = "marksman",
-						description = "Always 60% chance to hit on offense",
-						value = 60, active_on = "offense", cumulative = true } } } },
-			{ id = "wc3_dbg_charge", wml.tag.effect { apply_to = "attack",
-				wml.tag.filter_attack { range = "melee" },
-				wml.tag.set_specials { mode = "append",
-					wml.tag.damage { id = "charge", name = "charge",
-						description = "Double damage on offense (both attacker and defender)",
-						multiply = 2, active_on = "offense", apply_to = "both" } } } },
-			{ id = "wc3_dbg_berserk", wml.tag.effect { apply_to = "attack",
-				wml.tag.filter_attack { range = "melee" },
-				wml.tag.set_specials { mode = "append",
-					wml.tag.berserk { id = "berserk", name = "berserk",
-						description = "Fight to the death in melee",
-						value = 30 } } } },
-			{ id = "wc3_dbg_firststrike", wml.tag.effect { apply_to = "attack",
-				wml.tag.filter_attack { range = "melee" },
-				wml.tag.set_specials { mode = "append",
-					wml.tag.firststrike { id = "firststrike", name = "first strike",
-						description = "Always strikes first in melee" } } } },
-		}
-		if pick >= 1 and pick <= #ability_objects then
-			unit:add_modification("object", ability_objects[pick])
-			local label = opts[pick]:match("^(.-)%s*%(") or opts[pick]
-			msg(string.format("%s: added %s", unit.name, label))
+		if pick >= 1 and pick <= #ABILITY_DEFS then
+			return { action = "unit_ability", x = x, y = y, idx = pick }
 		end
 
 	elseif cat == 6 then -- Misc
 		local opts = { "Set Upkeep: Free", "Set Upkeep: Full", "Add Hero Overlay", "Back" }
 		local pick = pick_option("Misc", header, opts)
-		if pick == 1 then
-			unit.upkeep = "free"
-			msg(string.format("%s: upkeep → free", unit.name))
-		elseif pick == 2 then
-			unit.upkeep = "full"
-			msg(string.format("%s: upkeep → full", unit.name))
-		elseif pick == 3 then
-			unit:add_modification("object", {
-				id = "wc3_dbg_hero_overlay",
-				wml.tag.effect { apply_to = "overlay", add = "misc/hero-icon.png" },
-			})
-			msg(string.format("%s: hero overlay added", unit.name))
+		if pick == 1 then return { action = "unit_upkeep", x = x, y = y, value = "free" }
+		elseif pick == 2 then return { action = "unit_upkeep", x = x, y = y, value = "full" }
+		elseif pick == 3 then return { action = "unit_overlay", x = x, y = y }
 		end
 	end
+	return NO_ACTION
 end
 
 ---------------------------------------------------------------------------
--- Main menu
+-- Main entry — collects action from dialog, returns flat table
 ---------------------------------------------------------------------------
-function debug_panel.show(x, y)
-	local side_num = wesnoth.interface.get_viewing_side()
+local function collect_action(x, y)
+	local side_num = wesnoth.current.side
 	local unit = wesnoth.units.get(x, y)
 
 	local options = { "AI Director", "Upgrades" }
@@ -427,24 +497,52 @@ function debug_panel.show(x, y)
 	local choice = pick_option("WC3 Debug", header, options)
 
 	if choice == 1 then
-		show_ai_menu(side_num)
+		return collect_ai_action(side_num)
 	elseif choice == 2 then
-		show_upgrades_menu(side_num)
+		return collect_upgrades_action(side_num)
 	elseif unit and choice == 3 then
-		show_unit_menu(unit, x, y)
+		return collect_unit_action(unit, x, y)
 	else
 		local offset = unit and 3 or 2
 		if choice == offset + 1 then
-			wesnoth.sides[side_num].gold = wesnoth.sides[side_num].gold + 100
-			msg("+100 gold to side " .. side_num)
+			return { action = "gold", side = side_num, amount = 100 }
 		elseif choice == offset + 2 then
-			wesnoth.sides[side_num].gold = wesnoth.sides[side_num].gold + 500
-			msg("+500 gold to side " .. side_num)
+			return { action = "gold", side = side_num, amount = 500 }
 		elseif choice == offset + 3 then
 			wc2x_debug_enabled = false
 			msg("Debug menu disabled.")
+			return NO_ACTION
 		end
 	end
+	return NO_ACTION
+end
+
+---------------------------------------------------------------------------
+-- Public API
+---------------------------------------------------------------------------
+function debug_panel.show(x, y)
+	local acting_side = wesnoth.current.side
+	local res = wesnoth.sync.evaluate_single(_ "Debug Panel", function()
+		return collect_action(x, y)
+	end, acting_side)
+	apply_action(res)
+end
+
+function debug_panel.init(config)
+	debug_panel.config = config
+
+	wc2_utils.menu_item {
+		id = "9_WC3_Debug_Panel",
+		description = "WC3 Debug",
+		image = "icons/action/editor-tool-unit_25.png",
+		synced = true,
+		filter = function()
+			return wc2x_debug_enabled == true
+		end,
+		handler = function(cx)
+			debug_panel.show(cx.x1, cx.y1)
+		end,
+	}
 end
 
 return debug_panel
