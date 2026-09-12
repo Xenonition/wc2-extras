@@ -224,8 +224,8 @@ function wesnoth.wml_actions.wc2_show_wocopedia(cfg)
 			end
 		end
 
-		local dbg_toggle = dialog:find("wc3x_debug_toggle")
-		if dbg_toggle then
+		local ok, dbg_toggle = pcall(dialog.find, dialog, "wc3x_debug_toggle")
+		if ok and dbg_toggle then
 			dbg_toggle.selected = wc2x_debug_enabled or false
 			dbg_toggle.on_modified = function()
 				wc2x_debug_enabled = dbg_toggle.selected
