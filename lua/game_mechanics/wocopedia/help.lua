@@ -224,15 +224,11 @@ function wesnoth.wml_actions.wc2_show_wocopedia(cfg)
 			end
 		end
 
-		local hidden_btn = dialog:find("wc3x_hidden")
-		if hidden_btn then
-			local click_count = 0
-			hidden_btn.on_button_click = function()
-				click_count = click_count + 1
-				if click_count >= 3 then
-					wc2x_debug_enabled = true
-					wesnoth.wml_actions.chat { speaker = "WC3", message = "Debug menu enabled." }
-				end
+		local dbg_toggle = dialog:find("wc3x_debug_toggle")
+		if dbg_toggle then
+			dbg_toggle.selected = wc2x_debug_enabled or false
+			dbg_toggle.on_modified = function()
+				wc2x_debug_enabled = dbg_toggle.selected
 			end
 		end
 	end

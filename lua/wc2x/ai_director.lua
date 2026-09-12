@@ -1001,4 +1001,88 @@ function director.debug.help()
 	msg("  wc2x.debug.help()          — this message")
 end
 
+-- Text-returning versions for the debug panel dialogs
+function director.debug.get_tactics_text()
+	local player_count = wml.variables.wc2_player_count or 1
+	local lines = {}
+	for i = player_count + 1, #wesnoth.sides do
+		if wesnoth.sides[i].controller == "ai" then
+			local s = state[i]
+			if not s then
+				table.insert(lines, string.format("<b>Side %d:</b> no active tactics", i))
+			else
+				for _, slot_name in ipairs({ "strategic", "opportunistic" }) do
+					local slot = s[slot_name]
+					if slot then
+						local alive = 0
+						for _, uid in ipairs(slot.unit_ids) do
+							if unit_alive(uid, i) then alive = alive + 1 end
+						end
+						table.insert(lines, string.format("<b>Side %d [%s]:</b> %s — %d/%d units",
+							i, slot_name, slot.tactic, alive, #slot.unit_ids))
+					else
+						table.insert(lines, string.format("<b>Side %d [%s]:</b> (empty)", i, slot_name))
+					end
+				end
+			end
+		end
+	end
+	return table.concat(lines, "\n")
+end
+
+function director.debug.get_weights_text(side_num)
+	local sit = assess(side_num)
+	if not sit.leader then
+		return string.format("Side %d: no leader", side_num)
+	end
+	local lines = {}
+	table.insert(lines, string.format("<b>Side %d Situation:</b>", side_num))
+	table.insert(lines, string.format("  Gold: %d | Units: %d | Villages: %d/%d",
+		sit.gold, sit.unit_count, sit.village_count, sit.total_village_count))
+	table.insert(lines, string.format("  Nearest player: %s hexes",
+		sit.nearest_player_dist == math.huge and "∞" or tostring(sit.nearest_player_dist)))
+	table.insert(lines, "")
+	table.insert(lines, "<b>Strategic weights:</b>")
+	local strat = {}
+	for name, tactic in pairs(strategic_tactics) do
+		table.insert(strat, { name = name, w = tactic.weight(sit) })
+	end
+	table.sort(strat, function(a, b) return a.w > b.w end)
+	for _, e in ipairs(strat) do
+		table.insert(lines, string.format("  %s: %.0f", e.name, e.w))
+	end
+	table.insert(lines, "")
+	table.insert(lines, "<b>Opportunistic weights:</b>")
+	local opp = {}
+	for name, tactic in pairs(opportunistic_tactics) do
+		table.insert(opp, { name = name, w = tactic.weight(sit) })
+	end
+	table.sort(opp, function(a, b) return a.w > b.w end)
+	for _, e in ipairs(opp) do
+		table.insert(lines, string.format("  %s: %.0f", e.name, e.w))
+	end
+	return table.concat(lines, "\n")
+end
+
+function director.debug.get_personality_text(side_num)
+	local side = wesnoth.sides[side_num]
+	local lines = { string.format("<b>Side %d Personality:</b>", side_num) }
+	for i, key in ipairs(PERSONALITY_KEYS) do
+		local val = side.variables[key]
+		if val then
+			table.insert(lines, string.format("  %s: %s", PERSONALITY_LABELS[i], tostring(val)))
+		end
+	end
+	return table.concat(lines, "\n")
+end
+
+function director.debug.get_tactic_names()
+	local names = { strategic = {}, opportunistic = {} }
+	for name in pairs(strategic_tactics) do table.insert(names.strategic, name) end
+	for name in pairs(opportunistic_tactics) do table.insert(names.opportunistic, name) end
+	table.sort(names.strategic)
+	table.sort(names.opportunistic)
+	return names
+end
+
 return director
