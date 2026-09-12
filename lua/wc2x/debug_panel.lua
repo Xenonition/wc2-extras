@@ -157,10 +157,7 @@ local function apply_action(data)
 		unit.experience = unit.experience + data.amount
 		msg(string.format("%s +%d XP (%d/%d)", unit.name, data.amount, unit.experience, unit.max_experience), s)
 		if unit.experience >= unit.max_experience then
-			wesnoth.wml_actions.advance_unit {
-				wml.tag.filter { x = data.x, y = data.y },
-				animate = false,
-			}
+			unit:advance(true, false)
 			unit = wesnoth.units.get(data.x, data.y)
 			if unit then msg(string.format("  → advanced to %s", unit.type), s) end
 		end
@@ -169,12 +166,9 @@ local function apply_action(data)
 		local unit = wesnoth.units.get(data.x, data.y)
 		if not unit then return end
 		local safety = 0
-		while unit and unit.experience < unit.max_experience and safety < 20 do
+		while unit and #unit.advances_to > 0 and safety < 20 do
 			unit.experience = unit.max_experience
-			wesnoth.wml_actions.advance_unit {
-				wml.tag.filter { x = data.x, y = data.y },
-				animate = false,
-			}
+			unit:advance(true, false)
 			unit = wesnoth.units.get(data.x, data.y)
 			safety = safety + 1
 		end
