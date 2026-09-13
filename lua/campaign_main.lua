@@ -32,6 +32,15 @@ wesnoth.dofile("./campaign/autorecall.lua")
 wesnoth.dofile("./campaign/objectives.lua")
 wesnoth.dofile("./campaign/enemy_themed.lua")
 
+if wesnoth.wml_actions.item_pick_menu then
+	local loti_orig_item_pick_menu = wesnoth.wml_actions.item_pick_menu
+	wesnoth.wml_actions.item_pick_menu = function(cfg)
+		local unit = wesnoth.units.find_on_map(cfg)[1]
+		if unit and not wc2_scenario.is_human_side(unit.side) then return end
+		loti_orig_item_pick_menu(cfg)
+	end
+end
+
 on_event("prestart", function(cx)
 	wesnoth.wml_actions.wc2_fix_colors {
 		wml.tag.player_sides {
