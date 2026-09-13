@@ -41,4 +41,15 @@ on_event("prestart", function(cx)
 			}
 		}
 	}
+
+	if wml.variables["enemy_sides"] then
+		local enemy_list = {}
+		for i = 1, #wesnoth.sides do
+			local s = wesnoth.sides[i]
+			if not wc2_scenario.is_human_side(i) and not s.variables["wc2x_is_neutral"] then
+				table.insert(enemy_list, tostring(i))
+			end
+		end
+		wml.variables["enemy_sides"] = table.concat(enemy_list, ",")
+	end
 end)
