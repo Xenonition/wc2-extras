@@ -21,6 +21,48 @@ local function get_advanced_units(level, list, res)
 	return res
 end
 
+local function get_target_leader_level(scenario_num)
+	local wc2x_cfg = wc2x and wc2x.config
+	local target = 3
+	if wc2x_cfg and wc2x_cfg.enemy_leader_level then
+		for _, entry in ipairs(wc2x_cfg.enemy_leader_level) do
+			if scenario_num >= entry.scenario then target = entry.level end
+		end
+	end
+	return target
+end
+
+local function advance_type_to(base_type_id, target_level)
+	local utype = wesnoth.unit_types[base_type_id]
+	if not utype then return base_type_id end
+	if utype.level >= target_level then return base_type_id end
+
+	local current = base_type_id
+	local visited = { [base_type_id] = true }
+	for lvl = utype.level + 1, target_level do
+		local prev_type = wesnoth.unit_types[current]
+		if not prev_type or #prev_type.advances_to == 0 then break end
+		local candidates = {}
+		for _, adv in ipairs(prev_type.advances_to) do
+			local at = wesnoth.unit_types[adv]
+			if at and at.level == lvl and not visited[adv] then
+				table.insert(candidates, adv)
+			end
+		end
+		if #candidates == 0 then break end
+		current = candidates[mathx.random(#candidates)]
+		visited[current] = true
+	end
+	return current
+end
+
+local function resolve_leader_type(leader_cfg, scenario_num)
+	local target_level = get_target_leader_level(scenario_num)
+	if target_level <= 2 then return leader_cfg.level2 end
+	local base_type = leader_cfg.level3
+	return advance_type_to(base_type, target_level)
+end
+
 function enemy.pick_suitable_enemy_item(unit)
 	local enemy_items = stringx.split(wml.variables["wc2_enemy_army.artifacts"] or "")
 	if #enemy_items == 0 then
@@ -74,7 +116,6 @@ function enemy.do_commander(cfg, group_id, loc)
 		return
 	end
 	local scenario = wc2_scenario.scenario_num()
-	--wesnoth.interface.add_chat_message("do_commander", wml.variables[("wc2_enemy_army.group[%d].allies_available"):format(group_id)])
 	local ally_i = wc2_utils.pick_random(("wc2_enemy_army.group[%d].allies_available"):format(group_id)) - 1
 	local leader_index = mathx.random(wml.variables[("wc2_enemy_army.group[%d].leader.length"):format(ally_i)]) - 1
 	local new_recruits = wml.variables[("wc2_enemy_army.group[%d].leader[%d].recruit"):format(ally_i, leader_index)]
@@ -83,10 +124,13 @@ function enemy.do_commander(cfg, group_id, loc)
 		type = new_recruits
 	}
 	local commander_options = wml.variables[("wc2_enemy_army.group[%d].commander.level%d"):format(ally_i, cfg.commander)]
+	local base_type = mathx.random_choice(commander_options)
+	local target_level = get_target_leader_level(scenario)
+	local commander_type = advance_type_to(base_type, target_level)
 	wesnoth.wml_actions.unit {
 		x = loc[1],
 		y = loc[2],
-		type = mathx.random_choice(commander_options),
+		type = commander_type,
 		side = cfg.side,
 		generate_name = true,
 		role = "commander",
@@ -283,10 +327,11 @@ function wesnoth.wml_actions.wc2_enemy(cfg)
 		end
 	end
 	local leader_cfg = wc2_utils.pick_random_t(("wc2_enemy_army.group[%d].leader"):format(enemy_type_id))
+	local leader_type = resolve_leader_type(leader_cfg, scenario)
 	local unit = wesnoth.units.create {
 		x = loc[1],
 		y = loc[2],
-		type = scenario == 1 and leader_cfg.level2 or leader_cfg.level3,
+		type = leader_type,
 		side = side_num,
 		canrecruit = true,
 		generate_name = true,

@@ -51,11 +51,22 @@ poi.types = {
 }
 
 local FALLBACK_MERC_TYPES = {
-	"Orcish Crossbowman", "Troll", "Ogre", "Swordsman", "Pikeman",
-	"Javelineer", "Longbowman", "White Mage", "Red Mage",
-	"Elvish Ranger", "Elvish Marksman", "Elvish Captain",
-	"Dwarvish Steelclad", "Dwarvish Thunderguard",
-	"Orcish Warrior", "Goblin Knight", "Revenant", "Deathblade",
+	[2] = {
+		"Orcish Crossbowman", "Troll", "Ogre", "Swordsman", "Pikeman",
+		"Javelineer", "Longbowman", "White Mage", "Red Mage",
+		"Elvish Ranger", "Elvish Marksman", "Elvish Captain",
+		"Dwarvish Steelclad", "Dwarvish Thunderguard",
+		"Orcish Warrior", "Goblin Knight", "Revenant", "Deathblade",
+	},
+	[3] = {
+		"Paladin", "Grand Knight", "Iron Mauler", "Master at Arms",
+		"Arch Mage", "Silver Mage", "Elvish Marshal", "Elvish Avenger",
+		"Dwarvish Lord", "Orcish Sovereign", "Troll Warrior",
+		"Direwolf Rider", "Lich", "Death Knight",
+	},
+	[4] = {
+		"Great Mage", "Elvish High Lord", "Ancient Lich",
+	},
 }
 
 local merc_pool_cache = nil
@@ -64,43 +75,80 @@ function poi.get_mercenary_pool()
 	if merc_pool_cache then return merc_pool_cache end
 
 	local seen = {}
-	local pool = {}
+	local by_level = {}
 
-	local function add_advances_of(recruit_str)
-		local recruits = stringx.split(recruit_str or "")
-		for _, name in ipairs(recruits) do
-			name = tostring(name):match("^%s*(.-)%s*$")
-			local utype = wesnoth.unit_types[name]
-			if utype then
-				for _, adv_name in ipairs(utype.advances_to) do
-					local adv = wesnoth.unit_types[adv_name]
-					if adv and adv.level == 2 and not seen[adv_name] then
-						seen[adv_name] = true
-						table.insert(pool, adv_name)
-					end
-				end
-			end
+	local function walk_tree(type_id, depth)
+		if not type_id or depth > 6 then return end
+		local utype = wesnoth.unit_types[type_id]
+		if not utype then return end
+		if utype.level >= 2 and not seen[type_id] then
+			seen[type_id] = true
+			local lvl = utype.level
+			if not by_level[lvl] then by_level[lvl] = {} end
+			table.insert(by_level[lvl], type_id)
+		end
+		for _, adv_name in ipairs(utype.advances_to) do
+			walk_tree(adv_name, depth + 1)
 		end
 	end
 
 	local n_groups = wml.variables["wc2_enemy_army.group.length"] or 0
 	if n_groups > 0 then
 		for g = 0, n_groups - 1 do
-			add_advances_of(wml.variables[string.format("wc2_enemy_army.group[%d].recruit", g)])
-		end
-	end
-
-	if #pool < 6 then
-		for _, name in ipairs(FALLBACK_MERC_TYPES) do
-			if not seen[name] and wesnoth.unit_types[name] then
-				seen[name] = true
-				table.insert(pool, name)
+			local recruits = stringx.split(wml.variables[string.format("wc2_enemy_army.group[%d].recruit", g)] or "")
+			for _, name in ipairs(recruits) do
+				walk_tree(tostring(name):match("^%s*(.-)%s*$"), 0)
 			end
 		end
 	end
 
-	merc_pool_cache = pool
-	return pool
+	for lvl, fallbacks in pairs(FALLBACK_MERC_TYPES) do
+		if not by_level[lvl] or #by_level[lvl] < 4 then
+			if not by_level[lvl] then by_level[lvl] = {} end
+			for _, name in ipairs(fallbacks) do
+				if not seen[name] and wesnoth.unit_types[name] then
+					seen[name] = true
+					table.insert(by_level[lvl], name)
+				end
+			end
+		end
+	end
+
+	merc_pool_cache = by_level
+	return by_level
+end
+
+local function get_merc_level_weights(scenario_num)
+	local cfg = poi.config.merc_level_weights
+	if not cfg then return { [2] = 10 } end
+	local best = cfg[1].weights
+	for _, entry in ipairs(cfg) do
+		if scenario_num >= entry.scenario then best = entry.weights end
+	end
+	return best
+end
+
+local function pick_weighted_merc(by_level, level_weights)
+	local total_w = 0
+	local candidates = {}
+	for lvl, w in pairs(level_weights) do
+		if by_level[lvl] and #by_level[lvl] > 0 then
+			total_w = total_w + w
+			table.insert(candidates, { level = lvl, weight = w })
+		end
+	end
+	table.sort(candidates, function(a, b) return a.level < b.level end)
+	if total_w == 0 then return nil end
+	local roll = mathx.random(total_w)
+	local sum = 0
+	for _, c in ipairs(candidates) do
+		sum = sum + c.weight
+		if roll <= sum then
+			local pool = by_level[c.level]
+			return pool[mathx.random(#pool)], c.level
+		end
+	end
+	return nil
 end
 
 local function adjacent_hexes(loc_or_x, y)
@@ -176,14 +224,11 @@ end
 
 function poi.place_all()
 	local player_count = wml.variables.wc2_player_count or 1
-	-- Use the first actual enemy AI side for POI guards, not the null placeholder.
-	-- In a 2p game: sides 1-2 are players, side 3 is an empty null-controller
-	-- placeholder, sides 4+ are enemy AI. Spawning on the null side made guards
-	-- passive (no AI to run guardian behavior) and sometimes wrong-teamed.
+	-- Find the dedicated neutral side (team_name="wc2_neutral"), added after all
+	-- enemy sides. This keeps POI guards independent of both player and enemy.
 	poi.neutral_side = nil
-	for i = player_count + 1, #wesnoth.sides do
-		local s = wesnoth.sides[i]
-		if s and s.controller == "ai" then
+	for i = 1, #wesnoth.sides do
+		if wesnoth.sides[i].team_name == "wc2_neutral" then
 			poi.neutral_side = i
 			break
 		end
@@ -379,21 +424,31 @@ function poi.activate(unit, poi_type)
 		}
 
 	elseif poi_type == "mercenary_camp" then
-		local pool = poi.get_mercenary_pool()
-		if #pool == 0 then return false end
+		local by_level = poi.get_mercenary_pool()
+		local has_any = false
+		for _, pool in pairs(by_level) do
+			if #pool > 0 then has_any = true; break end
+		end
+		if not has_any then return false end
 		local du = wc2x.dialog_utils
 
-		local indices = {}
-		for i = 1, #pool do table.insert(indices, i) end
-		mathx.shuffle(indices)
-		local offer_count = math.min(3, #indices)
+		local scenario_num = wc2_scenario.scenario_num()
+		local level_weights = get_merc_level_weights(scenario_num)
+		local offer_count = config.merc_offer_count or 3
+		local cost_mult = config.merc_cost_multiplier or 1.2
 
+		local seen_offers = {}
 		local offers = {}
-		for i = 1, offer_count do
-			local name = pool[indices[i]]
-			local utype = wesnoth.unit_types[name]
-			if utype then
-				table.insert(offers, { type_id = name, utype = utype, cost = utype.cost, icon = utype.image })
+		for _ = 1, offer_count + 5 do
+			if #offers >= offer_count then break end
+			local name, lvl = pick_weighted_merc(by_level, level_weights)
+			if name and not seen_offers[name] then
+				seen_offers[name] = true
+				local utype = wesnoth.unit_types[name]
+				if utype then
+					local cost = math.floor(utype.cost * cost_mult)
+					table.insert(offers, { type_id = name, utype = utype, cost = cost, icon = utype.image, level = lvl })
+				end
 			end
 		end
 
@@ -614,7 +669,7 @@ function poi.capture_villages_for_enemies()
 	local enemy_sides = {}
 	for i = player_count + 1, #wesnoth.sides do
 		local s = wesnoth.sides[i]
-		if s and s.controller == "ai" then
+		if s and s.controller == "ai" and s.team_name ~= "wc2_neutral" then
 			table.insert(enemy_sides, i)
 		end
 	end

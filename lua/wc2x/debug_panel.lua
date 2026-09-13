@@ -9,6 +9,9 @@ local debug_panel = {}
 wc2x_debug_enabled = false
 
 local dbg_counter = 0
+local loti_free_craft = false
+local loti_orig_get_counts = nil
+local loti_orig_add = nil
 
 ---------------------------------------------------------------------------
 -- Shared definitions — both clients reference these by index
@@ -280,6 +283,32 @@ local function apply_action(data)
 	elseif data.action == "force_tactic" then
 		wc2x.ai_director.debug.force(data.side, data.slot, data.tactic)
 		msg(string.format("Forced side %d %s → %s", data.side, data.slot, data.tactic), s)
+
+	elseif data.action == "loti_free_craft" then
+		if not loti or not loti.gem then
+			msg("LotI Era not loaded — toggle has no effect", s)
+			return
+		end
+		loti_free_craft = not loti_free_craft
+		if loti_free_craft then
+			if not loti_orig_get_counts then
+				loti_orig_get_counts = loti.gem.get_counts
+				loti_orig_add = loti.gem.add
+			end
+			loti.gem.get_counts = function()
+				local counts = {}
+				for _ = 1, #loti.gem.types do table.insert(counts, 999) end
+				return counts
+			end
+			loti.gem.add = function() end
+			msg("LotI free crafting ON — craft anything, no gems consumed", s)
+		else
+			if loti_orig_get_counts then
+				loti.gem.get_counts = loti_orig_get_counts
+				loti.gem.add = loti_orig_add
+			end
+			msg("LotI free crafting OFF — normal gem costs restored", s)
+		end
 	end
 end
 
@@ -483,6 +512,10 @@ local function collect_action(x, y)
 	if unit then table.insert(options, "Unit: " .. tostring(unit.name)) end
 	table.insert(options, "Gold: +100")
 	table.insert(options, "Gold: +500")
+	if loti and loti.gem then
+		local label = loti_free_craft and "LotI Free Craft: ON (click to disable)" or "LotI Free Craft: OFF (click to enable)"
+		table.insert(options, label)
+	end
 	table.insert(options, "Disable Debug Menu")
 
 	local header = string.format("Side %d — %d gold", side_num, wesnoth.sides[side_num].gold)
@@ -504,10 +537,18 @@ local function collect_action(x, y)
 			return { action = "gold", side = side_num, amount = 100 }
 		elseif choice == offset + 2 then
 			return { action = "gold", side = side_num, amount = 500 }
-		elseif choice == offset + 3 then
-			wc2x_debug_enabled = false
-			msg("Debug menu disabled.")
-			return NO_ACTION
+		else
+			local loti_offset = offset + 2
+			local has_loti = loti and loti.gem
+			if has_loti and choice == loti_offset + 1 then
+				return { action = "loti_free_craft" }
+			end
+			local disable_idx = has_loti and (loti_offset + 2) or (loti_offset + 1)
+			if choice == disable_idx then
+				wc2x_debug_enabled = false
+				msg("Debug menu disabled.")
+				return NO_ACTION
+			end
 		end
 	end
 	return NO_ACTION

@@ -88,6 +88,26 @@ local function add_empty_side(scenario)
 	table.insert(scenario.side, side)
 end
 
+local function add_neutral_side(scenario)
+	local side_num = #scenario.side + 1
+	local side = {
+		side = side_num,
+		controller = "ai",
+		no_leader = true,
+		allow_player = false,
+		hidden = false,
+		team_name = "wc2_neutral",
+		user_team_name = _ "Neutral",
+		gold = 0,
+		income = -2,
+		village_gold = 0,
+		fog = false,
+		terrain_liked = "",
+		wml.tag.ai { ai_special = "guardian" },
+	}
+	table.insert(scenario.side, side)
+end
+
 function wc_ii_generate_sides(scenario, prestart_event, nplayers, scenario_num, enemy_data, scenario_data)
 
 	local n_enemy_sides = scenario_num == 5 and 6 or scenario_num
@@ -118,4 +138,5 @@ function wc_ii_generate_sides(scenario, prestart_event, nplayers, scenario_num, 
 		})
 		add_enemy_side(scenario, enemy_data.gold, i + nplayers)
 	end
+	add_neutral_side(scenario)
 end

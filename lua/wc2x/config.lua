@@ -53,6 +53,29 @@ config.upgrade_price_escalation = 1.6
 config.barracks_spawn_interval = 4
 config.training_ground_xp_per_turn = 4
 
+-- Mercenary camp scaling — weights per level, by scenario threshold
+-- Each entry: from that scenario onward, use these weights when picking offers.
+-- Higher-level mercs appear with increasing probability in later scenarios.
+config.merc_level_weights = {
+	{ scenario = 1, weights = { [2] = 10 } },
+	{ scenario = 2, weights = { [2] = 8, [3] = 2 } },
+	{ scenario = 3, weights = { [2] = 5, [3] = 4, [4] = 1 } },
+	{ scenario = 4, weights = { [2] = 3, [3] = 5, [4] = 2 } },
+	{ scenario = 5, weights = { [2] = 2, [3] = 4, [4] = 3, [5] = 1 } },
+}
+config.merc_offer_count = 3
+config.merc_cost_multiplier = 1.2
+
+-- Enemy leader scaling — target leader level by scenario.
+-- The leader spawns at the highest available level up to this target,
+-- walking the advancement tree from the data table's L3 type.
+config.enemy_leader_level = {
+	{ scenario = 1, level = 2 },
+	{ scenario = 2, level = 3 },
+	{ scenario = 4, level = 4 },
+	{ scenario = 5, level = 5 },
+}
+
 -- Enemy recruit expansion (add higher-level units to recruit list in later scenarios)
 config.enemy_recruit_tiers = {
 	{ level = 2, start_scenario = 2, count = 3 },
