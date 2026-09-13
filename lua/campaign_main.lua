@@ -39,8 +39,8 @@ wesnoth.dofile("./campaign/enemy_themed.lua")
 if loti and loti.item and loti.item.on_the_ground and loti.item.on_the_ground.add then
 	local loti_orig_ground_add = loti.item.on_the_ground.add
 	loti.item.on_the_ground.add = function(item_number, x, y, crafted_sort, turn, dropping_side)
-		if dropping_side and wc2_scenario.is_human_side(dropping_side) then
-			dropping_side = nil
+		if dropping_side and wc2_scenario.is_human_side(tonumber(dropping_side) or 0) then
+			dropping_side = 0
 		end
 		return loti_orig_ground_add(item_number, x, y, crafted_sort, turn, dropping_side)
 	end
