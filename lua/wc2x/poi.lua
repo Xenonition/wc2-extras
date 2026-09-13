@@ -224,11 +224,11 @@ end
 
 function poi.place_all()
 	local player_count = wml.variables.wc2_player_count or 1
-	-- Find the dedicated neutral side (team_name="wc2_neutral"), added after all
-	-- enemy sides. This keeps POI guards independent of both player and enemy.
+	-- Find the dedicated neutral side (marked with wc2x_is_neutral variable),
+	-- added after all enemy sides. Uses idle_ai so guards never move.
 	poi.neutral_side = nil
 	for i = 1, #wesnoth.sides do
-		if wesnoth.sides[i].team_name == "wc2_neutral" then
+		if wesnoth.sides[i].variables["wc2x_is_neutral"] then
 			poi.neutral_side = i
 			break
 		end
@@ -669,7 +669,7 @@ function poi.capture_villages_for_enemies()
 	local enemy_sides = {}
 	for i = player_count + 1, #wesnoth.sides do
 		local s = wesnoth.sides[i]
-		if s and s.controller == "ai" and s.team_name ~= "wc2_neutral" then
+		if s and s.controller == "ai" and not s.variables["wc2x_is_neutral"] then
 			table.insert(enemy_sides, i)
 		end
 	end

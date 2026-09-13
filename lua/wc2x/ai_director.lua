@@ -724,7 +724,7 @@ function director.init(config)
 		if wc2_scenario.is_human_side(side_num) then return end
 		local side = wesnoth.sides[side_num]
 		if side.controller ~= "ai" then return end
-		if side.team_name == "wc2_neutral" then return end
+		if side.variables["wc2x_is_neutral"] then return end
 
 		cleanup_dead(side_num)
 

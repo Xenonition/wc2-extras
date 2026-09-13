@@ -96,7 +96,7 @@ local function add_neutral_side(scenario)
 		no_leader = true,
 		allow_player = false,
 		hidden = false,
-		team_name = "wc2_neutral",
+		team_name = "wc2_enemy",
 		user_team_name = _ "Neutral",
 		gold = 0,
 		income = -2,
@@ -105,6 +105,9 @@ local function add_neutral_side(scenario)
 		terrain_liked = "",
 		wml.tag.ai {
 			ai_algorithm = "idle_ai",
+		},
+		wml.tag.variables {
+			wc2x_is_neutral = true,
 		},
 	}
 	table.insert(scenario.side, side)
