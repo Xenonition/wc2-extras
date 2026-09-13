@@ -103,7 +103,9 @@ local function add_neutral_side(scenario)
 		village_gold = 0,
 		fog = false,
 		terrain_liked = "",
-		wml.tag.ai { ai_special = "guardian" },
+		wml.tag.ai {
+			ai_algorithm = "idle_ai",
+		},
 	}
 	table.insert(scenario.side, side)
 end
