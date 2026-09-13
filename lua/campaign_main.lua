@@ -32,6 +32,8 @@ wesnoth.dofile("./campaign/autorecall.lua")
 wesnoth.dofile("./campaign/objectives.lua")
 wesnoth.dofile("./campaign/enemy_themed.lua")
 
+-- LotI Era workaround: item_pick fires for AI sides because LotI's
+-- controller=human filter is ignored by the engine. See DESIGN.md.
 if wesnoth.wml_actions.item_pick_menu then
 	local loti_orig_item_pick_menu = wesnoth.wml_actions.item_pick_menu
 	wesnoth.wml_actions.item_pick_menu = function(cfg)
@@ -51,6 +53,8 @@ on_event("prestart", function(cx)
 		}
 	}
 
+	-- LotI Era workaround: DROPS macro hardcodes enemy_sides to 1-12,
+	-- which includes the player. Rebuild to actual enemy sides only.
 	if wml.variables["enemy_sides"] then
 		local enemy_list = {}
 		for i = 1, #wesnoth.sides do

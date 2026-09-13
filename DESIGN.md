@@ -93,3 +93,46 @@ WC2 extension using `#ifdef LOAD_WC2` guard. Lives in `data/add-ons/`, does not 
 WC2's own files. Uses WC2's existing era, factions, artifacts, and training systems.
 New mechanics implemented in Lua, shop as a custom GUI dialog (same tech as WC2's invest
 screen).
+
+## Known issues & mod interactions
+
+### LotI Era compatibility
+
+WC3 is designed to work alongside LotI Era as a lobby-toggled modification. Several LotI
+behaviors assume a standard campaign side layout and break in WC3's co-op structure. WC3
+applies runtime workarounds; none modify LotI's files.
+
+| Issue | Root cause | WC3 workaround | File |
+|---|---|---|---|
+| `controller=` SSF warnings (~1700/session) | LotI uses `controller=human` in `[filter_side]` blocks; Wesnoth 1.18 ignores this in SSFs and logs a warning each time | Cannot fix without patching LotI. Harmless log noise — the filter is ignored identically on all clients | LotI `global_events.cfg` lines 121, 152, 485, 538, 552, 1724; `utils.cfg` line 70 |
+| Player recruits get elite mods (reflect, temptation) | LotI's `DROPS` macro hardcodes `$enemy_sides` to `1,2,...,12`, including the player side | WC3 overwrites `$enemy_sides` at prestart to only include non-human, non-neutral AI sides | `campaign_main.lua` prestart event |
+| Item pickup dialog fires for AI units | LotI's `item_pick` event uses `controller=human` filter (ignored by engine), so `[item_pick_menu]` fires for all sides | WC3 wraps `wesnoth.wml_actions.item_pick_menu` to skip non-human sides | `campaign_main.lua` item_pick_menu wrapper |
+
+### Base World Conquest coexistence
+
+When both WC3 and the original World Conquest add-on are installed, several WML macros
+are defined by both. WC3 adds `#undef` before each redefinition to suppress preprocessor
+warnings: `ICON_THREE`, `ICON_FOUR`, `IMAGE_ONE`, `WC2_CAMPAIGN_NEW`, `WC2_SCENARIO_NEW`,
+`WC_II_PAIR` (in `_main.cfg` and `scenarios/WC_II_scenario.cfg`), and
+`WCT_CHANCE_ARCANE_BOOST` (in `resources/data/training.cfg`).
+
+### Multiplayer sync safety
+
+WC3's Lua code is audited for OOS (out-of-sync) safety:
+
+- **All random calls use `mathx.random`** (synced RNG), never `math.random`.
+- **All `pairs()` iterations** that feed into random selection or state changes sort the
+  result before use. (A `pairs()` OOS bug in mercenary level selection was found and fixed
+  — the candidates array was unsorted, causing different clients to pick different tiers
+  from the same roll.)
+- **All dialogs** that affect game state (shop, mercenary camp, item pickup, debug panel)
+  are wrapped in `wesnoth.sync.evaluate_single`.
+- **No `os.time`/`os.clock`/`tostring(table)`** or other non-deterministic values in game logic.
+
+### Neutral POI side
+
+POI guards and creeps live on a dedicated side with:
+- `team_name = "wc2_enemy"` — allied with enemies so AI doesn't waste turns attacking guards
+- `ai_algorithm = "idle_ai"` — guards never move or initiate attacks; defense is automatic
+- `wc2x_is_neutral = true` side variable — used to identify the neutral side in code
+- Excluded from: AI director, village capture, enemy scaling, recruit events
