@@ -9,7 +9,7 @@ local debug_panel = {}
 wc2x_debug_enabled = false
 
 local dbg_counter = 0
-local loti_free_craft = false
+local loti_free_craft_sides = {}
 local loti_orig_get_counts = nil
 local loti_orig_add = nil
 
@@ -289,25 +289,27 @@ local function apply_action(data)
 			msg("LotI Era not loaded — toggle has no effect", s)
 			return
 		end
-		loti_free_craft = not loti_free_craft
-		if loti_free_craft then
-			if not loti_orig_get_counts then
-				loti_orig_get_counts = loti.gem.get_counts
-				loti_orig_add = loti.gem.add
-			end
+		if not loti_orig_get_counts then
+			loti_orig_get_counts = loti.gem.get_counts
+			loti_orig_add = loti.gem.add
 			loti.gem.get_counts = function()
-				local counts = {}
-				for _ = 1, #loti.gem.types do table.insert(counts, 999) end
-				return counts
+				if loti_free_craft_sides[wesnoth.current.side] then
+					local counts = {}
+					for _ = 1, #loti.gem.types do table.insert(counts, 999) end
+					return counts
+				end
+				return loti_orig_get_counts()
 			end
-			loti.gem.add = function() end
-			msg("LotI free crafting ON — craft anything, no gems consumed", s)
+			loti.gem.add = function(gem, count)
+				if loti_free_craft_sides[wesnoth.current.side] then return end
+				loti_orig_add(gem, count)
+			end
+		end
+		loti_free_craft_sides[s] = not loti_free_craft_sides[s] or nil
+		if loti_free_craft_sides[s] then
+			msg("LotI free crafting ON for side " .. s, s)
 		else
-			if loti_orig_get_counts then
-				loti.gem.get_counts = loti_orig_get_counts
-				loti.gem.add = loti_orig_add
-			end
-			msg("LotI free crafting OFF — normal gem costs restored", s)
+			msg("LotI free crafting OFF for side " .. s, s)
 		end
 	end
 end
@@ -513,7 +515,7 @@ local function collect_action(x, y)
 	table.insert(options, "Gold: +100")
 	table.insert(options, "Gold: +500")
 	if loti and loti.gem then
-		local label = loti_free_craft and "LotI Free Craft: ON (click to disable)" or "LotI Free Craft: OFF (click to enable)"
+		local label = loti_free_craft_sides[side_num] and "LotI Free Craft: ON (click to disable)" or "LotI Free Craft: OFF (click to enable)"
 		table.insert(options, label)
 	end
 	table.insert(options, "Disable Debug Menu")

@@ -107,6 +107,8 @@ applies runtime workarounds; none modify LotI's files.
 | `controller=` SSF warnings (~1700/session) | LotI uses `controller=human` in `[filter_side]` blocks; Wesnoth 1.18 ignores this in SSFs and logs a warning each time | Cannot fix without patching LotI. Harmless log noise — the filter is ignored identically on all clients | LotI `global_events.cfg` lines 121, 152, 485, 538, 552, 1724; `utils.cfg` line 70 |
 | Player recruits get elite mods (reflect, temptation) | LotI's `DROPS` macro hardcodes `$enemy_sides` to `1,2,...,12`, including the player side | WC3 overwrites `$enemy_sides` at prestart to only include non-human, non-neutral AI sides | `campaign_main.lua` prestart event |
 | Item pickup dialog fires for AI units | LotI's `item_pick` event uses `controller=human` filter (ignored by engine), so `[item_pick_menu]` fires for all sides | WC3 wraps `wesnoth.wml_actions.item_pick_menu` to skip non-human sides | `campaign_main.lua` item_pick_menu wrapper |
+| Player can't pick up items from own fallen units | `DROPS` die event includes player side; `on_the_ground.add` sets `dropping_side` = player, and the pickup filter excludes that side | WC3 wraps `loti.item.on_the_ground.add` to clear `dropping_side` when it's a human side | `campaign_main.lua` on_the_ground.add wrapper |
+| Uncollected items lost on victory | LotI only auto-picks items dropped on the final turn or on impassable terrain; everything else is cleared | WC3 registers a victory event that stores all remaining ground items (gems, gold, equipment) before LotI's handler runs | `campaign_main.lua` victory event |
 
 ### Base World Conquest coexistence
 

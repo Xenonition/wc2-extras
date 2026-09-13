@@ -32,6 +32,20 @@ wesnoth.dofile("./campaign/autorecall.lua")
 wesnoth.dofile("./campaign/objectives.lua")
 wesnoth.dofile("./campaign/enemy_themed.lua")
 
+-- LotI Era workaround: DROPS die event has side=1..12 baked at preprocess,
+-- so player-unit deaths drop items with dropping_side=player. The pickup
+-- filter then excludes the player from picking them up. Clear dropping_side
+-- for human sides so the player can loot items from their own fallen units.
+if loti and loti.item and loti.item.on_the_ground and loti.item.on_the_ground.add then
+	local loti_orig_ground_add = loti.item.on_the_ground.add
+	loti.item.on_the_ground.add = function(item_number, x, y, crafted_sort, turn, dropping_side)
+		if dropping_side and wc2_scenario.is_human_side(dropping_side) then
+			dropping_side = nil
+		end
+		return loti_orig_ground_add(item_number, x, y, crafted_sort, turn, dropping_side)
+	end
+end
+
 -- LotI Era workaround: item_pick fires for AI sides because LotI's
 -- controller=human filter is ignored by the engine. See DESIGN.md.
 if wesnoth.wml_actions.item_pick_menu then
@@ -41,6 +55,23 @@ if wesnoth.wml_actions.item_pick_menu then
 		if unit and not wc2_scenario.is_human_side(unit.side) then return end
 		loti_orig_item_pick_menu(cfg)
 	end
+end
+
+-- LotI Era workaround: auto-collect all ground items on victory.
+-- LotI only auto-picks items dropped on the final turn or on impassable
+-- terrain; everything else is lost. Collect them all into storage first.
+if loti and loti.item and loti.item.storage then
+	on_event("victory", function()
+		local items = wml.array_access.get("items")
+		if #items == 0 then return end
+		for _, elem in ipairs(items) do
+			local item_number = elem.type
+			local sort = elem.sort
+			loti.item.storage.add(item_number, sort)
+			wesnoth.wml_actions.remove_item { x = elem.x, y = elem.y }
+		end
+		wml.array_access.set("items", {})
+	end)
 end
 
 on_event("prestart", function(cx)
