@@ -12,6 +12,19 @@ function poi.init(config)
 	poi.config = config
 end
 
+-- Lazily resolve the neutral side — survives save/load where "start" doesn't re-fire.
+function poi.get_neutral_side()
+	if poi.neutral_side then return poi.neutral_side end
+	for i = 1, #wesnoth.sides do
+		if wesnoth.sides[i].variables["wc2x_is_neutral"] then
+			poi.neutral_side = i
+			return i
+		end
+	end
+	poi.neutral_side = #wesnoth.sides
+	return poi.neutral_side
+end
+
 poi.types = {
 	{
 		id = "ruins",
@@ -267,9 +280,12 @@ function poi.place_all()
 		}
 		wesnoth.wml_actions.label { x = loc.x, y = loc.y, text = poi_type.name }
 
-		local tier = resolve_guard_tier(poi_type.id, scenario_num)
-		local guard_types = tier and tier.types or poi_type.guard_types
-		local guard_count = tier and tier.count or poi_type.guard_count
+		local guard_types = poi_type.guard_types
+		local guard_count = poi_type.guard_count
+		if not poi_type.ambush_types then
+			local tier = resolve_guard_tier(poi_type.id, scenario_num)
+			if tier then guard_types = tier.types; guard_count = tier.count end
+		end
 		if guard_types and #guard_types > 0 then
 			local num_guards = mathx.random(guard_count[1], guard_count[2])
 			local adj = adjacent_hexes(loc)
@@ -326,7 +342,7 @@ on_event("wc2_drop_pickup", function(ec)
 	-- Guard check: if any neutral guards adjacent to POI hex, block pickup
 	for _, adj in ipairs(adjacent_hexes(x, y)) do
 		local guard = wesnoth.units.get(adj.x, adj.y)
-		if guard and guard.side == poi.neutral_side then
+		if guard and guard.side == poi.get_neutral_side() then
 			return
 		end
 	end
@@ -355,7 +371,7 @@ on_event("wc2_drop_pickup", function(ec)
 				local terr = wesnoth.current.map[a]
 				if terr and not tostring(terr):match("[XQ]") then
 					wesnoth.wml_actions.unit {
-						side = poi.neutral_side,
+						side = poi.get_neutral_side(),
 						type = ambush_types[mathx.random(#ambush_types)],
 						x = a.x, y = a.y,
 						generate_name = true, random_traits = true, upkeep = "free",

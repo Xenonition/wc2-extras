@@ -232,6 +232,8 @@ on_event("turn 1", function(cx)
 						x = hex.x, y = hex.y,
 						moves = 0, generate_name = true,
 					}
+					local u = wesnoth.units.get(hex.x, hex.y)
+					if u then wc2_training.apply(u) end
 					spawned = spawned + 1
 				end
 			end
@@ -275,6 +277,8 @@ on_event("side turn", function(cx)
 				x = loc.x, y = loc.y,
 				moves = 0, generate_name = true,
 			}
+			local u = wesnoth.units.get(loc.x, loc.y)
+			if u then wc2_training.apply(u) end
 			wesnoth.interface.float_label(loc.x, loc.y, "Barracks recruit!")
 		end
 	end
