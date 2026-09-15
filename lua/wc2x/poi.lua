@@ -519,17 +519,23 @@ function poi.activate(unit, poi_type)
 		local cost = tonumber(cost_str)
 		if not type_id or not cost then return false end
 
+		local spawn_hex = nil
 		for _, hex in ipairs(adjacent_hexes(unit)) do
 			if not wesnoth.units.get(hex.x, hex.y) then
-				wesnoth.wml_actions.unit {
-					side = unit.side, type = type_id,
-					x = hex.x, y = hex.y,
-					generate_name = true, random_traits = true, moves = 0,
-				}
-				side.gold = side.gold - cost
-				break
+				local terr = wesnoth.current.map[hex]
+				if terr and not tostring(terr):match("[XQ]") then
+					spawn_hex = hex
+					break
+				end
 			end
 		end
+		if not spawn_hex then spawn_hex = { x = unit.x, y = unit.y } end
+		wesnoth.wml_actions.unit {
+			side = unit.side, type = type_id,
+			x = spawn_hex.x, y = spawn_hex.y,
+			generate_name = true, random_traits = true, moves = 0,
+		}
+		side.gold = side.gold - cost
 
 	elseif poi_type == "caravan" then
 		wesnoth.wml_actions.message {
