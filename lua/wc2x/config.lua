@@ -119,16 +119,16 @@ config.ai_tactic_spend_modifier = {
 -- POI guard scaling by scenario
 config.poi_guard_scaling = {
 	shrine = {
-		{ scenario = 1, count = { 1, 1 }, types = { "Elvish Fighter", "Mage", "Footpad" } },
-		{ scenario = 2, count = { 1, 2 }, types = { "Elvish Fighter", "Mage", "Footpad", "Elvish Druid" } },
-		{ scenario = 3, count = { 2, 3 }, types = { "Elvish Druid", "Elvish Sorceress", "Mage", "Fire Guardian" } },
-		{ scenario = 5, count = { 2, 4 }, types = { "Elvish Sorceress", "Fire Guardian", "Elvish Shaman", "Red Mage" } },
+		{ scenario = 1, count = { 1, 1 }, types = { "Footpad", "Poacher", "Thug", "Orcish Grunt", "Troll Whelp" } },
+		{ scenario = 2, count = { 1, 2 }, types = { "Orcish Warrior", "Troll", "Ogre", "Bandit", "Mage", "Wolf Rider" } },
+		{ scenario = 3, count = { 2, 3 }, types = { "Orcish Crossbowman", "Troll Warrior", "Swordsman", "White Mage", "Rogue" } },
+		{ scenario = 5, count = { 2, 4 }, types = { "Orcish Slurbow", "Troll Hero", "Knight", "Red Mage", "Assassin" } },
 	},
 	ruins = {
-		{ scenario = 1, count = { 1, 1 }, types = { "Skeleton", "Walking Corpse" } },
-		{ scenario = 2, count = { 1, 2 }, types = { "Skeleton", "Skeleton Archer", "Ghoul" } },
-		{ scenario = 3, count = { 2, 3 }, types = { "Skeleton", "Skeleton Archer", "Ghost", "Ghoul" } },
-		{ scenario = 5, count = { 2, 4 }, types = { "Revenant", "Bone Shooter", "Ghost", "Wraith" } },
+		{ scenario = 1, count = { 1, 1 }, types = { "Skeleton", "Walking Corpse", "Wolf", "Mudcrawler" } },
+		{ scenario = 2, count = { 1, 2 }, types = { "Ghoul", "Orcish Archer", "Thief", "Giant Scorpion", "Troll Whelp" } },
+		{ scenario = 3, count = { 2, 3 }, types = { "Revenant", "Chocobone", "Troll", "Orcish Warrior", "Ghost" } },
+		{ scenario = 5, count = { 2, 4 }, types = { "Bone Shooter", "Wraith", "Troll Warrior", "Orcish Crossbowman", "Ogre" } },
 	},
 }
 
