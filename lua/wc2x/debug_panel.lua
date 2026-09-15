@@ -130,7 +130,7 @@ local ABILITY_NAMES = {
 ---------------------------------------------------------------------------
 local function msg(text, acting_side)
 	if acting_side and wesnoth.interface.get_viewing_side() ~= acting_side then return end
-	wesnoth.wml_actions.chat { speaker = "WC3", message = text }
+	wesnoth.interface.add_chat_message("WC3", text)
 end
 
 local function pick_option(title, message, options)
