@@ -7,10 +7,12 @@ local director = {}
 local state = {}       -- per-side tactic assignments
 local dir_counter = 0  -- unique ca_id suffix
 
-local REASSESS_INTERVAL = 3
 local MAX_SPECIAL_UNITS = 5
 local BODYGUARD_THRESHOLD = 3
 local VILLAGE_THREAT_RADIUS = 6
+local REASSESS_CHANCE = 35          -- % chance per turn to reassess (after min_duration)
+local REASSESS_CHANCE_PER_CAUTION = -10  -- cautious AIs hold tactics longer
+local REASSESS_CHANCE_PER_AGGRESSION = 10  -- aggressive AIs switch faster
 
 local function next_ca_id()
 	dir_counter = dir_counter + 1
@@ -68,6 +70,30 @@ local function slot_is_stale(side_num, slot_name)
 		if unit_alive(uid, side_num) then return false end
 	end
 	return true
+end
+
+-- Check if a tactic slot is eligible for reassessment (min_duration expired + random roll)
+local function slot_ready_to_reassess(side_num, slot_name, sit)
+	local slot = state[side_num] and state[side_num][slot_name]
+	if not slot then return true end  -- empty slot always ready
+	if slot.forced then return false end
+
+	local turn = wesnoth.current.turn
+	local assigned_turn = slot.assigned_turn or 0
+	local age = turn - assigned_turn
+
+	-- Look up min_duration from the tactic definition
+	local pool = slot_name == "strategic" and strategic_tactics or opportunistic_tactics
+	local tactic_def = pool[slot.tactic]
+	local min_dur = tactic_def and tactic_def.min_duration or 2
+	if age < min_dur then return false end
+
+	-- Personality-adjusted reassess chance
+	local chance = REASSESS_CHANCE
+		+ (sit.aggression or 0.4) * REASSESS_CHANCE_PER_AGGRESSION
+		+ (sit.caution or 0.25) * REASSESS_CHANCE_PER_CAUTION
+	chance = math.max(10, math.min(chance, 80))
+	return mathx.random(100) <= chance
 end
 
 ---------------------------------------------------------------------------
@@ -147,6 +173,7 @@ local function assess(side_num)
 		enemies_near_villages = enemies_near_my_villages,
 		aggression = tonumber(side.variables["wc2x_ai_aggression"] or "0.4"),
 		caution = tonumber(side.variables["wc2x_ai_caution"] or "0.25"),
+		leader_aggression = tonumber(side.variables["wc2x_ai_leader_aggression"] or "0"),
 		assigned_ids = assigned_ids,
 	}
 end
@@ -168,7 +195,7 @@ local strategic_tactics = {}
 local opportunistic_tactics = {}
 
 -- STRATEGIC: Rally & Strike -----------------------------------------------
-strategic_tactics.rally_strike = {}
+strategic_tactics.rally_strike = { min_duration = 3 }
 
 function strategic_tactics.rally_strike.weight(sit)
 	if not sit.leader then return 0 end
@@ -214,7 +241,7 @@ function strategic_tactics.rally_strike.apply(sit)
 end
 
 -- STRATEGIC: Village Turtle ------------------------------------------------
-strategic_tactics.village_turtle = {}
+strategic_tactics.village_turtle = { min_duration = 2 }
 
 function strategic_tactics.village_turtle.weight(sit)
 	if sit.village_count == 0 then return 0 end
@@ -287,7 +314,7 @@ function strategic_tactics.village_turtle.apply(sit)
 end
 
 -- STRATEGIC: Village Grab --------------------------------------------------
-strategic_tactics.village_grab = {}
+strategic_tactics.village_grab = { min_duration = 2 }
 
 function strategic_tactics.village_grab.weight(sit)
 	if not sit.leader then return 0 end
@@ -362,7 +389,7 @@ function strategic_tactics.village_grab.apply(sit)
 end
 
 -- OPPORTUNISTIC: Raid Leader -----------------------------------------------
-opportunistic_tactics.raid_leader = {}
+opportunistic_tactics.raid_leader = { min_duration = 2 }
 
 function opportunistic_tactics.raid_leader.weight(sit)
 	if not sit.nearest_player_leader then return 0 end
@@ -402,7 +429,7 @@ end
 -- OPPORTUNISTIC: Forest Ambush ---------------------------------------------
 -- Finds units with ambush/submerge, places them in hiding terrain along the
 -- path between enemy base and nearest player leader.
-opportunistic_tactics.forest_ambush = {}
+opportunistic_tactics.forest_ambush = { min_duration = 3 }
 
 local AMBUSH_FOREST_TERRAIN = "*^F*,*^Fet*,*^Fpa*"
 local MIN_AMBUSH_HEXES = 4
@@ -556,7 +583,7 @@ function opportunistic_tactics.forest_ambush.apply(sit)
 end
 
 -- OPPORTUNISTIC: Leader Bodyguard ------------------------------------------
-opportunistic_tactics.leader_bodyguard = {}
+opportunistic_tactics.leader_bodyguard = { min_duration = 2 }
 
 function opportunistic_tactics.leader_bodyguard.weight(sit)
 	if not sit.leader then return 0 end
@@ -564,6 +591,9 @@ function opportunistic_tactics.leader_bodyguard.weight(sit)
 	local w = 30
 	w = w + sit.caution * 30
 	w = w + (BODYGUARD_THRESHOLD - sit.friendly_near_leader) * 15
+	-- Aggressive leaders leave the keep — they need bodyguards more
+	local la = sit.leader_aggression
+	if la > 0 then w = w + la * 30 end
 	return math.min(w, 100)
 end
 
@@ -658,10 +688,19 @@ local function reassess(side_num)
 	if not sit.leader then return end
 	if sit.unit_count < 2 then return end
 
+	-- Clear dead slots unconditionally
 	if slot_is_stale(side_num, "strategic") then
 		clear_slot(side_num, "strategic")
 	end
 	if slot_is_stale(side_num, "opportunistic") then
+		clear_slot(side_num, "opportunistic")
+	end
+
+	-- Stochastic reassess: clear live slots only when min_duration passed + roll succeeds
+	if state[side_num].strategic and slot_ready_to_reassess(side_num, "strategic", sit) then
+		clear_slot(side_num, "strategic")
+	end
+	if state[side_num].opportunistic and slot_ready_to_reassess(side_num, "opportunistic", sit) then
 		clear_slot(side_num, "opportunistic")
 	end
 
@@ -670,6 +709,7 @@ local function reassess(side_num)
 		if name then
 			local result = strategic_tactics[name].apply(sit)
 			if result then
+				result.assigned_turn = wesnoth.current.turn
 				state[side_num].strategic = result
 				for _, uid in ipairs(result.unit_ids) do
 					sit.assigned_ids[uid] = true
@@ -685,6 +725,7 @@ local function reassess(side_num)
 		if name then
 			local result = opportunistic_tactics[name].apply(sit)
 			if result then
+				result.assigned_turn = wesnoth.current.turn
 				state[side_num].opportunistic = result
 			end
 		end
@@ -727,10 +768,7 @@ function director.init(config)
 		if side.variables["wc2x_is_neutral"] then return end
 
 		cleanup_dead(side_num)
-
-		if wesnoth.current.turn % REASSESS_INTERVAL == 1 or wesnoth.current.turn == 1 then
-			reassess(side_num)
-		end
+		reassess(side_num)
 	end)
 
 	director.register_debug_commands()
@@ -790,9 +828,10 @@ local function print_tactics(side_num)
 			for _, uid in ipairs(slot.unit_ids) do
 				if unit_alive(uid, side_num) then alive = alive + 1 end
 			end
-			msg(string.format("  Side %d [%s]: %s — %d/%d units alive — units: %s",
+			local age = slot.assigned_turn and (wesnoth.current.turn - slot.assigned_turn) or "?"
+			msg(string.format("  Side %d [%s]: %s — %d/%d alive — age %s turns — %s",
 				side_num, slot_name, slot.tactic, alive, #slot.unit_ids,
-				table.concat(slot.unit_ids, ", ")))
+				tostring(age), table.concat(slot.unit_ids, ", ")))
 		else
 			msg(string.format("  Side %d [%s]: (empty)", side_num, slot_name))
 		end
@@ -805,9 +844,10 @@ local function print_weights(side_num)
 		msg(string.format("Side %d: no leader, can't assess", side_num))
 		return
 	end
-	msg(string.format("Side %d situation: %d gold, %d units, %d/%d villages, nearest player %d hexes",
+	msg(string.format("Side %d situation: %d gold, %d units, %d/%d villages, nearest player %d hexes, leader_aggr %.1f",
 		side_num, sit.gold, sit.unit_count, sit.village_count, sit.total_village_count,
-		sit.nearest_player_dist == math.huge and -1 or sit.nearest_player_dist))
+		sit.nearest_player_dist == math.huge and -1 or sit.nearest_player_dist,
+		sit.leader_aggression))
 	msg("  Strategic weights:")
 	for name, tactic in pairs(strategic_tactics) do
 		msg(string.format("    %s: %.0f", name, tactic.weight(sit)))
