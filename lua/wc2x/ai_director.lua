@@ -59,6 +59,13 @@ local function clear_slot(side_num, slot_name)
 			revoke_ambush(uid)
 		end
 	end
+	-- Restore leader_aggression if castle_defense overrode it
+	if slot.saved_leader_aggression then
+		wesnoth.wml_actions.modify_side {
+			side = side_num,
+			wml.tag.ai { leader_aggression = slot.saved_leader_aggression },
+		}
+	end
 	state[side_num][slot_name] = nil
 end
 
@@ -442,6 +449,12 @@ function strategic_tactics.castle_defense.apply(sit)
 	local units = available_units(sit)
 	if #units == 0 or not sit.leader then return nil end
 
+	-- Force leader back to keep — needs to recruit reinforcements, not fight
+	wesnoth.wml_actions.modify_side {
+		side = sit.side_num,
+		wml.tag.ai { leader_aggression = -5 },
+	}
+
 	-- Commit everyone, not just MAX_SPECIAL_UNITS — this is an emergency
 	table.sort(units, function(a, b) return a.max_hitpoints > b.max_hitpoints end)
 	local count = math.min(#units, MAX_SPECIAL_UNITS + 3)
@@ -465,7 +478,10 @@ function strategic_tactics.castle_defense.apply(sit)
 		table.insert(unit_ids, u.id)
 	end
 
-	return { tactic = "castle_defense", ca_ids = ca_ids, ai_types = ai_types, unit_ids = unit_ids }
+	return {
+		tactic = "castle_defense", ca_ids = ca_ids, ai_types = ai_types, unit_ids = unit_ids,
+		saved_leader_aggression = sit.leader_aggression,
+	}
 end
 
 -- STRATEGIC: Fighting Retreat -----------------------------------------------
@@ -766,89 +782,6 @@ function opportunistic_tactics.leader_bodyguard.apply(sit)
 	return { tactic = "leader_bodyguard", ca_ids = ca_ids, ai_types = ai_types, unit_ids = unit_ids }
 end
 
--- OPPORTUNISTIC: Village Raid -----------------------------------------------
--- Punish player overcommits by stealing their undefended villages.
-opportunistic_tactics.village_raid = { min_duration = 3 }
-
-function opportunistic_tactics.village_raid.weight(sit)
-	if sit.player_village_count == 0 then return 0 end
-	if sit.unit_count < 4 then return 0 end
-	-- Only valuable when the player is attacking us (committed away from home)
-	if sit.player_units_near_leader < 2 then return 0 end
-	local w = 20
-	w = w + sit.player_units_near_leader * 5
-	w = w + sit.aggression * 25
-	w = w + math.min(sit.player_village_count, 8) * 3
-	return math.min(w, 100)
-end
-
-function opportunistic_tactics.village_raid.apply(sit)
-	local units = available_units(sit)
-	if #units == 0 then return nil end
-
-	local targets = sit.player_villages
-	if #targets == 0 then return nil end
-
-	-- Pick fast units for raiding
-	table.sort(units, function(a, b) return a.max_moves > b.max_moves end)
-
-	-- Target villages furthest from the player's army (least likely to be defended)
-	local player_center_x, player_center_y = 0, 0
-	local player_count = wml.variables.wc2_player_count or 1
-	local p_count = 0
-	for s = 1, player_count do
-		for _, u in ipairs(wesnoth.units.find_on_map({ side = s, canrecruit = false })) do
-			player_center_x = player_center_x + u.x
-			player_center_y = player_center_y + u.y
-			p_count = p_count + 1
-		end
-	end
-	if p_count > 0 then
-		player_center_x = math.floor(player_center_x / p_count)
-		player_center_y = math.floor(player_center_y / p_count)
-	end
-
-	-- Sort villages by distance from player army center (furthest first = least defended)
-	table.sort(targets, function(a, b)
-		local da = wesnoth.map.distance_between(a[1], a[2], player_center_x, player_center_y)
-		local db = wesnoth.map.distance_between(b[1], b[2], player_center_x, player_center_y)
-		return da > db
-	end)
-
-	local ca_ids, ai_types, unit_ids = {}, {}, {}
-	local claimed = {}
-	for _, u in ipairs(units) do
-		if #unit_ids >= 3 then break end
-		local best_v, best_d = nil, math.huge
-		for i, v in ipairs(targets) do
-			if not claimed[i] then
-				local d = wesnoth.map.distance_between(u.x, u.y, v[1], v[2])
-				if d < best_d then best_v = i; best_d = d end
-			end
-		end
-		if best_v and best_d <= 15 then
-			claimed[best_v] = true
-			local tv = targets[best_v]
-			local ca_id = next_ca_id()
-			wesnoth.wml_actions.micro_ai {
-				side = sit.side_num,
-				ai_type = "goto",
-				action = "add",
-				ca_id = ca_id,
-				release_unit_at_goal = true,
-				wml.tag.filter { id = u.id },
-				wml.tag.filter_location { x = tv[1], y = tv[2] },
-			}
-			table.insert(ca_ids, ca_id)
-			table.insert(ai_types, "goto")
-			table.insert(unit_ids, u.id)
-		end
-	end
-
-	if #unit_ids == 0 then return nil end
-	return { tactic = "village_raid", ca_ids = ca_ids, ai_types = ai_types, unit_ids = unit_ids }
-end
-
 ---------------------------------------------------------------------------
 -- Weighted pick — returns tactic name
 ---------------------------------------------------------------------------
@@ -1114,7 +1047,6 @@ local TACTIC_OVERLAYS = {
 	raid_leader      = "misc/red-x.png",
 	forest_ambush    = "misc/vision-fog.png",
 	leader_bodyguard = "misc/leader-expendable.png",
-	village_raid     = "items/gold-coins-small.png",
 }
 
 local DEBUG_OVERLAY_ID = "wc2x_debug_tactic_overlay"
