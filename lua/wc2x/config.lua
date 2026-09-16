@@ -114,6 +114,8 @@ config.ai_tactic_spend_modifier = {
 	rally_strike     = 0.6,   -- spend freely, build army for push
 	village_turtle   = 1.4,   -- conserve gold, hold position
 	village_grab     = 1.0,   -- moderate spending
+	castle_defense   = 0.4,   -- spend everything, recruit reinforcements now
+	fighting_retreat = 0.8,   -- spend moderately while pulling back
 }
 
 -- POI guard scaling by scenario
