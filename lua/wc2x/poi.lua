@@ -339,10 +339,11 @@ on_event("wc2_drop_pickup", function(ec)
 
 	local poi_type_id = item.variables.wc2x_poi_type
 
-	-- Guard check: if any neutral guards adjacent to POI hex, block pickup
+	-- Guard check: if any of THIS POI's guards are still alive, block pickup
+	local poi_key = x .. "," .. y
 	for _, adj in ipairs(adjacent_hexes(x, y)) do
 		local guard = wesnoth.units.get(adj.x, adj.y)
-		if guard and guard.side == poi.get_neutral_side() then
+		if guard and guard.variables.wc2x_poi_guard == poi_key then
 			return
 		end
 	end
@@ -370,13 +371,15 @@ on_event("wc2_drop_pickup", function(ec)
 			if not wesnoth.units.get(a.x, a.y) then
 				local terr = wesnoth.current.map[a]
 				if terr and not tostring(terr):match("[XQ]") then
-					wesnoth.wml_actions.unit {
+					local u = wesnoth.units.create {
 						side = poi.get_neutral_side(),
 						type = ambush_types[mathx.random(#ambush_types)],
 						x = a.x, y = a.y,
 						generate_name = true, random_traits = true, upkeep = "free",
 						wml.tag.ai { ai_special = "guardian" },
 					}
+					u.variables.wc2x_poi_guard = x .. "," .. y
+					u:to_map()
 					spawned = spawned + 1
 				end
 			end
