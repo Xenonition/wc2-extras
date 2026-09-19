@@ -28,6 +28,8 @@ wc2x.debug_panel = wesnoth.dofile("./wc2x/debug_panel.lua")
 wc2x.debug_panel.init(wc2x.config)
 wc2x.final_boss = wesnoth.dofile("./wc2x/final_boss.lua")
 wc2x.final_boss.init(wc2x.config)
+wc2x.unit_finder = wesnoth.dofile("./wc2x/unit_finder.lua")
+wc2x.unit_finder.init()
 
 wc2_scenario = wesnoth.dofile("./campaign/scenario.lua")
 wesnoth.dofile("./campaign/autorecall.lua")
