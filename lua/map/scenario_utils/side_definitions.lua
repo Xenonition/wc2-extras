@@ -113,9 +113,37 @@ local function add_neutral_side(scenario)
 	table.insert(scenario.side, side)
 end
 
+local function add_boss_side(scenario)
+	local side_num = #scenario.side + 1
+	local side = {
+		side = side_num,
+		controller = "ai",
+		no_leader = true,
+		allow_player = false,
+		hidden = true,
+		team_name = "wc2_enemy",
+		user_team_name = _ "Final Boss",
+		gold = 0,
+		income = -2,
+		village_gold = 0,
+		fog = false,
+		terrain_liked = "",
+		wml.tag.ai {
+			aggression = 0.8,
+			caution = 0.0,
+			leader_aggression = 0.8,
+			villages_per_scout = 6,
+			grouping = "offensive",
+			passive_leader = false,
+		},
+	}
+	table.insert(scenario.side, side)
+	return side_num
+end
+
 function wc_ii_generate_sides(scenario, prestart_event, nplayers, scenario_num, enemy_data, scenario_data)
 
-	local n_enemy_sides = scenario_num == 5 and 6 or scenario_num
+	local n_enemy_sides = scenario_num == 5 and 4 or scenario_num
 
 	for i = 1, nplayers do
 		add_player_side(scenario, scenario_num, scenario_data.player_gold)
@@ -143,5 +171,10 @@ function wc_ii_generate_sides(scenario, prestart_event, nplayers, scenario_num, 
 		})
 		add_enemy_side(scenario, enemy_data.gold, i + nplayers)
 	end
+
+	if scenario_num == 5 then
+		scenario.wc2x_boss_side = add_boss_side(scenario)
+	end
+
 	add_neutral_side(scenario)
 end

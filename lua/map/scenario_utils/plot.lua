@@ -90,14 +90,6 @@ function add_plot(scenario, scenario_num, nplayers)
 		start_message(ai2, false, _ "All the peoples of the world stand against you. Though we would be enemies otherwise, we are united in our cause. We must stop you!")
 		start_message("1,2,3", false, _ "No, not all of them. Today our full strength stands behind our allies!")
 
-		end_message("1", true, _ "That’s it, our work is done here!")
-		end_message("2", true, _ "The whole world is now ours to command!")
-		end_message("3", true, _ "It was hard, but I almost regret the fun is over.")
-		table.insert(vicroy_event, wml.tag.endlevel {
-			result = "victory",
-			music = "sad.ogg",
-			end_text = _"The End",
-			next_scenario = "",
-		})
+		-- Victory dialogue and endlevel are handled by final_boss.lua after the boss dies
 	end
 end

@@ -15,8 +15,6 @@ local function get_enemy_data(enemy_power)
 			wct_enemy(5, 2, 8, 0, 0, "$($wc2_difficulty.enemy_power*2-4)", "$($wc2_difficulty.enemy_power-3)"),
 			wct_enemy(6, 3, 1, 7, 0, "$($wc2_difficulty.enemy_power*2-5)", "$($wc2_difficulty.enemy_power-3)"),
 			wct_enemy(7, 2, 1, 0, 0, "$($wc2_difficulty.enemy_power*2-5)", "$($wc2_difficulty.enemy_power-3)"),
-			wct_enemy(8, 2, 0, 2, 1, "$($wc2_difficulty.enemy_power*2-5)", 7),
-			wct_enemy(9, 2, 1, 4, 1, 13, "$($wc2_difficulty.enemy_power-3)"),
 		}
 	}
 end

@@ -88,9 +88,9 @@ on_event("wc2_start", function(cx)
 	wml.variables.wc2_carryover = nil
 end)
 
--- our victory condition
+-- our victory condition (scenario 5 is handled by final_boss.lua)
 on_event("enemies defeated", function(cx)
-	if wml.variables.wc2_scenario > 4 then
+	if wml.variables.wc2_scenario >= 5 then
 		return
 	end
 	wesnoth.audio.play("ambient/ship.ogg")
@@ -106,8 +106,8 @@ on_event("victory", function(cx)
 	if wml.variables.wc2_scenario > 5 then
 		return
 	end
-	-- WC2X: Show shop for each human player before advancing
-	if wc2x and wc2x.shop then
+	-- WC2X: Show shop for each human player before advancing (skip final scenario)
+	if wc2x and wc2x.shop and wml.variables.wc2_scenario < 5 then
 		for side_num = 1, (wml.variables.wc2_player_count or 1) do
 			if wc2_scenario.is_human_side(side_num) and wesnoth.sides[side_num].gold > 0 then
 				wc2x.shop.show_for_side(side_num)

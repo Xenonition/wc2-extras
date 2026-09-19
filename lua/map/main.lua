@@ -90,6 +90,13 @@ function wc_ii_generate_scenario(nplayers, gen_args)
 	-- add plot (that is [event] with [message]s)
 	add_plot(scenario, scenario_num, nplayers)
 
+	-- Scenario 5: disable auto-victory so the final boss controls the win condition
+	if scenario_num == 5 then
+		scenario.victory_when_enemies_defeated = false
+		scenario.variables.wc2x_boss_side = scenario.wc2x_boss_side
+		scenario.wc2x_boss_side = nil
+	end
+
 	-- add the gold carryover event
 	if scenario_num < #n_villages then
 		table.insert(scenario.event, {

@@ -7,6 +7,8 @@ local director = {}
 local state = {}       -- per-side tactic assignments
 local dir_counter = 0  -- unique ca_id suffix
 
+local strategic_tactics, opportunistic_tactics
+
 local MAX_SPECIAL_UNITS = 5
 local BODYGUARD_THRESHOLD = 3
 local VILLAGE_THREAT_RADIUS = 6
@@ -230,8 +232,8 @@ end
 ---------------------------------------------------------------------------
 -- Tactic definitions
 ---------------------------------------------------------------------------
-local strategic_tactics = {}
-local opportunistic_tactics = {}
+strategic_tactics = {}
+opportunistic_tactics = {}
 
 -- STRATEGIC: Rally & Strike -----------------------------------------------
 strategic_tactics.rally_strike = { min_duration = 3 }
@@ -485,7 +487,7 @@ function strategic_tactics.castle_defense.apply(sit)
 end
 
 -- STRATEGIC: Fighting Retreat -----------------------------------------------
--- Pull scattered units back toward keep when outnumbered in the field.
+-- Pull scattered units back toward the leader when outnumbered in the field.
 strategic_tactics.fighting_retreat = { min_duration = 2 }
 
 function strategic_tactics.fighting_retreat.weight(sit)
@@ -512,7 +514,7 @@ function strategic_tactics.fighting_retreat.apply(sit)
 	local units = available_units(sit)
 	if #units == 0 or not sit.leader then return nil end
 
-	-- Only pull back units that are far from the keep
+	-- Only pull back units that are far from the leader
 	local far_units = {}
 	for _, u in ipairs(units) do
 		if wesnoth.map.distance_between(u, sit.leader) > 6 then
@@ -545,11 +547,14 @@ function strategic_tactics.fighting_retreat.apply(sit)
 end
 
 -- OPPORTUNISTIC: Raid Leader -----------------------------------------------
-opportunistic_tactics.raid_leader = { min_duration = 2 }
+opportunistic_tactics.raid_leader = { min_duration = 3 }
+
+local RAID_MIN_UNITS = 2
+local RAID_MAX_UNITS = 3
 
 function opportunistic_tactics.raid_leader.weight(sit)
 	if not sit.nearest_player_leader then return 0 end
-	if sit.unit_count < 3 then return 0 end
+	if sit.unit_count < 5 then return 0 end
 	local w = 10
 	w = w + sit.aggression * 50
 	w = w + (1 - sit.caution) * 20
@@ -559,26 +564,50 @@ end
 
 function opportunistic_tactics.raid_leader.apply(sit)
 	local units = available_units(sit)
-	if #units == 0 or not sit.nearest_player_leader then return nil end
+	if #units < RAID_MIN_UNITS or not sit.nearest_player_leader then return nil end
 
-	table.sort(units, function(a, b) return a.max_moves > b.max_moves end)
-	local pick = units[1]
+	local skirmishers, others = {}, {}
+	for _, u in ipairs(units) do
+		if u:matches({ ability = "skirmisher" }) then
+			table.insert(skirmishers, u)
+		else
+			table.insert(others, u)
+		end
+	end
+	table.sort(skirmishers, function(a, b) return a.max_moves > b.max_moves end)
+	table.sort(others, function(a, b) return a.max_moves > b.max_moves end)
 
-	local ca_id = next_ca_id()
-	wesnoth.wml_actions.micro_ai {
-		side = sit.side_num,
-		ai_type = "assassin",
-		action = "add",
-		ca_id = ca_id,
-		wml.tag.filter { id = pick.id },
-		wml.tag.filter_second { side = sit.nearest_player_leader.side, canrecruit = true },
-	}
+	local picks = {}
+	for _, u in ipairs(skirmishers) do
+		if #picks >= RAID_MAX_UNITS then break end
+		table.insert(picks, u)
+	end
+	for _, u in ipairs(others) do
+		if #picks >= RAID_MAX_UNITS then break end
+		table.insert(picks, u)
+	end
+
+	local ca_ids, ai_types, unit_ids = {}, {}, {}
+	for _, pick in ipairs(picks) do
+		local ca_id = next_ca_id()
+		wesnoth.wml_actions.micro_ai {
+			side = sit.side_num,
+			ai_type = "assassin",
+			action = "add",
+			ca_id = ca_id,
+			wml.tag.filter { id = pick.id },
+			wml.tag.filter_second { side = sit.nearest_player_leader.side, canrecruit = true },
+		}
+		table.insert(ca_ids, ca_id)
+		table.insert(ai_types, "assassin")
+		table.insert(unit_ids, pick.id)
+	end
 
 	return {
 		tactic = "raid_leader",
-		ca_ids = { ca_id },
-		ai_types = { "assassin" },
-		unit_ids = { pick.id },
+		ca_ids = ca_ids,
+		ai_types = ai_types,
+		unit_ids = unit_ids,
 	}
 end
 
@@ -922,6 +951,7 @@ function director.init(config)
 		local side = wesnoth.sides[side_num]
 		if side.controller ~= "ai" then return end
 		if side.variables["wc2x_is_neutral"] then return end
+		if side_num == wml.variables["wc2x_boss_side"] then return end
 
 		cleanup_dead(side_num)
 		reassess(side_num)

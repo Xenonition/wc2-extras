@@ -11,9 +11,15 @@ local strings = {
 }
 
 function wesnoth.wml_actions.wc2_objectives(cfg)
+	local win_desc = strings.wct_victory_condition
+	if wc2x and wc2x.final_boss and wc2x.final_boss.is_boss_phase() then
+		local boss_name = wml.variables["wc2x_boss_name"] or "the Final Boss"
+		win_desc = _ "Defeat " .. boss_name
+	end
+
 	wesnoth.wml_actions.objectives {
 		wml.tag.objective {
-			description = strings.wct_victory_condition,
+			description = win_desc,
 			condition = "win",
 		},
 		wml.tag.objective {
