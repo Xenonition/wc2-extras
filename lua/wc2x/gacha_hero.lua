@@ -199,7 +199,7 @@ function gacha.show_for_side(side_num)
 
 	local res = wesnoth.sync.evaluate_single(_ "Build a Hero", function()
 		return gacha.show(side_num, discount_pct)
-	end)
+	end, side_num)
 
 	local total_cost = (res and res.total_cost) or 0
 
