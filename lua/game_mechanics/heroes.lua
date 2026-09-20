@@ -83,6 +83,9 @@ function wc2_heroes.place(t, side, x, y, is_commander)
 	if is_commander then
 		u.variables["wc2.is_commander"] = true
 	end
+	local x2,y2 = wesnoth.paths.find_vacant_hex(x, y, u)
+	u:to_map(x2,y2)
+
 	local scenario_num = wc2_scenario.scenario_num()
 	local advances = 0
 	if scenario_num >= 4 then advances = 2
@@ -95,8 +98,6 @@ function wc2_heroes.place(t, side, x, y, is_commander)
 		u:advance(false, false)
 	end
 
-	local x2,y2 = wesnoth.paths.find_vacant_hex(x, y, u)
-	u:to_map(x2,y2)
 	return u
 end
 
