@@ -96,7 +96,7 @@ function unit_finder.show()
 	end
 
 	local options = {}
-	for _, tag in ipairs(tags) do
+	for i, tag in ipairs(tags) do
 		local kind_label = tag.kind == "trait" and _ "Trait" or _ "Ability"
 		table.insert(options, tostring(tag.name) .. " [" .. tostring(kind_label) .. "] (" .. tag.count .. ")")
 	end
