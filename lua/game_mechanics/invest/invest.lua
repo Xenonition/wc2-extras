@@ -67,45 +67,11 @@ function wc2_invest.do_gold()
 	}
 end
 
-function wc2_invest.do_hero(t, is_local)
+function wc2_invest.do_hero(t)
 	local side_num = wesnoth.current.side
-	local side = wesnoth.sides[side_num]
 	local leaders = wesnoth.units.find_on_map { side = side_num, canrecruit = true }
-	local x,y = leaders[1].x, leaders[1].y
-	if t == "wc2_commander" then
-		local commanders = stringx.split(side.variables["wc2.commanders"] or "")
-		local i = mathx.random(#commanders)
-		t = commanders[i]
-		table.remove(commanders, i)
-		side.variables["wc2.commanders"] = table.concat(commanders, ",")
-		if is_local then
-			wc2_invest_tellunit.execute(t)
-		end
-		wc2_heroes.place(t, side_num, x, y, true)
-	elseif t == "wc2_deserter" then
-
-		wesnoth.sides[side_num].gold = wesnoth.sides[side_num].gold + 15
-
-		local deserters = stringx.split(side.variables["wc2.deserters"] or "")
-		local i = mathx.random(#deserters)
-		t = deserters[i]
-		table.remove(deserters, i)
-		side.variables["wc2.deserters"] = table.concat(deserters, ",")
-		if is_local then
-			wc2_invest_tellunit.execute(t)
-		end
-		wc2_heroes.place(t, side_num, x, y, false)
-	else
-		local heroes_available = stringx.split(side.variables["wc2.heroes"] or "")
-		local i = find_index(heroes_available, t)
-		if i == nil then
-			error("wc2 invest: invalid pick")
-		end
-		table.remove(heroes_available, i)
-		side.variables["wc2.heroes"] = table.concat(heroes_available, ",")
-		wc2_heroes.place(t, side_num, x, y, false)
-	end
-
+	local x, y = leaders[1].x, leaders[1].y
+	wc2x.gacha_hero.place_hero(t, side_num, x, y)
 end
 
 function wc2_invest.do_training(t)
@@ -130,33 +96,43 @@ function wc2_invest.do_item(t)
 	wc2_artifacts.place_item(x, y + 1, t)
 end
 
+local function generate_hero_pool(count)
+	if not (wc2x and wc2x.unit_pool) then return {} end
+	local scenario_num = wc2_scenario.scenario_num()
+	local min_lv, max_lv = wc2x.unit_pool.level_range_for_scenario(scenario_num)
+	local full_pool = wc2x.unit_pool.get_range(min_lv, max_lv)
+	if #full_pool == 0 then return {} end
+	local indices = {}
+	for i = 1, #full_pool do table.insert(indices, i) end
+	mathx.shuffle(indices)
+	local result = {}
+	for i = 1, math.min(count, #full_pool) do
+		table.insert(result, full_pool[indices[i]])
+	end
+	return result
+end
+
 function wc2_invest.invest()
 	local side_num = wesnoth.current.side
 	local side = wesnoth.sides[side_num]
 	local items_available = stringx.split(side.variables["wc2.items"] or "")
-	local heroes_available = stringx.split(side.variables["wc2.heroes"] or "")
-	local commanders_available = stringx.split(side.variables["wc2.commanders"] or "")
-	local deserters_available = stringx.split(side.variables["wc2.deserters"] or "")
+	local heroes_available = generate_hero_pool(5)
 	local trainings_available = wc2_training.list_available(side_num, {2,3,4,5,6})
 	local gold_available = true
 	for i = 1,2 do
-		local is_local = false
 		local res = wesnoth.sync.evaluate_single(_"WC2 Invest", function()
-			is_local = true
 			return wc2_show_invest_dialog {
 				items_available = items_available,
 				heroes_available = heroes_available,
 				trainings_available = trainings_available,
 				gold_available = gold_available,
-				deserters_available = deserters_available,
-				commanders_available = commanders_available,
 			}
 		end)
 		if res.pick == "gold" then
 			wc2_invest.do_gold()
 			gold_available = nil
 		elseif res.pick == "hero" then
-			wc2_invest.do_hero(res.type, is_local)
+			wc2_invest.do_hero(res.type)
 			heroes_available = nil
 		elseif res.pick == "training" then
 			wc2_invest.do_training(res.type)

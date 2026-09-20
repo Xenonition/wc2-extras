@@ -144,7 +144,21 @@ config.shrine_buffs = {
 	{ name = "+20% XP Bonus",     weight = 3, effect = { apply_to = "max_experience", increase = "-20%" } },
 	{ name = "+1 Melee Strike",   weight = 1, effect = { apply_to = "attack", range = "melee", increase_attacks = 1 } },
 	{ name = "+1 Ranged Strike",  weight = 1, effect = { apply_to = "attack", range = "ranged", increase_attacks = 1 } },
-	-- Rare abilities (weight 1 each, ~3% per ability)
+	-- Uncommon stat buffs
+	{ name = "+12 Hitpoints",     weight = 3, effect = { apply_to = "hitpoints", increase_total = 12 } },
+	{ name = "+16 Hitpoints",     weight = 2, effect = { apply_to = "hitpoints", increase_total = 16 } },
+	{ name = "+2 Melee Damage",   weight = 2, effect = { apply_to = "attack", range = "melee", increase_damage = 2 } },
+	{ name = "+2 Ranged Damage",  weight = 2, effect = { apply_to = "attack", range = "ranged", increase_damage = 2 } },
+	{ name = "+2 Movement",       weight = 2, effect = { apply_to = "movement", increase = 2 } },
+	{ name = "+3 Movement",       weight = 1, effect = { apply_to = "movement", increase = 3 } },
+	-- Resistance buffs (negative = more resistant)
+	{ name = "+15% Blade Resist",  weight = 2, effect = { apply_to = "resistance", replace = false, wml.tag.resistance { blade = -15 } } },
+	{ name = "+15% Impact Resist", weight = 2, effect = { apply_to = "resistance", replace = false, wml.tag.resistance { impact = -15 } } },
+	{ name = "+15% Fire Resist",   weight = 2, effect = { apply_to = "resistance", replace = false, wml.tag.resistance { fire = -15 } } },
+	{ name = "+15% Cold Resist",   weight = 2, effect = { apply_to = "resistance", replace = false, wml.tag.resistance { cold = -15 } } },
+	{ name = "+15% Pierce Resist", weight = 2, effect = { apply_to = "resistance", replace = false, wml.tag.resistance { pierce = -15 } } },
+	{ name = "+15% Arcane Resist", weight = 2, effect = { apply_to = "resistance", replace = false, wml.tag.resistance { arcane = -15 } } },
+	-- Rare abilities (weight 1 each)
 	{ name = "Ability: Ambush",      weight = 1, trait = {
 		id = "wc2x_ambush", male_name = "ambush", female_name = "ambush",
 		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
@@ -211,7 +225,38 @@ config.shrine_buffs = {
 			},
 		}},
 	}},
-	{ name = "Special: Backstab",    weight = 1, trait = {
+	{ name = "Ability: Cures",       weight = 1, trait = {
+		id = "wc2x_cures", male_name = "cures", female_name = "cures",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.heals { id = "curing", name = "cures",
+				description = "This unit can cure adjacent allied units of poison.",
+				affect_allies = true, affect_self = false, poison = "cured",
+				wml.tag.affect_adjacent {},
+			},
+		}},
+	}},
+	{ name = "Ability: Heals +4",    weight = 1, trait = {
+		id = "wc2x_heals4", male_name = "heals +4", female_name = "heals +4",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.heals { id = "healing4", name = "heals +4",
+				description = "This unit heals adjacent allied units for 4 HP per turn.",
+				value = 4, affect_allies = true, affect_self = false, poison = "slowed",
+				wml.tag.affect_adjacent {},
+			},
+		}},
+	}},
+	{ name = "Ability: Heals +8",    weight = 1, trait = {
+		id = "wc2x_heals8", male_name = "heals +8", female_name = "heals +8",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.heals { id = "healing8", name = "heals +8",
+				description = "This unit heals adjacent allied units for 8 HP per turn.",
+				value = 8, affect_allies = true, affect_self = false, poison = "slowed",
+				wml.tag.affect_adjacent {},
+			},
+		}},
+	}},
+	-- Weapon specials (weight 1 each)
+	{ name = "Melee: Backstab",      weight = 1, trait = {
 		id = "wc2x_backstab", male_name = "backstab", female_name = "backstab",
 		wml.tag.effect { apply_to = "attack", range = "melee",
 			wml.tag.set_specials { mode = "append", wml.tag.damage {
@@ -224,7 +269,7 @@ config.shrine_buffs = {
 			}},
 		},
 	}},
-	{ name = "Special: Poison",      weight = 1, trait = {
+	{ name = "Melee: Poison",        weight = 1, trait = {
 		id = "wc2x_poison", male_name = "poison", female_name = "poison",
 		wml.tag.effect { apply_to = "attack", range = "melee",
 			wml.tag.set_specials { mode = "append", wml.tag.poison {
@@ -233,7 +278,7 @@ config.shrine_buffs = {
 			}},
 		},
 	}},
-	{ name = "Special: Drain",       weight = 1, trait = {
+	{ name = "Melee: Drain",         weight = 1, trait = {
 		id = "wc2x_drain", male_name = "drain", female_name = "drain",
 		wml.tag.effect { apply_to = "attack", range = "melee",
 			wml.tag.set_specials { mode = "append", wml.tag.drains {
@@ -243,7 +288,7 @@ config.shrine_buffs = {
 			}},
 		},
 	}},
-	{ name = "Special: Marksman",    weight = 1, trait = {
+	{ name = "Ranged: Marksman",     weight = 1, trait = {
 		id = "wc2x_marksman", male_name = "marksman", female_name = "marksman",
 		wml.tag.effect { apply_to = "attack", range = "ranged",
 			wml.tag.set_specials { mode = "append", wml.tag.chance_to_hit {
@@ -253,7 +298,7 @@ config.shrine_buffs = {
 			}},
 		},
 	}},
-	{ name = "Special: Berserk",     weight = 1, trait = {
+	{ name = "Melee: Berserk",       weight = 1, trait = {
 		id = "wc2x_berserk", male_name = "berserk", female_name = "berserk",
 		wml.tag.effect { apply_to = "attack", range = "melee",
 			wml.tag.set_specials { mode = "append", wml.tag.berserk {

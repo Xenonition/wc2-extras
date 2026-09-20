@@ -63,71 +63,14 @@ poi.types = {
 	},
 }
 
-local FALLBACK_MERC_TYPES = {
-	[2] = {
-		"Orcish Crossbowman", "Troll", "Ogre", "Swordsman", "Pikeman",
-		"Javelineer", "Longbowman", "White Mage", "Red Mage",
-		"Elvish Ranger", "Elvish Marksman", "Elvish Captain",
-		"Dwarvish Steelclad", "Dwarvish Thunderguard",
-		"Orcish Warrior", "Goblin Knight", "Revenant", "Deathblade",
-	},
-	[3] = {
-		"Paladin", "Grand Knight", "Iron Mauler", "Master at Arms",
-		"Arch Mage", "Silver Mage", "Elvish Marshal", "Elvish Avenger",
-		"Dwarvish Lord", "Orcish Sovereign", "Troll Warrior",
-		"Direwolf Rider", "Lich", "Death Knight",
-	},
-	[4] = {
-		"Great Mage", "Elvish High Lord", "Ancient Lich",
-	},
-}
-
-local merc_pool_cache = nil
-
 function poi.get_mercenary_pool()
-	if merc_pool_cache then return merc_pool_cache end
-
-	local seen = {}
 	local by_level = {}
-
-	local function walk_tree(type_id, depth)
-		if not type_id or depth > 6 then return end
-		local utype = wesnoth.unit_types[type_id]
-		if not utype then return end
-		if utype.level >= 2 and not seen[type_id] then
-			seen[type_id] = true
-			local lvl = utype.level
-			if not by_level[lvl] then by_level[lvl] = {} end
-			table.insert(by_level[lvl], type_id)
-		end
-		for _, adv_name in ipairs(utype.advances_to) do
-			walk_tree(adv_name, depth + 1)
+	for lv = 1, 6 do
+		local pool = wc2x.unit_pool.get(lv)
+		if #pool > 0 then
+			by_level[lv] = pool
 		end
 	end
-
-	local n_groups = wml.variables["wc2_enemy_army.group.length"] or 0
-	if n_groups > 0 then
-		for g = 0, n_groups - 1 do
-			local recruits = stringx.split(wml.variables[string.format("wc2_enemy_army.group[%d].recruit", g)] or "")
-			for _, name in ipairs(recruits) do
-				walk_tree(tostring(name):match("^%s*(.-)%s*$"), 0)
-			end
-		end
-	end
-
-	for lvl, fallbacks in pairs(FALLBACK_MERC_TYPES) do
-		if not by_level[lvl] or #by_level[lvl] < 4 then
-			if not by_level[lvl] then by_level[lvl] = {} end
-			for _, name in ipairs(fallbacks) do
-				if not seen[name] and wesnoth.unit_types[name] then
-					seen[name] = true
-					table.insert(by_level[lvl], name)
-				end
-			end
-		end
-	end
-
-	merc_pool_cache = by_level
 	return by_level
 end
 

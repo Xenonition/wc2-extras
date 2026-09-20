@@ -6,12 +6,10 @@ function wc2_show_invest_dialog_impl(dialog_args)
 	local side_num = wesnoth.current.side
 	local available_artifacts = dialog_args.items_available
 	local available_heroes = dialog_args.heroes_available
-	local available_deserters = dialog_args.deserters_available
-	local available_commanders = dialog_args.commanders_available
 	local available_training = dialog_args.trainings_available
 
 	local show_artifacts = dialog_args.items_available ~= nil
-	local show_heroes = dialog_args.heroes_available ~= nil
+	local show_heroes = dialog_args.heroes_available ~= nil and #dialog_args.heroes_available > 0
 	local show_training = dialog_args.trainings_available ~= nil
 	local show_other = dialog_args.gold_available
 
@@ -85,43 +83,17 @@ function wc2_show_invest_dialog_impl(dialog_args)
 		if show_heroes then
 			local node = root_node:add_invest_category(_ "Heroes")
 
-			if available_commanders then
-				local desc = _ "Commanders will take your leader’s place when the leader dies, possible commanders:"
-				for j,v in ipairs(available_commanders) do
-					desc = desc .. "\n" .. wesnoth.unit_types[v].name
-				end
-
-				local subnode, page = node:add_invest_item {
-					icon = wc2_color.tc_image("units/unknown-unit.png"),
-					name = _ "Commander" .. "\n" .. wc2_color.tc_text(_ "promote to leader"),
-					result = { pick = "hero", type= "wc2_commander" }
-				}
-				page.info_label.label = desc
-			end
 			for j,v in ipairs(available_heroes) do
 				local unit_type = wesnoth.unit_types[v]
-
-
-				local subnode, page = node:add_invest_item {
-					page_type = "hero",
-					icon = wc2_color.tc_image(unit_type.image),
-					name = unit_type.name,
-					result = { pick = "hero", type= v }
-				}
-				page.unit_info.unit = unit_type
-			end
-			if available_deserters then
-				local desc = "<b>" .. _ "possible units:" .. "</b>"
-				for j,v in ipairs(available_deserters) do
-					desc = desc .. "\n" .. wesnoth.unit_types[v].name
+				if unit_type then
+					local subnode, page = node:add_invest_item {
+						page_type = "hero",
+						icon = wc2_color.tc_image(unit_type.image),
+						name = unit_type.name,
+						result = { pick = "hero", type = v }
+					}
+					page.unit_info.unit = unit_type
 				end
-
-				local subnode, page = node:add_invest_item {
-					icon = wc2_color.tc_image("units/unknown-unit.png"),
-					name = _ "Deserter" .. "\n" .. wc2_color.tc_text("+15 gold"),
-					result = { pick = "hero", type= "wc2_deserter" }
-				}
-				page.info_label.label = desc
 			end
 		end
 
