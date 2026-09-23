@@ -11,13 +11,16 @@ function shop.init(config, upgrades_mod)
 	shop.upgrades = upgrades_mod
 end
 
-function shop.get_discount()
+function shop.get_discount(side_num)
+	if side_num and wesnoth.sides[side_num].variables["wc2x_dbg_free_shop"] then
+		return 100
+	end
 	local turns_left = math.max(wesnoth.scenario.turns - wesnoth.current.turn, 0)
 	return math.min(turns_left * shop.config.shop_discount_per_turn_early, shop.config.shop_max_discount)
 end
 
-function shop.discounted_price(base_price)
-	return math.ceil(base_price * (1 - shop.get_discount() / 100))
+function shop.discounted_price(base_price, discount)
+	return math.ceil(base_price * (1 - discount / 100))
 end
 
 function shop.build_consumable_list(side_num)
@@ -150,7 +153,7 @@ end
 
 function shop.show_for_side(side_num)
 	local side = wesnoth.sides[side_num]
-	local discount = shop.get_discount()
+	local discount = shop.get_discount(side_num)
 	local du = wc2x.dialog_utils
 
 	local consumables = shop.build_consumable_list(side_num)
@@ -165,7 +168,7 @@ function shop.show_for_side(side_num)
 		local purchase_strings = {}
 
 		local function format_item(item)
-			local price = shop.discounted_price(item.price)
+			local price = shop.discounted_price(item.price, discount)
 			local can_afford = gold_remaining >= price
 			local name_str = tostring(item.name)
 			if item.sold then
@@ -201,7 +204,7 @@ function shop.show_for_side(side_num)
 					if item.sold then
 						dialog.detail_text.label = du.gray(tostring(_ "Already purchased."))
 					else
-						local price = shop.discounted_price(item.price)
+						local price = shop.discounted_price(item.price, discount)
 						dialog.detail_text.label = shop.build_detail_text(item, price, gold_remaining >= price, discount)
 					end
 				end
@@ -213,7 +216,7 @@ function shop.show_for_side(side_num)
 				if not idx or idx < 1 or idx > #all_items then return end
 				local item = all_items[idx]
 				if item.sold then return end
-				local price = shop.discounted_price(item.price)
+				local price = shop.discounted_price(item.price, discount)
 				if gold_remaining < price then return end
 
 				gold_remaining = gold_remaining - price

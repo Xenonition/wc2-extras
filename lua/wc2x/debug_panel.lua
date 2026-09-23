@@ -76,8 +76,9 @@ local ABILITY_DEFS = {
 			wml.tag.filter_base_value { greater_than = 0, less_than = 50 } } } } },
 	{ id = "wc3_dbg_leadership", wml.tag.effect { apply_to = "new_ability",
 		wml.tag.abilities { wml.tag.leadership { id = "leadership", name = "leadership",
-			description = "+25% damage to adjacent lower-level allies",
-			value = 25 } } } },
+			description = "+25% damage per level of difference to adjacent lower-level allies",
+			value = "(25 * (level - other.level))", cumulative = false, affect_self = false,
+			wml.tag.affect_adjacent { wml.tag.filter { formula = "level < other.level" } } } } } },
 	{ id = "wc3_dbg_heals4", wml.tag.effect { apply_to = "new_ability",
 		wml.tag.abilities { wml.tag.heals { id = "healing", name = "heals +4",
 			description = "Heals adjacent allies 4 HP per turn",
@@ -261,6 +262,14 @@ local function apply_action(data)
 		unit:add_modification("object", def)
 		msg(string.format("%s: added %s", unit.name, ABILITY_NAMES[data.idx] or "ability"), s)
 
+	elseif data.action == "unit_buff" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		local buff = wc2x.config.shrine_buffs[data.idx]
+		if not buff then return end
+		wc2x.gacha_hero.apply_bonuses(unit, { tostring(data.idx) })
+		msg(string.format("%s: added %s", unit.name, tostring(buff.name)), s)
+
 	elseif data.action == "unit_upkeep" then
 		local unit = wesnoth.units.get(data.x, data.y)
 		if not unit then return end
@@ -283,6 +292,16 @@ local function apply_action(data)
 	elseif data.action == "force_tactic" then
 		wc2x.ai_director.debug.force(data.side, data.slot, data.tactic)
 		msg(string.format("Forced side %d %s → %s", data.side, data.slot, data.tactic), s)
+
+	elseif data.action == "free_shop" then
+		local vars = wesnoth.sides[s].variables
+		if vars["wc2x_dbg_free_shop"] then
+			vars["wc2x_dbg_free_shop"] = nil
+			msg("100% end-of-scenario discount OFF for side " .. s, s)
+		else
+			vars["wc2x_dbg_free_shop"] = true
+			msg("100% end-of-scenario discount ON for side " .. s .. " (gacha + shop)", s)
+		end
 
 	elseif data.action == "loti_free_craft" then
 		if not loti or not loti.gem then
@@ -413,7 +432,7 @@ local function collect_upgrades_action(side_num)
 end
 
 local function collect_unit_action(unit, x, y)
-	local categories = { "Progression", "Stats", "Combat", "Traits", "Abilities", "Misc", "Back" }
+	local categories = { "Progression", "Stats", "Combat", "Traits", "Abilities", "Misc", "Shrine/Gacha Buffs", "Back" }
 	local header = string.format("%s [%s] — HP %d/%d — XP %d/%d",
 		unit.name, unit.type, unit.hitpoints, unit.max_hitpoints,
 		unit.experience, unit.max_experience)
@@ -499,6 +518,16 @@ local function collect_unit_action(unit, x, y)
 		elseif pick == 2 then return { action = "unit_upkeep", x = x, y = y, value = "full" }
 		elseif pick == 3 then return { action = "unit_overlay", x = x, y = y }
 		end
+
+	elseif cat == 7 then -- Shrine/Gacha buff pool
+		local pool = wc2x.config.shrine_buffs
+		local opts = {}
+		for i, buff in ipairs(pool) do table.insert(opts, tostring(buff.name)) end
+		table.insert(opts, "Back")
+		local pick = pick_option("Shrine/Gacha Buffs", header, opts)
+		if pick >= 1 and pick <= #pool then
+			return { action = "unit_buff", x = x, y = y, idx = pick }
+		end
 	end
 	return NO_ACTION
 end
@@ -514,6 +543,8 @@ local function collect_action(x, y)
 	if unit then table.insert(options, "Unit: " .. tostring(unit.name)) end
 	table.insert(options, "Gold: +100")
 	table.insert(options, "Gold: +500")
+	local free_shop_on = wesnoth.sides[side_num].variables["wc2x_dbg_free_shop"]
+	table.insert(options, free_shop_on and "100% Shop/Gacha Discount: ON (click to disable)" or "100% Shop/Gacha Discount: OFF (click to enable)")
 	if loti and loti.gem then
 		local label = loti_free_craft_sides[side_num] and "LotI Free Craft: ON (click to disable)" or "LotI Free Craft: OFF (click to enable)"
 		table.insert(options, label)
@@ -539,8 +570,10 @@ local function collect_action(x, y)
 			return { action = "gold", side = side_num, amount = 100 }
 		elseif choice == offset + 2 then
 			return { action = "gold", side = side_num, amount = 500 }
+		elseif choice == offset + 3 then
+			return { action = "free_shop" }
 		else
-			local loti_offset = offset + 2
+			local loti_offset = offset + 3
 			local has_loti = loti and loti.gem
 			if has_loti and choice == loti_offset + 1 then
 				return { action = "loti_free_craft" }

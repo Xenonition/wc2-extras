@@ -194,7 +194,7 @@ function gacha.show_for_side(side_num)
 
 	local discount_pct = 0
 	if wc2x.shop and wc2x.shop.get_discount then
-		discount_pct = wc2x.shop.get_discount()
+		discount_pct = wc2x.shop.get_discount(side_num)
 	end
 
 	local res = wesnoth.sync.evaluate_single(_ "Build a Hero", function()
