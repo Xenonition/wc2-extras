@@ -32,6 +32,8 @@ wc2x.unit_finder = wesnoth.dofile("./wc2x/unit_finder.lua")
 wc2x.unit_finder.init()
 wc2x.unit_pool = wesnoth.dofile("./wc2x/unit_pool.lua")
 wc2x.gacha_hero = wesnoth.dofile("./wc2x/gacha_hero.lua")
+wc2x.item_curses = wesnoth.dofile("./wc2x/item_curses.lua")
+wc2x.item_curses.init()
 
 wc2_scenario = wesnoth.dofile("./campaign/scenario.lua")
 wesnoth.dofile("./campaign/autorecall.lua")
