@@ -1,106 +1,252 @@
-# WC2 Extras — Design Document
+# World Conquest III — Design Document
 
-A WC2 extension mod that addresses replayability issues with the base World Conquest II
-campaign: the gold-dump-and-turtle loop, lack of territory contesting, and limited
-inter-map investment options.
+World Conquest III (WC3) is a standalone fork of World Conquest II (WC2) for Battle for
+Wesnoth 1.18. It keeps WC2's five-scenario co-op structure, random maps, era and
+training, and adds systems aimed at WC2's replayability problems: the gold-dump-and-turtle
+loop, no reason to contest territory, few ways to invest between maps, and an anticlimactic
+ending.
 
-## Core changes from base WC2
+Numbers below are the current values in `lua/wc2x/config.lua` unless noted; treat them as
+playtest defaults, not final balance.
 
-### 1. Enemy economy: income-based, not lump-sum
+## Design pillars
 
-Base WC2 gives enemies a large gold lump at map start and pre-places most of their army.
-This mod gives enemies moderate starting gold (player start * 2) and lets them earn income
-from villages like a normal MP side. The default Wesnoth AI already contests villages,
-recruits from income, and retreats wounded units — changing the economic setup is enough
-to make territory matter without writing custom AI.
+1. **Territory matters.** Enemies earn income from villages like a normal MP side, so
+   leaving the map to them makes the game harder.
+2. **Finish, don't farm.** Finishing a map early is rewarded (shop discount), so sitting on
+   the last enemy to farm XP has a real cost.
+3. **Every run is different.** Heroes, shop stock, shrine buffs and the final boss are rolled
+   from large pools, so no two campaigns play the same.
+4. **Decisions over free power.** New items carry real downsides; buffs are rare and random.
 
-Difficulty scaling: enemy starting gold and income rate scale with WC2 difficulty settings.
+## Core changes from WC2
 
-### 2. Points of interest
+### Enemy economy: income, not a lump sum
 
-2-3 POIs per map, placed during map generation. Small number keeps them meaningful without
-cluttering the map.
+WC2 gives enemies a large starting gold pile and pre-places most of their army. WC3 gives
+enemies moderate starting gold (`enemy_gold_multiplier` 0.5 of WC2's, ±30% per side,
+scaled by difficulty 0.8–1.5×) and a minimum income of 10/turn, and pre-captures 30% of
+villages (+10% per scenario, max 80%, never within 4 hexes of a player). The default AI
+already contests villages and recruits from income, so territory matters without custom AI.
 
-| POI type | Guards | Reward | Notes |
-|---|---|---|---|
-| Ruins | 1-2 weak undead | Random artifact or gold cache | Low-risk exploration |
-| Mercenary camp | None (friendly) | Pay gold to recruit an off-faction unit | Spend now for tactical flexibility |
-| Shrine | 2-3 themed units (moderate) | Permanent stat buff to capturing unit | Worth sending your best unit |
-| Caravan | Escort mission (moves toward keep, enemies target it) | Large gold payout on arrival | Time-limited, forces attention split |
-| Neutral creeps | Scattered weak units (wolves, bandits) | XP only | Fills dead space, no special hex needed |
+Enemy strength also scales by scenario:
+- **Leaders** spawn at level 2 (S1), 3 (S2–3), 4 (S4) and 5 (S5), walking up their
+  advancement tree.
+- **Recruit lists** gain level-2 units from S2 and level-3 units from S4.
+- **Assassins:** from S2, each enemy recruit has a 12% chance to become an assassin that
+  hunts the nearest player leader (Micro AI `assassin`).
+- **Personality:** each AI side rolls aggression, caution, village focus, leader
+  aggression and recruitment habits from ranges, so enemies behave differently per map.
 
-POI guard strength scales with difficulty and scenario number.
+### AI director
 
-Multiplayer scaling: POI count and rewards stay fixed regardless of player count. More
-players means POIs are proportionally less pivotal — accepted tradeoff to avoid map clutter.
+Every AI side runs two tactic slots, reassessed stochastically (35% base chance per turn
+once a tactic's minimum duration has passed, adjusted by the side's personality):
 
-### 3. Between-map shop
-
-Appears after winning a map, before proceeding to next scenario. Players spend leftover
-gold plus an early-finish discount (the anti-farming mechanism — finishing faster gives
-a shop discount).
-
-**Consumables** (random subset each visit, from WC2's pool + our additions):
-- Artifacts
-- Training
-- Heroes
-- Gold
-
-Random subset ensures different runs feel different. The total pool is large (base WC2 +
-our additions), so showing a subset per visit creates roguelike variety.
-
-**Permanent upgrades** (always available, escalating prices):
-
-| Item | Effect |
+| Slot | Tactics |
 |---|---|
-| Castle hex | +1 starting castle hex next map |
-| Supply village | Castle hex with village (heals + income from turn 1) |
-| Unit discount | Reduce recruit cost of a chosen unit type by X gold, permanently |
-| Recall discount | Reduce recall cost for all units permanently |
-| Starting gold | +X base gold each map |
-| Vision radius | +X fog reveal around keep at map start |
-| Reinforcements | X free units from recruit list spawn outside castle turn 1 |
-| Barracks | Special hex that auto-spawns a level 1 recruit every N turns |
-| Training ground | Castle hex where units gain +4 XP per turn ending there |
+| Strategic (army posture) | rally strike, village turtle, village grab, castle defense, fighting retreat |
+| Opportunistic (small ops) | raid leader, forest ambush, leader bodyguard |
 
-Permanent upgrades are always available (not randomized) because:
-- Players need to plan multi-map investment strategies
-- Escalating prices already create variance between runs
-- Only 9 items — too few for meaningful random subsets
+Tactics are implemented with Micro AIs and also tune recruitment saving (e.g. castle
+defense spends everything). Slot state is mirrored into side variables so it survives
+save/load — the Micro AIs themselves are saved with the side's AI config, so their owning
+slots must be too, or a reload would leave orphaned Micro AIs running.
 
-Prices escalate with each purchase (e.g. 1st castle hex: 50g, 2nd: 80g, 3rd: 120g).
-All prices scale with difficulty.
+### Points of interest (POIs)
 
-### 4. Map progression, era, factions
+3 POIs per map, +1 every two scenarios, placed during map generation, plus 4 scattered
+neutral creeps (wolves, bats, scorpions…) for XP.
 
-Same as base WC2. This mod extends WC2, not replaces it.
+| POI | Guards | Reward |
+|---|---|---|
+| Ancient Ruins | Ambush: undead rise when you first step on it | Gold (40–80 + 10–20 per scenario), 50% chance of an artifact. Loot is claimable only after the ambushers die |
+| Mercenary Camp | None | Hire one of 3 off-faction units from the shared unit pool at 1.2× cost; higher levels appear in later scenarios |
+| Ancient Shrine | 1–4 themed guards, scaling by scenario | One random permanent buff from the buff pool for the capturing unit |
+| Trade Caravan | Escort mission | Escort the caravan unit to your castle: gold (40 + 15/scenario), an artifact or training |
 
-## Anti-farming
+POI guards live on a dedicated neutral side (see *Neutral POI side*).
 
-Single mechanism: early-finish shop discount. WC2 already has turn limits per scenario.
-Finishing early gives a percentage discount in the shop, incentivizing efficient play
-over gold farming. No reinforcement waves needed.
+### Invest (scenario start)
 
-## Starting numbers
+Each player picks two of: +70 gold (plus a supply village), a hero from 5 random offers,
+a training level, or an item. Hero offers come from the shared unit pool (below).
 
-Enemy starting gold: player starting gold * 2. With income-based spending, enemies start
-stronger but the player catches up through village control. All numbers are initial
-estimates for playtesting.
+### Between-map sequence (after winning scenarios 1–4)
 
-## Technical approach
+For each surviving player, in side order:
 
-WC2 extension using `#ifdef LOAD_WC2` guard. Lives in `data/add-ons/`, does not modify
-WC2's own files. Uses WC2's existing era, factions, artifacts, and training systems.
-New mechanics implemented in Lua, shop as a custom GUI dialog (same tech as WC2's invest
-screen).
+1. **Build a Hero (gacha).** A random hero from the unit pool with 2–3 random buffs.
+   Cost 50 + 12 × scenario gold. Rerolls: everything (15g), buffs only (10g), or a
+   "bigger" roll with 4–5 buffs (35g). What you see is exactly what you get — the unit is
+   shown at its real level. The dialog opens even if the player can't afford anything.
+2. **Shop.** Skipped at 0 gold. Two random offers per consumable category plus all
+   permanent upgrades.
+
+Both apply the **early-finish discount**: 3% per turn left, max 50%. It applies to
+everything, including permanent upgrades — this is intentional: finishing fast is the
+strongest lever in the mod, which is the anti-farming mechanism.
+
+**Shop consumables** (random each visit): artifacts (30 + 10/scenario), training
+(40 + 8/scenario) and heroes from the unit pool (50 + 12/scenario). Artifacts bought here
+are placed next to the leader at the start of the next map — on a free castle hex if there
+is one, otherwise the nearest free hex outside the castle.
+
+**Permanent upgrades** (always available; price ×1.6 per purchase):
+
+| Upgrade | Base price | Effect |
+|---|---|---|
+| Castle Hex | 50 | +1 castle hex next to your keep each map |
+| Supply Village | 80 | Castle hex with a village (healing, income, recruit slot) |
+| Trade Route | 30 | +3 base income per turn |
+| Scout Network | 35 | +3 hex fog reveal around your leader at map start |
+| Reinforcements | 70 | +1 free random recruit next to your leader on turn 1 |
+| Barracks | 120 | Castle hex that spawns a free recruit every 4 turns |
+| Training Ground | 90 | Castle hex; non-leaders ending a turn there gain 4 XP |
+
+Upgrades are always shown (not randomized) so players can plan multi-map strategies.
+Fortification locations are mirrored into side variables so they survive save/load.
+
+### Shared unit pool
+
+Invest, gacha, shop heroes and the mercenary camp all draw from one pool
+(`lua/wc2x/unit_pool.lua`): every unit type that appears in any advancement tree (it
+advances to something, or something advances to it). This deliberately includes units
+players can't normally field, while excluding dead-end monsters, ships and props nobody
+wants to invest in. Level range by scenario: S1 Lv1–2, S2 Lv2, S3 Lv2–3, S4 Lv3.
+
+### Buff pool (shrines and gacha)
+
+One weighted pool in `config.shrine_buffs` (41 entries, total weight 67) feeds both
+shrines and gacha rolls:
+
+- **Stat buffs** (common): HP, melee/ranged damage and strikes, movement, XP, +15%
+  resistance per damage type.
+- **Abilities** (rare): ambush, skirmisher, regenerates, leadership, teleport (own
+  villages only), nightstalk, steadfast, cures, heals +4/+8, and WC3-exclusive:
+  - **Bulwark** — adjacent allies +10% all resistances.
+  - **Sunder** — adjacent enemies −15% all resistances.
+  - **Anchor** — +10% all resistances per adjacent enemy, up to +30% (cap 70%).
+- **Weapon specials** (rare): backstab, poison, drain, marksman, berserk, and
+  WC3-exclusive:
+  - **Supercharge** (melee) — ×4 damage both ways when attacking.
+  - **Duelist** — +50% damage when nobody else is adjacent to either fighter.
+  - **Pack Hunter** (melee) — +10% damage per other ally adjacent to the target, up to +30%.
+  - **Flurry** (melee) — double strikes, half damage per strike.
+
+Scaling buffs use one named `[dummy]` tag for the tooltip plus unnamed, mutually exclusive
+tiers (the same pattern mainline uses for diversion and feeding).
+
+**Stacking rules** (engine, `src/units/abilities.cpp`): specials of the same kind with the
+same id take the best value; different ids multiply (`multiply`) or add (`add`/`sub`); fixed
+`value`s (drain %, magical 70%) take the highest. So supercharge + charge is ×8 — accepted
+as a rare jackpot combo.
+
+### WC3 items
+
+Nine items are appended after the WC2 artifact list in `resources/data/artifacts.cfg`
+(saves reference artifacts by index, so new items always go at the end). Items can't be
+removed once picked up, so the downside is the decision of *who* carries it.
+
+| Item | Upside | Downside |
+|---|---|---|
+| Bloodprice Blade | Melee drains 100% of damage | Bearer loses 4 HP at the start of each of its turns (can't kill) |
+| Gambler's Die | All attacks: fixed 50% to hit, +50% damage | Every strike is a coin flip |
+| Plague Banner | Adjacent enemies −15% resistances | Adjacent allies −10% resistances |
+| Hive Crown | Melee +2 strikes | Melee gains swarm (strikes shrink with HP) |
+| Thunder Maul | Melee stun | Bearer has no zone of control |
+| Aegis of the Stubborn | Melee absorb (×0.75 incoming) and deflect | −2 moves |
+| Jester's Bells | Diversion | −20% all resistances |
+| Parrying Dagger | Melee parry: −20% enemy chance to hit when defending | None |
+| Marshal's Baton | Adjacent allies +15% chance to hit | Bearer deals half damage |
+
+Bloodprice's per-turn loss is the only item effect that needs Lua (`item_curses.lua`),
+since item effects can't express recurring damage. Icons are in `images/items/wc3-*.png`
+(72×72); source art lives outside the repo.
+
+### Final boss (scenario 5)
+
+At prestart an arena (a keep, two rings of castle and an impassable chasm ring) is stamped
+at the best site within 6 hexes of the map centre: its footprint may not cover a keep or a
+leader, and sites covering villages, items, units or water score worse. Units already in
+the footprint are moved to the nearest free hex outside it. POIs and creeps are placed
+afterwards and keep 6 hexes from any keep, so they never land inside. When every regular enemy leader is dead, the chasm opens and the
+boss spawns: a random level-3 unit advanced toward level 6, with regenerates, skirmisher,
++50% HP and a random title ("the Worldbreaker"…). It brings 13 level-3 troops in the
+arena and 10 flyers from the map edges. Killing it ends the campaign in victory; the
+between-map sequence does not run after scenario 5.
+
+The boss does not scale with player count — gold is split between players, so total
+player strength is roughly constant.
+
+### Factions
+
+WC2's era plus four WC3 factions built from base-game units: **The Coil**
+(naga/saurian/merfolk), **Magnoshutadt** (mage academy with elite summons), **The Swarm**
+(insects with purchasable level-3 queens) and **Monsters** (beasts).
+
+### Player tools
+
+- **Unit Finder** (right-click menu): lists traits and abilities across your units, then
+  the units that have a chosen one; picking a unit scrolls to it and selects it.
+- **Debug panel** (hidden): enabled from Wocopedia → Settings → "Enable detailed logging".
+  Grants gold, XP, stats, any buff from the buff pool, upgrades; inspects and forces AI
+  director tactics; toggles a per-side 100% shop/gacha discount and LotI free crafting.
+  All mutations go through `evaluate_single` so they are MP-safe.
+
+## Technical notes
+
+### Layout
+
+| Path | Contents |
+|---|---|
+| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `final_boss`, `unit_finder`, `debug_panel`, `dialog_utils` |
+| `lua/campaign_main.lua` | Loads WC3 modules and LotI workarounds |
+| `lua/campaign/`, `lua/game_mechanics/`, `lua/map/` | Forked WC2 code (scenario flow, invest, artifacts, map generation) |
+| `resources/data/` | Artifacts, training, trait data |
+| `era/factions/` | Faction definitions |
+| `gui/` | Shop, gacha, merc and help dialogs |
+
+`lua/wc2x/placement.lua` is the one place that decides where things appear next to a
+leader (castle hexes first, then nearest free hex, deterministic order); items, gacha
+heroes and shop heroes use it, and heroes fall back to the recall list if boxed in.
+
+### Save/load and MP rejoin
+
+Lua module state is lost on load and on MP rejoin (fresh Lua state). Anything that
+changes behaviour later must live in WML variables and be rebuilt on `preload`:
+fortification locations and pending reinforcements (`upgrades.lua`), AI director slots
+and the Micro AI id counter (`ai_director.lua`), the assassin id counter
+(`enemy_scaling.lua`) and boss state (`final_boss.lua`).
+
+### Multiplayer sync safety
+
+- All random calls use `mathx.random`, never `math.random`.
+- Every `pairs()` loop whose order feeds randomness or state is sorted first (Lua's hash
+  order differs between clients). Two such bugs were found and fixed: mercenary level
+  selection and the boss army's spawn hexes.
+- Every dialog that changes game state (gacha, shop, mercenary camp, debug panel) runs in
+  `wesnoth.sync.evaluate_single` with the acting side, and gacha/shop/merc pass an AI
+  fallback that declines, so an AI-controlled (e.g. disconnected) side never pops a
+  dialog on another client.
+- Return values from `evaluate_single` are flat tables of strings/numbers/booleans.
+- No `os.time`, `os.clock`, `tostring(table)` or other client-local values in game logic.
+
+### Neutral POI side
+
+POI guards and creeps live on a dedicated side with:
+- `team_name = "wc2_enemy"` — allied with enemies so the AI doesn't waste turns on guards
+- `ai_algorithm = "idle_ai"` — guards never move or attack; defence is automatic
+- `wc2x_is_neutral = true` side variable — identifies the side in code
+- Excluded from the AI director, village capture, enemy scaling and recruit events
 
 ## Known issues & mod interactions
 
 ### LotI Era compatibility
 
-WC3 is designed to work alongside LotI Era as a lobby-toggled modification. Several LotI
-behaviors assume a standard campaign side layout and break in WC3's co-op structure. WC3
-applies runtime workarounds; none modify LotI's files.
+WC3 works alongside LotI Era as a lobby-toggled modification. Several LotI behaviours
+assume a standard campaign side layout and break in WC3's co-op structure. WC3 applies
+runtime workarounds; none modify LotI's files.
 
 | Issue | Root cause | WC3 workaround | File |
 |---|---|---|---|
@@ -118,23 +264,22 @@ warnings: `ICON_THREE`, `ICON_FOUR`, `IMAGE_ONE`, `WC2_CAMPAIGN_NEW`, `WC2_SCENA
 `WC_II_PAIR` (in `_main.cfg` and `scenarios/WC_II_scenario.cfg`), and
 `WCT_CHANCE_ARCANE_BOOST` (in `resources/data/training.cfg`).
 
-### Multiplayer sync safety
+### Accepted quirks
 
-WC3's Lua code is audited for OOS (out-of-sync) safety:
+- **Four-player defeat.** In 4-player games one leader may die without ending the
+  scenario (inherited from WC2). That player skips the gacha and shop.
+- **Shop and ruins can drop player-restricted WC2 items** (Root of the Elder Wose,
+  Stormbringer, Sylph Bow). Invest respects the restriction; this is accepted.
+- **Duplicate buff rolls.** Shrines skip buffs the unit already has (same trait, or an
+  ability id it already has). The gacha can still roll an ability the hero's unit type has
+  natively; the engine then drops the duplicate.
+- **Bloodprice on turn 1** costs 4 HP with no healing to offset it, because the engine
+  skips start-of-turn healing on a side's first turn.
+- **Attack preview** for adjacency-based specials (pack hunter, duelist, backstab) is
+  computed before the attacker moves, so the preview numbers can differ from the real
+  fight.
 
-- **All random calls use `mathx.random`** (synced RNG), never `math.random`.
-- **All `pairs()` iterations** that feed into random selection or state changes sort the
-  result before use. (A `pairs()` OOS bug in mercenary level selection was found and fixed
-  — the candidates array was unsorted, causing different clients to pick different tiers
-  from the same roll.)
-- **All dialogs** that affect game state (shop, mercenary camp, item pickup, debug panel)
-  are wrapped in `wesnoth.sync.evaluate_single`.
-- **No `os.time`/`os.clock`/`tostring(table)`** or other non-deterministic values in game logic.
+## Open items
 
-### Neutral POI side
-
-POI guards and creeps live on a dedicated side with:
-- `team_name = "wc2_enemy"` — allied with enemies so AI doesn't waste turns attacking guards
-- `ai_algorithm = "idle_ai"` — guards never move or initiate attacks; defense is automatic
-- `wc2x_is_neutral = true` side variable — used to identify the neutral side in code
-- Excluded from: AI director, village capture, enemy scaling, recruit events
+- Deferred designs: random final boss from three hand-made bosses; a story-driven unit
+  mechanic.

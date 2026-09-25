@@ -11,6 +11,7 @@ wc2_era = wesnoth.require("./era/era.lua")
 wc2x = {}
 wc2x.config = wesnoth.dofile("./wc2x/config.lua")
 wc2x.dialog_utils = wesnoth.dofile("./wc2x/dialog_utils.lua")
+wc2x.placement = wesnoth.dofile("./wc2x/placement.lua")
 wc2x.upgrades = wesnoth.dofile("./wc2x/upgrades.lua")
 wc2x.upgrades.init(wc2x.config)
 wc2x.poi = wesnoth.dofile("./wc2x/poi.lua")

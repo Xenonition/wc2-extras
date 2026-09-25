@@ -173,7 +173,7 @@ function gacha.show(side_num, discount_pct)
 	end
 end
 
-function gacha.place_hero(unit_type_id, side_num, x, y)
+function gacha.place_hero(unit_type_id, side_num, leader)
 	local modifications = wc2_heroes.generate_traits(unit_type_id)
 	table.insert(modifications, wml.tag.advancement { wc2_scenario.experience_penalty() })
 	table.insert(modifications, wc2_heroes.hero_overlay_object())
@@ -184,8 +184,7 @@ function gacha.place_hero(unit_type_id, side_num, x, y)
 		random_traits = false,
 		wml.tag.modifications(modifications),
 	}
-	local x2, y2 = wesnoth.paths.find_vacant_hex(x, y, u)
-	u:to_map(x2, y2)
+	wc2x.placement.unit_to_map(u, leader)
 	return u
 end
 
@@ -199,7 +198,7 @@ function gacha.show_for_side(side_num)
 
 	local res = wesnoth.sync.evaluate_single(_ "Build a Hero", function()
 		return gacha.show(side_num, discount_pct)
-	end, side_num)
+	end, function() return { unit_type = "", buff_list = "", total_cost = 0 } end, side_num)
 
 	local total_cost = (res and res.total_cost) or 0
 
@@ -214,7 +213,7 @@ function gacha.show_for_side(side_num)
 
 	local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
 	if leader then
-		local u = gacha.place_hero(res.unit_type, side_num, leader.x, leader.y)
+		local u = gacha.place_hero(res.unit_type, side_num, leader)
 		local buff_indices = stringx.split(res.buff_list or "")
 		gacha.apply_bonuses(u, buff_indices)
 	end

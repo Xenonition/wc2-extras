@@ -330,9 +330,10 @@ on_event("wc2_drop_pickup", function(ec)
 		if spawned > 0 then
 			wesnoth.wml_actions.message {
 				speaker = "narrator", caption = poi_def.name,
-				message = _ "The dead stir as you disturb the ruins!",
+				message = _ "The dead stir as you disturb the ruins! Defeat them, then return to claim the treasure.",
 				image = poi_def.image,
 			}
+			return
 		end
 	end
 
@@ -342,6 +343,27 @@ on_event("wc2_drop_pickup", function(ec)
 		wesnoth.wml_actions.label { x = x, y = y, text = "" }
 	end
 end)
+
+-- A trait buff the unit already carries adds nothing, and a new ability whose id the unit
+-- already has is dropped by the engine; skip both so a shrine visit is never wasted
+local function buff_is_redundant(unit, buff)
+	local trait = buff.trait
+	if not trait then return false end
+	if unit:matches { wml.tag.filter_wml { wml.tag.modifications { wml.tag.trait { id = trait.id } } } } then
+		return true
+	end
+	for i, effect in ipairs(trait) do
+		if effect[1] == "effect" and effect[2].apply_to == "new_ability" then
+			local abilities = wml.get_child(effect[2], "abilities")
+			for j, ability in ipairs(abilities or {}) do
+				if ability[2].name and unit:matches { ability = ability[2].id } then
+					return true
+				end
+			end
+		end
+	end
+	return false
+end
 
 function poi.activate(unit, poi_type)
 	local config = poi.config
@@ -457,7 +479,7 @@ function poi.activate(unit, poi_type)
 				return { hire = "" }
 			end
 			return { hire = hire_target.type_id .. ":" .. tostring(hire_target.cost) }
-		end, unit.side)
+		end, function() return { hire = "" } end, unit.side)
 
 		local hire_str = res.hire or ""
 		if hire_str == "" then return false end
@@ -512,8 +534,11 @@ function poi.activate(unit, poi_type)
 		}
 
 	elseif poi_type == "shrine" then
-		local buffs = config.shrine_buffs
-		if not buffs or #buffs == 0 then return end
+		local buffs = {}
+		for i, b in ipairs(config.shrine_buffs or {}) do
+			if not buff_is_redundant(unit, b) then table.insert(buffs, b) end
+		end
+		if #buffs == 0 then return end
 		local total_w = 0
 		for _, b in ipairs(buffs) do total_w = total_w + b.weight end
 		local roll = mathx.random(total_w)

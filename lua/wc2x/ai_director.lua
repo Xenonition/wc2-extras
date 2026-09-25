@@ -4,8 +4,7 @@
 local on_event = wesnoth.game_events.add_repeating
 
 local director = {}
-local state = {}       -- per-side tactic assignments
-local dir_counter = 0  -- unique ca_id suffix
+local state = {}       -- per-side tactic assignments, mirrored into side variables (see persist_slot)
 
 local strategic_tactics, opportunistic_tactics
 
@@ -16,9 +15,71 @@ local REASSESS_CHANCE = 35          -- % chance per turn to reassess (after min_
 local REASSESS_CHANCE_PER_CAUTION = -10  -- cautious AIs hold tactics longer
 local REASSESS_CHANCE_PER_AGGRESSION = 10  -- aggressive AIs switch faster
 
+-- Counter lives in a WML variable so ca_ids stay unique after a reload
 local function next_ca_id()
-	dir_counter = dir_counter + 1
-	return "wc2x_dir_" .. dir_counter
+	local n = (wml.variables["wc2x_dir_counter"] or 0) + 1
+	wml.variables["wc2x_dir_counter"] = n
+	return "wc2x_dir_" .. n
+end
+
+---------------------------------------------------------------------------
+-- Persistence: micro AIs are saved with the side's AI config, so the slots that
+-- own them must survive save/load too, or reloads would stack orphaned micro AIs.
+---------------------------------------------------------------------------
+local SLOT_NAMES = { "strategic", "opportunistic" }
+local LIST_FIELDS = { "ca_ids", "ai_types", "unit_ids", "granted_ambush_ids" }
+
+local function persist_slot(side_num, slot_name)
+	local slot = state[side_num] and state[side_num][slot_name]
+	local key = "wc2x_dir_" .. slot_name
+	if not slot then
+		wesnoth.sides[side_num].variables[key] = nil
+		return
+	end
+	local flat = {
+		tactic = slot.tactic,
+		assigned_turn = slot.assigned_turn,
+		forced = slot.forced,
+		saved_leader_aggression = slot.saved_leader_aggression,
+	}
+	for i, field in ipairs(LIST_FIELDS) do
+		if slot[field] then flat[field] = table.concat(slot[field], ",") end
+	end
+	wesnoth.sides[side_num].variables[key] = flat
+end
+
+local function restore_state()
+	state = {}
+	for side_num = 1, #wesnoth.sides do
+		for i, slot_name in ipairs(SLOT_NAMES) do
+			local flat = wesnoth.sides[side_num].variables["wc2x_dir_" .. slot_name]
+			if flat and flat.tactic then
+				local slot = {
+					tactic = flat.tactic,
+					assigned_turn = flat.assigned_turn,
+					forced = flat.forced,
+					saved_leader_aggression = flat.saved_leader_aggression,
+				}
+				for j, field in ipairs(LIST_FIELDS) do
+					if flat[field] then slot[field] = stringx.split(flat[field]) end
+				end
+				slot.ca_ids = slot.ca_ids or {}
+				slot.ai_types = slot.ai_types or {}
+				slot.unit_ids = slot.unit_ids or {}
+				state[side_num] = state[side_num] or {}
+				state[side_num][slot_name] = slot
+			end
+		end
+	end
+end
+
+local function reset_state()
+	state = {}
+	for side_num = 1, #wesnoth.sides do
+		for i, slot_name in ipairs(SLOT_NAMES) do
+			wesnoth.sides[side_num].variables["wc2x_dir_" .. slot_name] = nil
+		end
+	end
 end
 
 local function rand_float(lo, hi)
@@ -69,6 +130,7 @@ local function clear_slot(side_num, slot_name)
 		}
 	end
 	state[side_num][slot_name] = nil
+	persist_slot(side_num, slot_name)
 end
 
 local function slot_is_stale(side_num, slot_name)
@@ -896,6 +958,7 @@ local function reassess(side_num)
 			if result then
 				result.assigned_turn = wesnoth.current.turn
 				state[side_num].strategic = result
+				persist_slot(side_num, "strategic")
 				for _, uid in ipairs(result.unit_ids) do
 					sit.assigned_ids[uid] = true
 				end
@@ -912,6 +975,7 @@ local function reassess(side_num)
 			if result then
 				result.assigned_turn = wesnoth.current.turn
 				state[side_num].opportunistic = result
+				persist_slot(side_num, "opportunistic")
 			end
 		end
 	end
@@ -944,6 +1008,11 @@ end
 ---------------------------------------------------------------------------
 function director.init(config)
 	director.config = config
+
+	-- preload runs for new scenarios and loaded saves; prestart only for new scenarios,
+	-- where any stored slots are leftovers from the previous map
+	on_event("preload", restore_state)
+	on_event("prestart", reset_state)
 
 	on_event("side turn", function()
 		local side_num = wesnoth.current.side
@@ -1062,6 +1131,7 @@ local function force_tactic(side_num, slot_name, tactic_name)
 	if result then
 		result.forced = true
 		state[side_num][slot_name] = result
+		persist_slot(side_num, slot_name)
 		msg(string.format("Forced side %d %s → %s (%d units) [locked until dead]", side_num, slot_name, tactic_name, #result.unit_ids))
 	else
 		msg("Tactic " .. tactic_name .. " returned nil (no eligible units?)")

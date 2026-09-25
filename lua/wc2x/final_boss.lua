@@ -109,12 +109,92 @@ local function get_hex_ring(cx, cy, target_dist)
 	return result
 end
 
+-- sorted: pairs() order over string keys differs between clients, and callers shuffle this list
 local function ring_to_list(ring)
 	local list = {}
 	for _, h in pairs(ring) do
 		table.insert(list, h)
 	end
+	table.sort(list, function(a, b)
+		if a.x ~= b.x then return a.x < b.x end
+		return a.y < b.y
+	end)
 	return list
+end
+
+-- Arena site: best spot within ARENA_SEARCH_RADIUS of the map centre whose footprint covers
+-- no keep or leader, preferring few villages/items/units/water. Ties break by distance, then x/y,
+-- so every client picks the same hex.
+local ARENA_RADIUS = 3
+local ARENA_SEARCH_RADIUS = 6
+local ARENA_FOOTPRINT = 37 -- hexes within distance 3
+
+local function choose_arena_center(mx, my)
+	local best, best_score, best_dist
+	for i, c in ipairs(wesnoth.map.find { x = mx, y = my, radius = ARENA_SEARCH_RADIUS }) do
+		local area = wesnoth.map.find { x = c.x, y = c.y, radius = ARENA_RADIUS }
+		local ok = #area == ARENA_FOOTPRINT
+		local score = 0
+		for j, h in ipairs(area) do
+			if not ok then break end
+			local terr = tostring(wesnoth.current.map[h])
+			local u = wesnoth.units.get(h.x, h.y)
+			if terr:match("^K") or terr:match("%^K") or (u and u.canrecruit) then
+				ok = false
+			else
+				if terr:match("%^V") then score = score + 10 end
+				if #wesnoth.interface.get_items(h.x, h.y) > 0 then score = score + 10 end
+				if u then score = score + 3 end
+				if terr:match("^W") or terr:match("^S") or terr:match("^Q") or terr:match("^X") then
+					score = score + 1
+				end
+			end
+		end
+		if ok then
+			local dist = wesnoth.map.distance_between({ x = mx, y = my }, c)
+			score = score + dist * 2
+			local better = not best or score < best_score
+				or (score == best_score and dist < best_dist)
+				or (score == best_score and dist == best_dist and (c.x < best.x or (c.x == best.x and c.y < best.y)))
+			if better then best, best_score, best_dist = c, score, dist end
+		end
+	end
+	if not best then return mx, my end
+	return best.x, best.y
+end
+
+-- Move units standing in the footprint to the nearest free hex outside it, so nothing is
+-- trapped behind the chasm ring or blocks the boss's spawn hexes
+local function evacuate_arena(cx, cy)
+	local inside = wesnoth.units.find_on_map {
+		wml.tag.filter_location { x = cx, y = cy, radius = ARENA_RADIUS },
+	}
+	if #inside == 0 then return end
+	table.sort(inside, function(a, b)
+		if a.x ~= b.x then return a.x < b.x end
+		return a.y < b.y
+	end)
+	local outside = wesnoth.map.find {
+		x = cx, y = cy, radius = ARENA_RADIUS + 5,
+		wml.tag["not"] { x = cx, y = cy, radius = ARENA_RADIUS },
+	}
+	local taken = {}
+	for i, u in ipairs(inside) do
+		local best, best_dist
+		for j, h in ipairs(outside) do
+			local key = h.x .. "," .. h.y
+			if not taken[key] and not wesnoth.units.get(h.x, h.y)
+				and #wesnoth.interface.get_items(h.x, h.y) == 0
+				and wesnoth.units.movement_on(u, { x = h.x, y = h.y }) < 99 then
+				local d = wesnoth.map.distance_between({ x = u.x, y = u.y }, h)
+				if not best or d < best_dist then best, best_dist = h, d end
+			end
+		end
+		if best then
+			taken[best.x .. "," .. best.y] = true
+			u:to_map(best.x, best.y)
+		end
+	end
 end
 
 function boss.place_arena()
@@ -127,8 +207,8 @@ function boss.place_arena()
 	local map_w = wesnoth.current.map.playable_width
 	local map_h = wesnoth.current.map.playable_height
 	local border = wesnoth.current.map.border_size or 1
-	local cx = math.floor(map_w / 2) + border
-	local cy = math.floor(map_h / 2) + border
+	local cx, cy = choose_arena_center(math.floor(map_w / 2) + border, math.floor(map_h / 2) + border)
+	evacuate_arena(cx, cy)
 
 	arena_center = { cx, cy }
 

@@ -1,14 +1,57 @@
 -- WC2 Extras — persistent upgrades
 -- State stored in side variables (wc2x_upgrades.*), persists via savegame.
--- Fortification hex positions are ephemeral (rebuilt each scenario).
+-- Fortification hex positions are placed each scenario and mirrored into side variables
+-- so they survive save/load and MP rejoin.
 
 local _ = wesnoth.textdomain 'wesnoth-wc'
 local on_event = wesnoth.game_events.add_repeating
 
 local upgrades = {}
 
--- Ephemeral per-scenario fortification locations: { [side_num] = { barracks = {{x,y},...}, training = {{x,y},...} } }
+-- Per-scenario fortification locations: { [side_num] = { barracks = {{x,y},...}, training = {{x,y},...} } }
 local fortifications = {}
+
+local function encode_locs(locs)
+	local parts = {}
+	for i, loc in ipairs(locs) do parts[i] = loc.x .. "," .. loc.y end
+	return table.concat(parts, ";")
+end
+
+local function decode_locs(str)
+	local locs = {}
+	for x, y in (str or ""):gmatch("(%d+),(%d+)") do
+		table.insert(locs, { x = tonumber(x), y = tonumber(y) })
+	end
+	return locs
+end
+
+local function persist_side(side_num)
+	local vars = wesnoth.sides[side_num].variables
+	local forts = fortifications[side_num] or { barracks = {}, training = {} }
+	vars["wc2x_forts_barracks"] = encode_locs(forts.barracks)
+	vars["wc2x_forts_training"] = encode_locs(forts.training)
+	vars["wc2x_pending_reinf"] = (upgrades.pending_reinforcements or {})[side_num] or 0
+end
+
+-- Save files and rejoining MP clients get a fresh Lua state; rebuild it from side variables
+on_event("preload", function()
+	fortifications = {}
+	upgrades.pending_reinforcements = nil
+	for side_num = 1, (wml.variables.wc2_player_count or 1) do
+		local vars = wesnoth.sides[side_num] and wesnoth.sides[side_num].variables
+		if vars then
+			fortifications[side_num] = {
+				barracks = decode_locs(vars["wc2x_forts_barracks"]),
+				training = decode_locs(vars["wc2x_forts_training"]),
+			}
+			local reinf = vars["wc2x_pending_reinf"] or 0
+			if reinf > 0 then
+				upgrades.pending_reinforcements = upgrades.pending_reinforcements or {}
+				upgrades.pending_reinforcements[side_num] = reinf
+			end
+		end
+	end
+end)
 
 function upgrades.init(config)
 	upgrades.config = config
@@ -163,6 +206,7 @@ on_event("wc2_start", function(cx)
 		upgrades.apply_castle_hexes(side_num)
 		upgrades.apply_for_side(side_num)
 		upgrades.place_pending_artifacts(side_num)
+		persist_side(side_num)
 	end
 end)
 
@@ -179,31 +223,14 @@ function upgrades.place_pending_artifacts(side_num)
 	local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
 	if not leader then return end
 
-	local adj = { wesnoth.map.get_adjacent_hexes(leader) }
-	local castle_hexes = {}
-	for _, hex in ipairs(adj) do
-		local terr = tostring(wesnoth.current.map[hex])
-		if terr and (terr:match("C") or terr:match("K")) then
-			table.insert(castle_hexes, hex)
-		end
-	end
-
-	local placed_hexes = {}
+	local taken = {}
 	for _, id_str in ipairs(artifact_ids) do
 		local artifact_id = tonumber(id_str)
 		if artifact_id then
-			local placed = false
-			for _, hex in ipairs(castle_hexes) do
-				local key = hex.x .. "," .. hex.y
-				if not placed_hexes[key] and not wesnoth.units.get(hex.x, hex.y)
-					and not (hex.x == leader.x and hex.y == leader.y) then
-					placed_hexes[key] = true
-					wc2_artifacts.place_item(hex.x, hex.y, artifact_id)
-					placed = true
-					break
-				end
-			end
-			if not placed then
+			local hex = wc2x.placement.item_hex(leader, taken)
+			if hex then
+				wc2_artifacts.place_item(hex.x, hex.y, artifact_id)
+			else
 				wc2_artifacts.give_item(leader, artifact_id, true)
 			end
 		end
@@ -240,6 +267,9 @@ on_event("turn 1", function(cx)
 		end
 	end
 	upgrades.pending_reinforcements = nil
+	for side_num = 1, (wml.variables.wc2_player_count or 1) do
+		wesnoth.sides[side_num].variables["wc2x_pending_reinf"] = 0
+	end
 end)
 
 -- Training ground XP

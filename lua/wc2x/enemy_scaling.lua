@@ -3,7 +3,6 @@
 local on_event = wesnoth.game_events.add_repeating
 
 local enemy_scaling = {}
-local assassin_counter = 0
 
 function enemy_scaling.init(config)
 	enemy_scaling.config = config
@@ -121,7 +120,9 @@ function enemy_scaling.maybe_make_assassin(unit)
 
 	if mathx.random(100) > config.assassin_chance_pct then return end
 
-	assassin_counter = assassin_counter + 1
+	-- counter in a WML variable so unit ids stay unique after a reload
+	local assassin_counter = (wml.variables["wc2x_assassin_counter"] or 0) + 1
+	wml.variables["wc2x_assassin_counter"] = assassin_counter
 	local uid = "wc2x_assassin_" .. assassin_counter
 	wesnoth.wml_actions.modify_unit {
 		wml.tag.filter { x = unit.x, y = unit.y },

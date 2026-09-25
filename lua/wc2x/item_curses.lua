@@ -4,7 +4,7 @@ local _ = wesnoth.textdomain 'wesnoth-wc'
 
 local item_curses = {}
 
-local BLOODPRICE_HP_LOSS = 8
+local BLOODPRICE_HP_LOSS = 4
 
 function item_curses.init()
 	-- "side turn" fires before start-of-turn healing, so like poison the loss lands after the enemy's turn

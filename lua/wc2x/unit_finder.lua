@@ -112,29 +112,26 @@ function unit_finder.show()
 	local units = find_units_with_tag(side_num, tag.id, tag.kind)
 	if #units == 0 then return end
 
-	while true do
-		local unit_options = {}
-		for _, u in ipairs(units) do
-			table.insert(unit_options, u.name .. " — " .. u.type_name .. " (Lv" .. u.level .. ")")
-		end
-		table.insert(unit_options, tostring(_ "Back"))
-		table.insert(unit_options, tostring(_ "Close"))
+	local unit_options = {}
+	for i, u in ipairs(units) do
+		table.insert(unit_options, string.format("%s — %s (Lv%d) at %d,%d", u.name, u.type_name, u.level, u.x, u.y))
+	end
+	table.insert(unit_options, tostring(_ "Back"))
+	table.insert(unit_options, tostring(_ "Close"))
 
-		local pick = gui.show_narration(
-			{ title = tostring(tag.name), message = #units .. " units found:" },
-			unit_options
-		)
+	local pick = gui.show_narration(
+		{ title = tostring(tag.name), message = #units .. " units found. Pick one to select it on the map:" },
+		unit_options
+	)
 
-		if pick == #unit_options then
-			return
-		elseif pick == #unit_options - 1 then
-			return unit_finder.show()
-		else
-			local target = units[pick]
-			if target then
-				wesnoth.wml_actions.scroll_to { x = target.x, y = target.y }
-			end
-		end
+	if pick == #unit_options - 1 then
+		return unit_finder.show()
+	end
+	local target = units[pick]
+	if target then
+		-- close the list so the selected unit, its highlight and sidebar stats are visible
+		wesnoth.interface.scroll_to_hex({ x = target.x, y = target.y }, false, false, true)
+		wesnoth.units.select({ x = target.x, y = target.y })
 	end
 end
 

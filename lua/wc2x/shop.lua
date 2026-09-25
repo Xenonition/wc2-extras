@@ -67,21 +67,19 @@ function shop.build_consumable_list(side_num)
 		end
 	end
 
-	local heroes_str = wesnoth.sides[side_num].variables["wc2.heroes"] or ""
-	if heroes_str ~= "" then
-		local hero_ids = stringx.split(heroes_str)
+	if wc2x.unit_pool then
+		local min_lv, max_lv = wc2x.unit_pool.level_range_for_scenario(scenario_num)
+		local hero_ids = wc2x.unit_pool.get_range(min_lv, max_lv)
 		mathx.shuffle(hero_ids)
 		for i = 1, math.min(slots, #hero_ids) do
-			local hero_id = hero_ids[i]
-			local utype = wesnoth.unit_types[hero_id]
-			if utype then
-				table.insert(consumables, {
-					category = "hero", id = hero_id,
-					name = utype.name, description = _ "Recruit a hero unit",
-					icon = utype.image or "units/unknown-unit.png",
-					price = 50 + (scenario_num * 12),
-				})
-			end
+			local utype = wesnoth.unit_types[hero_ids[i]]
+			table.insert(consumables, {
+				category = "hero", id = hero_ids[i],
+				name = utype.name,
+				description = string.format(tostring(_ "Recruit a level %d hero unit"), utype.level),
+				icon = utype.image or "units/unknown-unit.png",
+				price = 50 + (scenario_num * 12),
+			})
 		end
 	end
 
@@ -240,7 +238,7 @@ function shop.show_for_side(side_num)
 		gui.show_dialog(d_wml, preshow)
 
 		return { purchases = table.concat(purchase_strings, ";") }
-	end, side_num)
+	end, function() return { purchases = "" } end, side_num)
 
 	local purchases_str = res.purchases or ""
 	if purchases_str == "" then return end
@@ -265,7 +263,7 @@ function shop.show_for_side(side_num)
 		elseif category == "hero" then
 			local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
 			if leader then
-				wc2_heroes.place(id, side_num, leader.x, leader.y)
+				wc2x.gacha_hero.place_hero(id, side_num, leader)
 			end
 		elseif category == "upgrade" then
 			shop.upgrades.purchase(side_num, id)

@@ -18,114 +18,6 @@ local loti_orig_add = nil
 ---------------------------------------------------------------------------
 local UPGRADE_IDS = { "castle_hex", "supply_village", "base_income", "vision_radius", "reinforcements", "barracks", "training_ground" }
 
-local TRAIT_DEFS = {
-	{ id = "strong", name = "strong",
-		wml.tag.effect { apply_to = "attack", increase_damage = 1 },
-		wml.tag.effect { apply_to = "hitpoints", increase_total = 2 } },
-	{ id = "resilient", name = "resilient",
-		wml.tag.effect { apply_to = "hitpoints", increase_total = "7" } },
-	{ id = "quick", name = "quick",
-		wml.tag.effect { apply_to = "movement", increase = 1 },
-		wml.tag.effect { apply_to = "hitpoints", increase_total = "-5%" } },
-	{ id = "intelligent", name = "intelligent",
-		wml.tag.effect { apply_to = "max_experience", increase = "-20%" } },
-	{ id = "dextrous", name = "dextrous",
-		wml.tag.effect { apply_to = "attack", increase_damage = 1,
-			wml.tag.filter_attack { range = "ranged" } } },
-	{ id = "healthy", name = "healthy",
-		wml.tag.effect { apply_to = "hitpoints", increase_total = 2 },
-		wml.tag.effect { apply_to = "hitpoints", times = "per level", increase_total = 1 } },
-}
-local TRAIT_NAMES = { "Strong", "Resilient", "Quick", "Intelligent", "Dextrous", "Healthy" }
-
-local ABILITY_DEFS = {
-	{ id = "wc3_dbg_regen", wml.tag.effect { apply_to = "new_ability",
-		wml.tag.abilities { wml.tag.regenerate { id = "regenerates", name = "regenerates",
-			description = "Heals 8 HP per turn at the start of every turn",
-			value = 8, poison = "cured" } } } },
-	{ id = "wc3_dbg_skirmisher", wml.tag.effect { apply_to = "new_ability",
-		wml.tag.abilities { wml.tag.skirmisher { id = "skirmisher", name = "skirmisher",
-			description = "This unit can move through enemy ZOC without penalty" } } } },
-	{ id = "wc3_dbg_ambush", wml.tag.effect { apply_to = "new_ability",
-		wml.tag.abilities { wml.tag.hides { id = "ambush", name = "ambush",
-			description = "Invisible in forest terrain",
-			wml.tag.filter_self { wml.tag.filter_location { terrain = "*^F*" } } } } } },
-	{ id = "wc3_dbg_submerge", wml.tag.effect { apply_to = "new_ability",
-		wml.tag.abilities { wml.tag.hides { id = "submerge", name = "submerge",
-			description = "Invisible in shallow and deep water",
-			wml.tag.filter_self { wml.tag.filter_location { terrain = "W*,S*" } } } } } },
-	{ id = "wc3_dbg_nightstalk", wml.tag.effect { apply_to = "new_ability",
-		wml.tag.abilities { wml.tag.hides { id = "nightstalk", name = "nightstalk",
-			description = "Invisible at night",
-			wml.tag.filter_self { wml.tag.filter_location {
-				time_of_day = "chaotic" } } } } } },
-	{ id = "wc3_dbg_teleport", wml.tag.effect { apply_to = "new_ability",
-		wml.tag.abilities { wml.tag.teleport { id = "teleport", name = "teleport",
-			description = "Teleport between owned villages",
-			wml.tag.tunnel { id = "wc3_dbg_tp",
-				wml.tag.source { terrain = "*^V*" },
-				wml.tag.target { terrain = "*^V*" },
-				wml.tag.filter { ability = "teleport" },
-			} } } } },
-	{ id = "wc3_dbg_steadfast", wml.tag.effect { apply_to = "new_ability",
-		wml.tag.abilities { wml.tag.resistance {
-			id = "steadfast", name = "steadfast",
-			description = "Double resistance when defending (max 50%)",
-			multiply = 2, max_value = 50, active_on = "defense",
-			apply_to = "blade,pierce,impact,fire,cold,arcane",
-			wml.tag.filter_base_value { greater_than = 0, less_than = 50 } } } } },
-	{ id = "wc3_dbg_leadership", wml.tag.effect { apply_to = "new_ability",
-		wml.tag.abilities { wml.tag.leadership { id = "leadership", name = "leadership",
-			description = "+25% damage per level of difference to adjacent lower-level allies",
-			value = "(25 * (level - other.level))", cumulative = false, affect_self = false,
-			wml.tag.affect_adjacent { wml.tag.filter { formula = "level < other.level" } } } } } },
-	{ id = "wc3_dbg_heals4", wml.tag.effect { apply_to = "new_ability",
-		wml.tag.abilities { wml.tag.heals { id = "healing", name = "heals +4",
-			description = "Heals adjacent allies 4 HP per turn",
-			value = 4, affect_allies = true, affect_self = false } } } },
-	{ id = "wc3_dbg_drain", wml.tag.effect { apply_to = "attack",
-		wml.tag.set_specials { mode = "append",
-			wml.tag.drains { id = "drain", name = "drain",
-				description = "Absorbs 50% of damage dealt", value = 50 } } } },
-	{ id = "wc3_dbg_poison", wml.tag.effect { apply_to = "attack",
-		wml.tag.set_specials { mode = "append",
-			wml.tag.poison { id = "poison", name = "poison",
-				description = "Attacks poison the target" } } } },
-	{ id = "wc3_dbg_backstab", wml.tag.effect { apply_to = "attack",
-		wml.tag.filter_attack { range = "melee" },
-		wml.tag.set_specials { mode = "append",
-			wml.tag.backstab { id = "backstab", name = "backstab",
-				description = "Double damage when enemy is flanked", multiply = 2 } } } },
-	{ id = "wc3_dbg_marksman", wml.tag.effect { apply_to = "attack",
-		wml.tag.filter_attack { range = "ranged" },
-		wml.tag.set_specials { mode = "append",
-			wml.tag.chance_to_hit { id = "marksman", name = "marksman",
-				description = "Always 60% chance to hit on offense",
-				value = 60, active_on = "offense", cumulative = true } } } },
-	{ id = "wc3_dbg_charge", wml.tag.effect { apply_to = "attack",
-		wml.tag.filter_attack { range = "melee" },
-		wml.tag.set_specials { mode = "append",
-			wml.tag.damage { id = "charge", name = "charge",
-				description = "Double damage on offense (both attacker and defender)",
-				multiply = 2, active_on = "offense", apply_to = "both" } } } },
-	{ id = "wc3_dbg_berserk", wml.tag.effect { apply_to = "attack",
-		wml.tag.filter_attack { range = "melee" },
-		wml.tag.set_specials { mode = "append",
-			wml.tag.berserk { id = "berserk", name = "berserk",
-				description = "Fight to the death in melee",
-				value = 30 } } } },
-	{ id = "wc3_dbg_firststrike", wml.tag.effect { apply_to = "attack",
-		wml.tag.filter_attack { range = "melee" },
-		wml.tag.set_specials { mode = "append",
-			wml.tag.firststrike { id = "firststrike", name = "first strike",
-				description = "Always strikes first in melee" } } } },
-}
-local ABILITY_NAMES = {
-	"Regenerates", "Skirmisher", "Ambush", "Submerge", "Nightstalk",
-	"Teleport", "Steadfast", "Leadership", "Heals +4",
-	"Drain", "Poison", "Backstab", "Marksman", "Charge", "Berserk", "First Strike",
-}
-
 ---------------------------------------------------------------------------
 -- Helpers
 ---------------------------------------------------------------------------
@@ -245,22 +137,6 @@ local function apply_action(data)
 			},
 		})
 		msg(string.format("%s: +%s alternative type", unit.name, data.dtype), s)
-
-	elseif data.action == "unit_trait" then
-		local unit = wesnoth.units.get(data.x, data.y)
-		if not unit then return end
-		local def = TRAIT_DEFS[data.idx]
-		if not def then return end
-		unit:add_modification("trait", def)
-		msg(string.format("%s: added %s trait", unit.name, def.name), s)
-
-	elseif data.action == "unit_ability" then
-		local unit = wesnoth.units.get(data.x, data.y)
-		if not unit then return end
-		local def = ABILITY_DEFS[data.idx]
-		if not def then return end
-		unit:add_modification("object", def)
-		msg(string.format("%s: added %s", unit.name, ABILITY_NAMES[data.idx] or "ability"), s)
 
 	elseif data.action == "unit_buff" then
 		local unit = wesnoth.units.get(data.x, data.y)
@@ -432,7 +308,7 @@ local function collect_upgrades_action(side_num)
 end
 
 local function collect_unit_action(unit, x, y)
-	local categories = { "Progression", "Stats", "Combat", "Traits", "Abilities", "Misc", "Shrine/Gacha Buffs", "Back" }
+	local categories = { "Progression", "Stats", "Combat", "Traits & Abilities (buff pool)", "Misc", "Back" }
 	local header = string.format("%s [%s] — HP %d/%d — XP %d/%d",
 		unit.name, unit.type, unit.hitpoints, unit.max_hitpoints,
 		unit.experience, unit.max_experience)
@@ -477,56 +353,22 @@ local function collect_unit_action(unit, x, y)
 			end
 		end
 
-	elseif cat == 4 then -- Traits
+	elseif cat == 4 then -- Shrine/Gacha buff pool
+		local pool = wc2x.config.shrine_buffs
 		local opts = {}
-		for _, n in ipairs(TRAIT_NAMES) do table.insert(opts, n) end
+		for i, buff in ipairs(pool) do table.insert(opts, tostring(buff.name)) end
 		table.insert(opts, "Back")
-		local pick = pick_option("Traits", header, opts)
-		if pick >= 1 and pick <= #TRAIT_DEFS then
-			return { action = "unit_trait", x = x, y = y, idx = pick }
+		local pick = pick_option("Traits & Abilities (buff pool)", header, opts)
+		if pick >= 1 and pick <= #pool then
+			return { action = "unit_buff", x = x, y = y, idx = pick }
 		end
 
-	elseif cat == 5 then -- Abilities
-		local opts = {
-			"Regenerates (+8 HP/turn)",
-			"Skirmisher (ignore ZOC)",
-			"Ambush (invisible in forest)",
-			"Submerge (invisible in water)",
-			"Nightstalk (invisible at night)",
-			"Teleport (between villages)",
-			"Steadfast (2x resist on defense)",
-			"Leadership (+25% to adjacent)",
-			"Heals +4 (heals adjacent allies)",
-			"Drain (absorb 50% damage dealt)",
-			"Poison (attacks poison target)",
-			"Backstab (double flanking damage)",
-			"Marksman (60% ranged on offense)",
-			"Charge (double melee on offense)",
-			"Berserk (fight until death)",
-			"First Strike (melee always first)",
-			"Back",
-		}
-		local pick = pick_option("Abilities", header, opts)
-		if pick >= 1 and pick <= #ABILITY_DEFS then
-			return { action = "unit_ability", x = x, y = y, idx = pick }
-		end
-
-	elseif cat == 6 then -- Misc
+	elseif cat == 5 then -- Misc
 		local opts = { "Set Upkeep: Free", "Set Upkeep: Full", "Add Hero Overlay", "Back" }
 		local pick = pick_option("Misc", header, opts)
 		if pick == 1 then return { action = "unit_upkeep", x = x, y = y, value = "free" }
 		elseif pick == 2 then return { action = "unit_upkeep", x = x, y = y, value = "full" }
 		elseif pick == 3 then return { action = "unit_overlay", x = x, y = y }
-		end
-
-	elseif cat == 7 then -- Shrine/Gacha buff pool
-		local pool = wc2x.config.shrine_buffs
-		local opts = {}
-		for i, buff in ipairs(pool) do table.insert(opts, tostring(buff.name)) end
-		table.insert(opts, "Back")
-		local pick = pick_option("Shrine/Gacha Buffs", header, opts)
-		if pick >= 1 and pick <= #pool then
-			return { action = "unit_buff", x = x, y = y, idx = pick }
 		end
 	end
 	return NO_ACTION

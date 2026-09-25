@@ -108,12 +108,16 @@ on_event("victory", function(cx)
 	end
 	-- WC2X: Gacha hero + shop for each human player before advancing (skip final scenario)
 	if wc2x and wml.variables.wc2_scenario < 5 then
-		for side_num = 1, (wml.variables.wc2_player_count or 1) do
-			if wc2_scenario.is_human_side(side_num) then
+		-- 4p lets one leader die mid-scenario, which lowers wc2_player_count; loop over the original
+		-- sides and skip the defeated one rather than skipping the highest-numbered player
+		local last_side = wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
+		for side_num = 1, last_side do
+			if wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1] then
 				if wc2x.gacha_hero then
 					wc2x.gacha_hero.show_for_side(side_num)
 				end
-				if wc2x.shop and wesnoth.sides[side_num].gold > 0 then
+				local side = wesnoth.sides[side_num]
+				if wc2x.shop and (side.gold > 0 or side.variables["wc2x_dbg_free_shop"]) then
 					wc2x.shop.show_for_side(side_num)
 				end
 			end

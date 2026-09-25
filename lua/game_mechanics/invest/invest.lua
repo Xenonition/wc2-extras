@@ -69,9 +69,8 @@ end
 
 function wc2_invest.do_hero(t)
 	local side_num = wesnoth.current.side
-	local leaders = wesnoth.units.find_on_map { side = side_num, canrecruit = true }
-	local x, y = leaders[1].x, leaders[1].y
-	wc2x.gacha_hero.place_hero(t, side_num, x, y)
+	local leader = wesnoth.units.find_on_map { side = side_num, canrecruit = true }[1]
+	wc2x.gacha_hero.place_hero(t, side_num, leader)
 end
 
 function wc2_invest.do_training(t)
