@@ -173,6 +173,31 @@ local function apply_action(data)
 		wml.variables["wc2x_boss_force"] = data.kind ~= "" and data.kind or nil
 		msg("Final boss: " .. (data.kind ~= "" and data.kind or "random"), s)
 
+	elseif data.action == "boss_skip" then
+		-- the victory event runs gacha/shop and advances wc2_scenario to 5
+		wml.variables["wc2_scenario"] = 4
+		wesnoth.wml_actions.endlevel {
+			result = "victory",
+			carryover_percentage = 0,
+			carryover_add = false,
+			carryover_report = false,
+		}
+
+	elseif data.action == "boss_spawn_now" then
+		-- killing every regular enemy leader and commander is the boss trigger in final_boss.lua
+		local players = wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
+		local boss_side = wml.variables["wc2x_boss_side"]
+		for side_num = players + 1, #wesnoth.sides do
+			if side_num ~= boss_side and not wesnoth.sides[side_num].variables["wc2x_is_neutral"] then
+				wesnoth.wml_actions.kill { side = side_num, role = "commander", canrecruit = false, animate = false, fire_event = true }
+			end
+		end
+		for side_num = players + 1, #wesnoth.sides do
+			if side_num ~= boss_side and not wesnoth.sides[side_num].variables["wc2x_is_neutral"] then
+				wesnoth.wml_actions.kill { side = side_num, canrecruit = true, animate = false, fire_event = true }
+			end
+		end
+
 	elseif data.action == "free_shop" then
 		local vars = wesnoth.sides[s].variables
 		if vars["wc2x_dbg_free_shop"] then
@@ -420,10 +445,22 @@ local function collect_action(x, y)
 		elseif choice == offset + 3 then
 			return { action = "free_shop" }
 		elseif choice == offset + 4 then
-			local kinds = { "random", "lich", "usurper", "wyrm" }
-			local pick = pick_option("Final Boss", "Which boss spawns on scenario 5 (set before the last leader dies):", kinds)
-			if pick >= 1 and pick <= #kinds then
-				return { action = "boss_force", kind = pick == 1 and "" or kinds[pick] }
+			local scenario = wml.variables["wc2_scenario"] or 1
+			local sub = { "Choose boss (current: " .. (wml.variables["wc2x_boss_force"] or "random") .. ")" }
+			if scenario < 5 then table.insert(sub, "Skip to final scenario (win this one)") end
+			if scenario == 5 and not wml.variables["wc2x_boss_id"] then table.insert(sub, "Spawn boss now (kill all enemy leaders)") end
+			table.insert(sub, "Back")
+			local pick = pick_option("Final Boss", "Scenario " .. scenario, sub)
+			if pick == 1 then
+				local kinds = { "random", "lich", "usurper", "wyrm" }
+				local k = pick_option("Final Boss", "Which boss spawns on scenario 5:", kinds)
+				if k >= 1 and k <= #kinds then
+					return { action = "boss_force", kind = k == 1 and "" or kinds[k] }
+				end
+			elseif sub[pick] and sub[pick]:match("^Skip") then
+				return { action = "boss_skip" }
+			elseif sub[pick] and sub[pick]:match("^Spawn") then
+				return { action = "boss_spawn_now" }
 			end
 		else
 			local loti_offset = offset + 4

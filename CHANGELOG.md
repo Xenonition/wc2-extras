@@ -6,7 +6,8 @@
   with a signature mechanic, a phase change at half HP and a themed army — the Lich
   Sovereign (phylacteries), the Wyrm of the Last Age (scorching aura, Wrath) and the Usurper
   (lieutenants shield him; the Crown's Guard). Placeholder art until custom sprites land.
-- Objectives show the boss's status; the debug panel can force which boss spawns.
+- Objectives show the boss's status. Debug panel "Final Boss" menu: force which boss spawns,
+  skip to the final scenario, or spawn the boss immediately.
 
 ## 0.3.1 — 2026-09-25
 

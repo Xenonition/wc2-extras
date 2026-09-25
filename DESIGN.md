@@ -218,8 +218,9 @@ WC2's era plus four WC3 factions built from base-game units: **The Coil**
   the units that have a chosen one; picking a unit scrolls to it and selects it.
 - **Debug panel** (hidden): enabled from Wocopedia → Settings → "Enable detailed logging".
   Grants gold, XP, stats, any buff from the buff pool, upgrades; inspects and forces AI
-  director tactics; toggles a per-side 100% shop/gacha discount and LotI free crafting; forces which final boss
-  spawns.
+  director tactics; toggles a per-side 100% shop/gacha discount and LotI free crafting. Its "Final Boss" menu
+  forces which boss spawns, skips straight to scenario 5 (wins the current scenario with
+  `wc2_scenario` set to 4), and on scenario 5 kills every enemy leader to spawn the boss.
   All mutations go through `evaluate_single` so they are MP-safe.
 
 ## Technical notes
