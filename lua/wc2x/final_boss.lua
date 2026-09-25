@@ -110,7 +110,7 @@ local function evacuate_arena(cx, cy)
 		return a.y < b.y
 	end)
 	local outside = wesnoth.map.find {
-		x = cx, y = cy, radius = ARENA_RADIUS + 5,
+		wml.tag["and"] { x = cx, y = cy, radius = ARENA_RADIUS + 5 },
 		wml.tag["not"] { x = cx, y = cy, radius = ARENA_RADIUS },
 	}
 	local taken = {}

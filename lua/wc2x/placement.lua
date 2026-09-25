@@ -12,7 +12,8 @@ end
 -- Free hexes around the leader: castle hexes first, then by distance, then x/y (deterministic for MP)
 function placement.hexes_near(leader)
 	local candidates = wesnoth.map.find {
-		x = leader.x, y = leader.y, radius = SEARCH_RADIUS,
+		-- radius goes inside [and]: at top level it is applied after [not] and would re-add blocked hexes
+		wml.tag["and"] { x = leader.x, y = leader.y, radius = SEARCH_RADIUS },
 		wml.tag["not"] { terrain = BLOCKED_TERRAIN },
 	}
 	local result = {}

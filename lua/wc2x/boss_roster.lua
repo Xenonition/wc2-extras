@@ -33,7 +33,7 @@ end
 local function spawn_near(type_id, side, x, y, rmin, rmax, cfg)
 	local u = wesnoth.units.create(cfg or { type = type_id, side = side, generate_name = true, random_traits = true })
 	local candidates = wesnoth.map.find {
-		x = x, y = y, radius = rmax,
+		wml.tag["and"] { x = x, y = y, radius = rmax },
 		wml.tag["not"] { terrain = BLOCKED },
 	}
 	local list = {}
@@ -265,7 +265,8 @@ end
 function usurper.on_spawn(ctx)
 	local candidates = {}
 	for i, loc in ipairs(wesnoth.map.find {
-		x = ctx.cx, y = ctx.cy, radius = 7,
+		-- radius inside [and]/[not]: a top-level radius is applied after [not], which emptied this set
+		wml.tag["and"] { x = ctx.cx, y = ctx.cy, radius = 7 },
 		wml.tag["not"] { x = ctx.cx, y = ctx.cy, radius = 4 },
 		wml.tag["not"] { terrain = BLOCKED .. ",W*,S*" },
 	}) do
