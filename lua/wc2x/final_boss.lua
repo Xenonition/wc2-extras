@@ -341,17 +341,28 @@ local function spawn_boss()
 		}
 	end
 
-	local edge_hexes = find_edge_hexes(EDGE_COUNT)
-	for i = 1, #edge_hexes do
-		local hex = edge_hexes[i]
-		wesnoth.wml_actions.unit {
-			x = hex[1], y = hex[2],
+	-- extra candidates so non-flying edge units (the Usurper's cavalry) can skip water and other
+	-- hexes they can't stand on
+	local edge_hexes = find_edge_hexes(EDGE_COUNT * 4)
+	local used = {}
+	for i = 1, EDGE_COUNT do
+		local edge_unit = wesnoth.units.create {
 			type = def.edge[mathx.random(#def.edge)],
 			side = boss_side_num,
 			generate_name = true,
+			random_traits = true,
 		}
-		local edge_unit = wesnoth.units.get(hex[1], hex[2])
-		if edge_unit and def.edge_swift then
+		local placed = false
+		for j, hex in ipairs(edge_hexes) do
+			if not used[j] and not wesnoth.units.get(hex[1], hex[2])
+				and wesnoth.units.movement_on(edge_unit, { x = hex[1], y = hex[2] }) < 99 then
+				used[j] = true
+				edge_unit:to_map(hex[1], hex[2])
+				placed = true
+				break
+			end
+		end
+		if placed and def.edge_swift then
 			edge_unit:add_modification("object", {
 				id = "wc2x_boss_flyer_swift",
 				wml.tag.effect {
