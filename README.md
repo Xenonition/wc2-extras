@@ -21,7 +21,8 @@ and buffs, and a final boss. 1–4 players, five random maps.
   hunter, flurry and anchor.
 - **Cursed items** with real downsides, like the Bloodprice Blade (drains 100% of damage,
   but it bleeds you every turn) or the Gambler's Die (every strike is a coin flip).
-- **A final boss** on map five, rolled at random, with its own army.
+- **A final boss** on map five: one of three — a Lich you must hunt phylacteries to kill, a
+  dragon whose aura burns everyone beside it, or a Usurper shielded by his lieutenants.
 - **Four new factions:** The Coil, Magnoshutadt, The Swarm and Monsters.
 - **Unit Finder** (right-click): find which of your units has a given trait or ability.
 

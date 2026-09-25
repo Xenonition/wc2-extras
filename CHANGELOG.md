@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Final boss roster: the random boss is replaced by one of three hand-designed bosses, each
+  with a signature mechanic, a phase change at half HP and a themed army — the Lich
+  Sovereign (phylacteries), the Wyrm of the Last Age (scorching aura, Wrath) and the Usurper
+  (lieutenants shield him; the Crown's Guard). Placeholder art until custom sprites land.
+- Objectives show the boss's status; the debug panel can force which boss spawns.
+
 ## 0.3.1 — 2026-09-25
 
 Fixes from the pre-release audit.

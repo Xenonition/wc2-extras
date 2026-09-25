@@ -169,6 +169,10 @@ local function apply_action(data)
 		wc2x.ai_director.debug.force(data.side, data.slot, data.tactic)
 		msg(string.format("Forced side %d %s → %s", data.side, data.slot, data.tactic), s)
 
+	elseif data.action == "boss_force" then
+		wml.variables["wc2x_boss_force"] = data.kind ~= "" and data.kind or nil
+		msg("Final boss: " .. (data.kind ~= "" and data.kind or "random"), s)
+
 	elseif data.action == "free_shop" then
 		local vars = wesnoth.sides[s].variables
 		if vars["wc2x_dbg_free_shop"] then
@@ -387,6 +391,7 @@ local function collect_action(x, y)
 	table.insert(options, "Gold: +500")
 	local free_shop_on = wesnoth.sides[side_num].variables["wc2x_dbg_free_shop"]
 	table.insert(options, free_shop_on and "100% Shop/Gacha Discount: ON (click to disable)" or "100% Shop/Gacha Discount: OFF (click to enable)")
+	table.insert(options, "Final Boss: " .. (wml.variables["wc2x_boss_force"] or "random"))
 	if loti and loti.gem then
 		local label = loti_free_craft_sides[side_num] and "LotI Free Craft: ON (click to disable)" or "LotI Free Craft: OFF (click to enable)"
 		table.insert(options, label)
@@ -414,8 +419,14 @@ local function collect_action(x, y)
 			return { action = "gold", side = side_num, amount = 500 }
 		elseif choice == offset + 3 then
 			return { action = "free_shop" }
+		elseif choice == offset + 4 then
+			local kinds = { "random", "lich", "usurper", "wyrm" }
+			local pick = pick_option("Final Boss", "Which boss spawns on scenario 5 (set before the last leader dies):", kinds)
+			if pick >= 1 and pick <= #kinds then
+				return { action = "boss_force", kind = pick == 1 and "" or kinds[pick] }
+			end
 		else
-			local loti_offset = offset + 3
+			local loti_offset = offset + 4
 			local has_loti = loti and loti.gem
 			if has_loti and choice == loti_offset + 1 then
 				return { action = "loti_free_craft" }

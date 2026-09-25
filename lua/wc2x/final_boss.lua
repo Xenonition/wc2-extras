@@ -5,78 +5,13 @@ local _ = wesnoth.textdomain "wesnoth-wc"
 
 local boss = {}
 
-local BOSS_TITLES = {
-	_ "the Worldbreaker",
-	_ "the Conqueror",
-	_ "the Undying",
-	_ "the Dread Sovereign",
-	_ "Bane of Empires",
-	_ "the Last Warden",
-	_ "Scourge of the Coast",
-	_ "the Eternal",
-}
-
-local cached_lv3_pool = nil
-local function get_lv3_pool()
-	if cached_lv3_pool then return cached_lv3_pool end
-	cached_lv3_pool = {}
-	for id, ut in pairs(wesnoth.unit_types) do
-		if ut.level == 3 then
-			table.insert(cached_lv3_pool, id)
-		end
-	end
-	table.sort(cached_lv3_pool)
-	return cached_lv3_pool
-end
-
-local cached_flyer_pool = nil
-local function get_flyer_pool()
-	if cached_flyer_pool then return cached_flyer_pool end
-	cached_flyer_pool = {}
-	for id, ut in pairs(wesnoth.unit_types) do
-		if ut.level >= 1 then
-			local mt = tostring(ut.__cfg.movement_type or "")
-			if mt:find("fly") then
-				table.insert(cached_flyer_pool, id)
-			end
-		end
-	end
-	table.sort(cached_flyer_pool)
-	return cached_flyer_pool
-end
-
-local function advance_type_to_max(type_id, max_level)
-	local current = type_id
-	for _ = 1, 10 do
-		local ut = wesnoth.unit_types[current]
-		if not ut or ut.level >= max_level or #ut.advances_to == 0 then break end
-		local candidates = {}
-		for _, adv in ipairs(ut.advances_to) do
-			local at = wesnoth.unit_types[adv]
-			if at and at.level > ut.level then
-				table.insert(candidates, adv)
-			end
-		end
-		if #candidates == 0 then break end
-		current = candidates[mathx.random(#candidates)]
-	end
-	return current
-end
-
-local function pick_boss_type()
-	local pool = get_lv3_pool()
-	if #pool == 0 then return "Ancient Lich" end
-	local base = pool[mathx.random(#pool)]
-	return advance_type_to_max(base, 6)
-end
-
 local ARENA_KEEP = "Kud"
 local ARENA_CASTLE = "Cd"
 local ARENA_RING = "Qxu"
 local ARENA_RING_CLEARED = "Rr"
 
 local ARMY_COUNT = 13
-local FLYER_COUNT = 10
+local EDGE_COUNT = 10
 
 local arena_center = nil
 local boss_spawned = false
@@ -325,6 +260,21 @@ local function find_edge_hexes(count)
 end
 
 
+function boss.current_def()
+	local kind = wml.variables["wc2x_boss_kind"]
+	return kind and wc2x.boss_roster.get(kind)
+end
+
+function boss.context()
+	local id = wml.variables["wc2x_boss_id"]
+	local cx, cy = wml.variables["wc2x_arena_x"], wml.variables["wc2x_arena_y"]
+	return {
+		side = boss_side_num or wml.variables["wc2x_boss_side"],
+		cx = cx, cy = cy,
+		boss = id and wesnoth.units.find_on_map({ id = id })[1],
+	}
+end
+
 local function spawn_boss()
 	if boss_spawned then return end
 	boss_spawned = true
@@ -344,12 +294,14 @@ local function spawn_boss()
 
 	local cx, cy = arena_center[1], arena_center[2]
 
-	local boss_type = pick_boss_type()
-	local title = BOSS_TITLES[mathx.random(#BOSS_TITLES)]
+	local kind = wc2x.boss_roster.pick()
+	local def = wc2x.boss_roster.get(kind)
+	wml.variables["wc2x_boss_kind"] = kind
+	local title = def.titles[mathx.random(#def.titles)]
 
 	local unit_cfg = {
 		x = cx, y = cy,
-		type = boss_type,
+		type = def.type,
 		side = boss_side_num,
 		canrecruit = true,
 		generate_name = true,
@@ -363,28 +315,9 @@ local function spawn_boss()
 
 	local boss_unit = wesnoth.units.find_on_map({ side = boss_side_num, canrecruit = true })[1]
 	if boss_unit then
-		boss_unit:add_modification("object", {
-			id = "wc2x_boss_buffs",
-			wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.regenerate {
-					id = "regenerates", name = "regenerates",
-					description = "This unit restores 8 HP at the start of each turn.",
-					value = 8,
-				}},
-			},
-			wml.tag.effect { apply_to = "new_ability",
-				wml.tag.abilities { wml.tag.skirmisher {
-					id = "skirmisher", name = "skirmisher",
-					description = "This unit's movement is not slowed by enemy zones of control.",
-				}},
-			},
-			wml.tag.effect {
-				apply_to = "hitpoints",
-				increase_total = "50%",
-				heal_full = true,
-			},
-		})
-		boss_unit.name = boss_unit.name .. " " .. title
+		local base_name = tostring(boss_unit.name)
+		if base_name == "" then base_name = def.fallback_name end
+		boss_unit.name = base_name .. " " .. tostring(title)
 		boss_unit.hitpoints = boss_unit.max_hitpoints
 		boss_unit_id = boss_unit.id
 		wml.variables["wc2x_boss_id"] = boss_unit.id
@@ -393,7 +326,6 @@ local function spawn_boss()
 
 	wesnoth.sides[boss_side_num].hidden = false
 
-	local lv3 = get_lv3_pool()
 	local troop_hexes = ring_to_list(get_hex_ring(cx, cy, 1))
 	for _, h in ipairs(ring_to_list(get_hex_ring(cx, cy, 2))) do
 		table.insert(troop_hexes, h)
@@ -401,30 +333,26 @@ local function spawn_boss()
 	mathx.shuffle(troop_hexes)
 	for i = 1, math.min(ARMY_COUNT, #troop_hexes) do
 		local loc = troop_hexes[i]
-		local troop_type = lv3[mathx.random(#lv3)]
 		wesnoth.wml_actions.unit {
 			x = loc.x, y = loc.y,
-			type = troop_type,
+			type = def.army[mathx.random(#def.army)],
 			side = boss_side_num,
 			generate_name = true,
 		}
 	end
 
-	local flyers = get_flyer_pool()
-	local edge_hexes = find_edge_hexes(FLYER_COUNT)
-
+	local edge_hexes = find_edge_hexes(EDGE_COUNT)
 	for i = 1, #edge_hexes do
-		local flyer_type = flyers[mathx.random(#flyers)]
 		local hex = edge_hexes[i]
 		wesnoth.wml_actions.unit {
 			x = hex[1], y = hex[2],
-			type = flyer_type,
+			type = def.edge[mathx.random(#def.edge)],
 			side = boss_side_num,
 			generate_name = true,
 		}
-		local flyer = wesnoth.units.get(hex[1], hex[2])
-		if flyer then
-			flyer:add_modification("object", {
+		local edge_unit = wesnoth.units.get(hex[1], hex[2])
+		if edge_unit and def.edge_swift then
+			edge_unit:add_modification("object", {
 				id = "wc2x_boss_flyer_swift",
 				wml.tag.effect {
 					apply_to = "movement_costs",
@@ -441,7 +369,7 @@ local function spawn_boss()
 					increase = 3,
 				},
 			})
-			flyer.moves = flyer.max_moves
+			edge_unit.moves = edge_unit.max_moves
 		end
 	end
 
@@ -456,8 +384,9 @@ local function spawn_boss()
 	wesnoth.wml_actions.message {
 		side = boss_side_num,
 		canrecruit = true,
-		message = _ "You thought this land was yours? I have watched your petty conquests from my throne. Now face a TRUE ruler!",
+		message = def.intro,
 	}
+	if def.on_spawn then def.on_spawn(boss.context()) end
 
 	wesnoth.wml_actions.music {
 		name = "battle-epic.ogg",
@@ -530,33 +459,70 @@ function boss.init(config)
 			end
 		end
 
-		if boss_spawned then
-			local bid = boss_unit_id or wml.variables["wc2x_boss_id"]
-			if bid and dying.id == bid then
-				local boss_name = wml.variables["wc2x_boss_name"] or "the Final Boss"
-				wesnoth.wml_actions.message {
-					side = "1",
-					canrecruit = true,
-					message = boss_name .. _ " is slain! Against all odds, we have prevailed.",
-				}
-				wesnoth.wml_actions.message {
-					side = "1,2,3",
-					canrecruit = false,
-					message = _ "From a handful of soldiers to conquerors of an entire world. What a journey it has been.",
-				}
-				wesnoth.audio.play("ambient/ship.ogg")
-				wesnoth.wml_actions.endlevel {
-					result = "victory",
-					carryover_percentage = 0,
-					carryover_add = false,
-					carryover_report = false,
-					music = "sad.ogg",
-					end_text = _ "The End",
-					next_scenario = "",
-				}
+		if not boss_spawned then return end
+		local def = boss.current_def()
+		local bid = wml.variables["wc2x_boss_id"] or boss_unit_id
+		if bid and dying.id == bid then
+			if def and def.on_boss_death and def.on_boss_death(boss.context()) then
+				boss_unit_id = wml.variables["wc2x_boss_id"]
+				wesnoth.wml_actions.wc2_objectives {}
+				return
 			end
+			local boss_name = wml.variables["wc2x_boss_name"] or "the Final Boss"
+			wesnoth.wml_actions.message {
+				side = "1",
+				canrecruit = true,
+				message = boss_name .. _ " is slain! Against all odds, we have prevailed.",
+			}
+			wesnoth.wml_actions.message {
+				side = "1,2,3",
+				canrecruit = false,
+				message = _ "From a handful of soldiers to conquerors of an entire world. What a journey it has been.",
+			}
+			wesnoth.audio.play("ambient/ship.ogg")
+			wesnoth.wml_actions.endlevel {
+				result = "victory",
+				carryover_percentage = 0,
+				carryover_add = false,
+				carryover_report = false,
+				music = "sad.ogg",
+				end_text = _ "The End",
+				next_scenario = "",
+			}
+		elseif def and def.on_unit_death and def.on_unit_death(boss.context(), dying) then
+			-- the dying unit is still on the map during the die event; leave it out of the counts
+			boss.excluded_id = dying.id
+			wesnoth.wml_actions.wc2_objectives {}
+			boss.excluded_id = nil
 		end
 	end)
+
+	-- One phase change per boss, at half HP
+	on_event("attack end", function()
+		if not boss_spawned or wml.variables["wc2x_boss_phase_done"] then return end
+		local def = boss.current_def()
+		local ctx = boss.context()
+		if not (def and ctx.boss) then return end
+		if ctx.boss.hitpoints * 2 <= ctx.boss.max_hitpoints then
+			wml.variables["wc2x_boss_phase_done"] = true
+			if def.on_phase then def.on_phase(ctx) end
+			wesnoth.wml_actions.wc2_objectives {}
+		end
+	end)
+
+	-- "turn refresh" fires after start-of-turn healing, so villages and healers can't cancel the aura
+	on_event("turn refresh", function()
+		if not boss_spawned then return end
+		local def = boss.current_def()
+		if not (def and def.on_turn_refresh) then return end
+		local ctx = boss.context()
+		if ctx.boss then def.on_turn_refresh(ctx, wesnoth.current.side) end
+	end)
+end
+
+function boss.status_text()
+	local def = boss_spawned and boss.current_def()
+	return def and def.status_text and def.status_text(boss.excluded_id) or nil
 end
 
 function boss.is_boss_phase()

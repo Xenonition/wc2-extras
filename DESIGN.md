@@ -166,18 +166,45 @@ since item effects can't express recurring damage. Icons are in `images/items/wc
 
 ### Final boss (scenario 5)
 
-At prestart an arena (a keep, two rings of castle and an impassable chasm ring) is stamped
-at the best site within 6 hexes of the map centre: its footprint may not cover a keep or a
-leader, and sites covering villages, items, units or water score worse. Units already in
+**Arena.** At prestart an arena (a keep, two rings of castle and an impassable chasm ring) is
+stamped at the best site within 6 hexes of the map centre: its footprint may not cover a keep
+or a leader, and sites covering villages, items, units or water score worse. Units already in
 the footprint are moved to the nearest free hex outside it. POIs and creeps are placed
-afterwards and keep 6 hexes from any keep, so they never land inside. When every regular enemy leader is dead, the chasm opens and the
-boss spawns: a random level-3 unit advanced toward level 6, with regenerates, skirmisher,
-+50% HP and a random title ("the Worldbreaker"…). It brings 13 level-3 troops in the
-arena and 10 flyers from the map edges. Killing it ends the campaign in victory; the
-between-map sequence does not run after scenario 5.
+afterwards and keep 6 hexes from any keep, so they never land inside.
 
-The boss does not scale with player count — gold is split between players, so total
-player strength is roughly constant.
+**Trigger.** When every regular enemy leader is dead, the chasm opens and one of three bosses
+spawns at random (`lua/wc2x/boss_roster.lua`), with its own themed army: 13 units in the arena
+and 10 from the map edges. Killing the boss ends the campaign in victory; the between-map
+sequence does not run after scenario 5. The boss does not scale with player count — gold is
+split between players, so total player strength is roughly constant.
+
+**Design rule:** each boss has one signature mechanic and one phase change at 50% HP. The
+default AI controls the boss and doesn't understand gimmicks, so every mechanic is either
+passive or driven by our Lua — never something the AI must choose to do.
+
+| | Lich Sovereign | Wyrm of the Last Age | The Usurper |
+|---|---|---|---|
+| Unit | Level 5, 120 HP, undeadfoot, chaotic | Level 5, 150 HP, drakefly, chaotic | Level 5, 102 HP, smallfoot, lawful |
+| Attacks | touch 8-4 arcane drains; chill tempest 13-5 cold magical; shadow wave 9-5 arcane magical | bite 21-2 blade; tail 24-1 impact; fire breath 14-4 fire marksman | sword 10-4 blade; crossbow 8-3 pierce |
+| Abilities | regenerates, skirmisher | regenerates | regenerates, skirmisher, leadership, steadfast |
+| Signature | **Phylacteries:** 3 immobile phylacteries spawn hidden in the fog, 10+ hexes from the arena and 5+ from player units. While any survives, the slain Lich rises at the arena keep with half HP and no actions left that turn | **Scorching aura:** player units adjacent to the Wyrm at the start of their turn take 8 fire damage after healing is applied, so villages and healers can't cancel it (resistance applies; can't kill) | **Royal shield:** 3 lieutenants (General, Arch Mage, Master Bowman) spawn 5–7 hexes from the arena; each living one gives the Usurper +25% resistance to everything |
+| Phase at 50% HP | **Grave Tide:** 5 undead rise around the Lich | **Wrath:** +1 strike on all attacks, +2 moves | **The Crown's Guard:** 4 Royal Guards appear, and the AI is told to leave the keep and fight (`leader_ignores_keep`, `leader_aggression=1`) |
+| Army (arena) | Draug, Banebow, Lich, Death Knight, Ghast | Drake Flameheart, Drake Enforcer, Drake Warden, Drake Blademaster | Royal Guard, Halberdier, Iron Mauler, Master Bowman, Silver Mage |
+| Army (edges) | Spectre, Nightgaunt (fast, ignore terrain) | Hurricane Drake, Inferno Drake (fast, ignore terrain) | Cavalier, Grand Knight (normal movement) |
+
+Every boss also gets the heroic trait and a random title. The boss unit types
+(`units/wc3_bosses.cfg`) are standalone — no `[base_unit]` — so mainline rebalances can't
+change them; mainline numbers were used only as a reference. Signatures appear in the unit's
+help as `[dummy]` abilities. The objectives screen shows the boss's status (phylacteries
+remaining, lieutenants alive, enraged).
+
+State lives in WML variables (`wc2x_boss_kind`, `wc2x_boss_id`, `wc2x_boss_phase_done`) and
+on the map (phylactery units, lieutenants tagged with a `wc3_lieutenant` unit variable), so
+save/load needs no extra restore logic. The debug panel can force which boss spawns.
+
+Art: `images/units/wc3-bosses/` (unit sprites and the phylactery) and
+`images/portraits/wc3-bosses/` (portraits) currently hold mainline placeholders; replacing
+the files swaps the art without code changes.
 
 ### Factions
 
@@ -191,7 +218,8 @@ WC2's era plus four WC3 factions built from base-game units: **The Coil**
   the units that have a chosen one; picking a unit scrolls to it and selects it.
 - **Debug panel** (hidden): enabled from Wocopedia → Settings → "Enable detailed logging".
   Grants gold, XP, stats, any buff from the buff pool, upgrades; inspects and forces AI
-  director tactics; toggles a per-side 100% shop/gacha discount and LotI free crafting.
+  director tactics; toggles a per-side 100% shop/gacha discount and LotI free crafting; forces which final boss
+  spawns.
   All mutations go through `evaluate_single` so they are MP-safe.
 
 ## Technical notes
@@ -200,7 +228,8 @@ WC2's era plus four WC3 factions built from base-game units: **The Coil**
 
 | Path | Contents |
 |---|---|
-| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `final_boss`, `unit_finder`, `debug_panel`, `dialog_utils` |
+| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `final_boss`, `boss_roster`, `unit_finder`, `debug_panel`, `dialog_utils` |
+| `units/` | WC3 unit types (final bosses, phylactery) |
 | `lua/campaign_main.lua` | Loads WC3 modules and LotI workarounds |
 | `lua/campaign/`, `lua/game_mechanics/`, `lua/map/` | Forked WC2 code (scenario flow, invest, artifacts, map generation) |
 | `resources/data/` | Artifacts, training, trait data |
@@ -281,5 +310,5 @@ warnings: `ICON_THREE`, `ICON_FOUR`, `IMAGE_ONE`, `WC2_CAMPAIGN_NEW`, `WC2_SCENA
 
 ## Open items
 
-- Deferred designs: random final boss from three hand-made bosses; a story-driven unit
-  mechanic.
+- Deferred design: a story-driven unit mechanic.
+- Boss art: custom sprites and portraits to replace the placeholders.

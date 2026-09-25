@@ -17,7 +17,7 @@ function wesnoth.wml_actions.wc2_objectives(cfg)
 		win_desc = _ "Defeat " .. boss_name
 	end
 
-	wesnoth.wml_actions.objectives {
+	local objectives = {
 		wml.tag.objective {
 			description = win_desc,
 			condition = "win",
@@ -35,4 +35,9 @@ function wesnoth.wml_actions.wc2_objectives(cfg)
 		},
 		note = wc2_color.help_text(strings.help_available)
 	}
+	local boss_status = wc2x and wc2x.final_boss and wc2x.final_boss.status_text()
+	if boss_status then
+		table.insert(objectives, wml.tag.note { description = boss_status })
+	end
+	wesnoth.wml_actions.objectives(objectives)
 end
