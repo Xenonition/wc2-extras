@@ -5,7 +5,11 @@
 - Final boss roster: the random boss is replaced by one of three hand-designed bosses, each
   with a signature mechanic, a phase change at half HP and a themed army — the Lich
   Sovereign (phylacteries), the Wyrm of the Last Age (scorching aura, Wrath) and the Usurper
-  (lieutenants shield him; the Crown's Guard). Placeholder art until custom sprites land.
+  (lieutenants shield him; the Crown's Guard), with custom sprites.
+- Each boss has a unique attack kit: the Lich's plague touch, slowing chill and death knell
+  plus an aura that weakens adjacent enemies; the Wyrm's supercharged devour, stunning tail
+  and burning breath; the Usurper's first-strike blade, execute stroke and a leadership aura
+  that works on allies of any level.
 - Objectives show the boss's status. Debug panel "Final Boss" menu: force which boss spawns,
   skip to the final scenario, or spawn the boss immediately.
 

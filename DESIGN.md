@@ -185,8 +185,8 @@ passive or driven by our Lua — never something the AI must choose to do.
 | | Lich Sovereign | Wyrm of the Last Age | The Usurper |
 |---|---|---|---|
 | Unit | Level 5, 120 HP, undeadfoot, chaotic | Level 5, 150 HP, drakefly, chaotic | Level 5, 102 HP, smallfoot, lawful |
-| Attacks | touch 8-4 arcane drains; chill tempest 13-5 cold magical; shadow wave 9-5 arcane magical | bite 21-2 blade; tail 24-1 impact; fire breath 14-4 fire marksman | sword 10-4 blade; crossbow 8-3 pierce |
-| Abilities | regenerates, skirmisher | regenerates | regenerates, skirmisher, leadership, steadfast |
+| Attacks | soul rend 9-3 arcane, drains + plague (victims rise as Soulless); grave chill 10-4 cold, magical + slows; death knell 28-1 arcane, magical | devour 25-1 blade, supercharge (x4 both ways when attacking); tail sweep 14-2 impact, stun; inferno 11-4 fire, marksman + burning (poison under another name) | kingsblade 12-4 blade, first strike; executioner's stroke 16-2 blade, execute (x2 vs targets below half HP at the start of the fight); crossbow 10-3 pierce, marksman |
+| Abilities | regenerates, skirmisher, chill of the grave (adjacent enemies deal 15% less damage) | regenerates | regenerates, skirmisher, steadfast, tyrant's command (adjacent allies of any level +25% damage) |
 | Signature | **Phylacteries:** 3 immobile phylacteries spawn hidden in the fog, 10+ hexes from the arena and 5+ from player units. While any survives, the slain Lich rises at the arena keep with half HP and no actions left that turn | **Scorching aura:** player units adjacent to the Wyrm at the start of their turn take 8 fire damage after healing is applied, so villages and healers can't cancel it (resistance applies; can't kill) | **Royal shield:** 3 lieutenants (General, Arch Mage, Master Bowman) spawn 5–7 hexes from the arena; each living one gives the Usurper +25% resistance to everything |
 | Phase at 50% HP | **Grave Tide:** 5 undead rise around the Lich | **Wrath:** +1 strike on all attacks, +2 moves | **The Crown's Guard:** 4 Royal Guards appear, and the AI is told to leave the keep and fight (`leader_ignores_keep`, `leader_aggression=1`) |
 | Army (arena) | Draug, Banebow, Lich, Death Knight, Ghast | Drake Flameheart, Drake Enforcer, Drake Warden, Drake Blademaster | Royal Guard, Halberdier, Iron Mauler, Master Bowman, Silver Mage |
@@ -194,7 +194,8 @@ passive or driven by our Lua — never something the AI must choose to do.
 
 Every boss also gets the heroic trait and a random title. The boss unit types
 (`units/wc3_bosses.cfg`) are standalone — no `[base_unit]` — so mainline rebalances can't
-change them; mainline numbers were used only as a reference. Signatures appear in the unit's
+change them. Each has its own attack kit built only from stock specials, WC3 specials and
+condition filters (no Lua). Signatures appear in the unit's
 help as `[dummy]` abilities. The objectives screen shows the boss's status (phylacteries
 remaining, lieutenants alive, enraged).
 
