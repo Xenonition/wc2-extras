@@ -1,17 +1,23 @@
 # Changelog
 
-## Unreleased
+## 0.4.0 — 2026-09-26
 
 - Final boss roster: the random boss is replaced by one of three hand-designed bosses, each
   with a signature mechanic, a phase change at half HP and a themed army — the Lich
   Sovereign (phylacteries), the Wyrm of the Last Age (scorching aura, Wrath) and the Usurper
-  (lieutenants shield him; the Crown's Guard), with custom sprites.
+  (lieutenants shield him; the Crown's Guard), with custom sprites and portraits.
 - Each boss has a unique attack kit: the Lich's plague touch, slowing chill and death knell
   plus an aura that weakens adjacent enemies; the Wyrm's supercharged devour, stunning tail
-  and burning breath (its own status: orange tint, 6 damage for 2 turns, not cured by villages); the Usurper's first-strike blade, execute stroke and a leadership aura
-  that works on allies of any level.
+  and burning breath (its own status: orange tint, 6 damage for 2 turns, not cured by
+  villages); the Usurper's first-strike blade, execute stroke and a leadership aura that
+  works on allies of any level.
 - Objectives show the boss's status. Debug panel "Final Boss" menu: force which boss spawns,
   skip to the final scenario, or spawn the boss immediately.
+- Fixed location searches that put the radius at the top level of a filter (applied after
+  [not]): the Usurper's lieutenants never spawned, arena evacuation did nothing and item
+  placement could pick blocked hexes.
+- Boss edge units only spawn on hexes they can stand on (cavalry stuck in deep water), and
+  no longer pick off-map border hexes.
 
 ## 0.3.1 — 2026-09-25
 
