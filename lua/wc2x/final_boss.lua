@@ -199,13 +199,9 @@ end
 local EDGE_DEPTH = 3
 
 local function find_edge_hexes(count)
-	local map_w = wesnoth.current.map.playable_width
-	local map_h = wesnoth.current.map.playable_height
-	local border = wesnoth.current.map.border_size or 1
-	local x_min = border + 1
-	local x_max = map_w + border
-	local y_min = border + 1
-	local y_max = map_h + border
+	-- Lua map coordinates put the playable area at 1..width; 0 and width+1 are the border
+	local x_min, x_max = 1, wesnoth.current.map.playable_width
+	local y_min, y_max = 1, wesnoth.current.map.playable_height
 	local seen = {}
 	local bands = { {}, {}, {}, {} }
 	for d = 0, EDGE_DEPTH - 1 do
@@ -354,7 +350,8 @@ local function spawn_boss()
 		}
 		local placed = false
 		for j, hex in ipairs(edge_hexes) do
-			if not used[j] and not wesnoth.units.get(hex[1], hex[2])
+			if not used[j] and wesnoth.current.map:on_board(hex[1], hex[2])
+				and not wesnoth.units.get(hex[1], hex[2])
 				and wesnoth.units.movement_on(edge_unit, { x = hex[1], y = hex[2] }) < 99 then
 				used[j] = true
 				edge_unit:to_map(hex[1], hex[2])
