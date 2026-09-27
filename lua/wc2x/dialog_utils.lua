@@ -97,24 +97,6 @@ function du.build_upgrades_summary(side_num)
 		end
 	end
 
-	local side = wesnoth.sides[side_num]
-	local recruit_list = side.recruit
-	local discounts = {}
-	for _, rtype in ipairs(recruit_list) do
-		local d = side.variables["wc2x_unit_discount." .. rtype] or 0
-		if d > 0 then
-			local utype = wesnoth.unit_types[rtype]
-			local name = utype and tostring(utype.name) or rtype
-			table.insert(discounts, string.format("  %s: %s", name, du.colored(string.format("-%dg", d), "green")))
-		end
-	end
-	if #discounts > 0 then
-		any = true
-		table.insert(lines, "")
-		table.insert(lines, du.bold(tostring(_ "Unit Discounts:")))
-		for _, d in ipairs(discounts) do table.insert(lines, d) end
-	end
-
 	if not any then
 		table.insert(lines, du.gray(tostring(_ "No upgrades purchased yet.")))
 		table.insert(lines, "")
