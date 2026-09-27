@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 — 2026-09-27
 
 - Invest menu showed training as "level X/4" when the top level is 3, and never labelled the
   final step "Maximum Level". Both now use the real maximum.
