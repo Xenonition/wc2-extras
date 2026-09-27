@@ -503,6 +503,8 @@ function poi.activate(unit, poi_type)
 			x = spawn_hex.x, y = spawn_hex.y,
 			generate_name = true, random_traits = true, moves = 0,
 		}
+		local merc = wesnoth.units.get(spawn_hex.x, spawn_hex.y)
+		if merc and merc.type == type_id and wc2_training then wc2_training.apply(merc) end
 		side.gold = side.gold - cost
 
 	elseif poi_type == "caravan" then

@@ -4,6 +4,7 @@
 
 - Mercenary camp units cost half their normal price (was 1.2x). They stay plain units with no
   heroic trait or buffs, giving the camp a niche as cheap mid-war reinforcements.
+- Hired mercenaries now receive your faction's training upgrades, like normal recruits.
 
 ## 0.4.0 — 2026-09-26
 
