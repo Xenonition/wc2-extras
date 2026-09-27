@@ -419,7 +419,7 @@ function poi.activate(unit, poi_type)
 		local scenario_num = wc2_scenario.scenario_num()
 		local level_weights = get_merc_level_weights(scenario_num)
 		local offer_count = config.merc_offer_count or 3
-		local cost_mult = config.merc_cost_multiplier or 1.2
+		local cost_mult = config.merc_cost_multiplier or 0.5
 
 		local seen_offers = {}
 		local offers = {}

@@ -64,7 +64,8 @@ config.merc_level_weights = {
 	{ scenario = 5, weights = { [2] = 2, [3] = 4, [4] = 3, [5] = 1 } },
 }
 config.merc_offer_count = 3
-config.merc_cost_multiplier = 1.2
+-- half price: mercs are plain units (no heroic trait or buffs), the cheap mid-war option
+config.merc_cost_multiplier = 0.5
 
 -- Enemy leader scaling — target leader level by scenario.
 -- The leader spawns at the highest available level up to this target,

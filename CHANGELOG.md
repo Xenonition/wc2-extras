@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Mercenary camp units cost half their normal price (was 1.2x). They stay plain units with no
+  heroic trait or buffs, giving the camp a niche as cheap mid-war reinforcements.
+
 ## 0.4.0 — 2026-09-26
 
 - Final boss roster: the random boss is replaced by one of three hand-designed bosses, each
