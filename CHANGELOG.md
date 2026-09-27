@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.4.1 — 2026-09-27
 
 - Mercenary camp units cost half their normal price (was 1.2x). They stay plain units with no
   heroic trait or buffs, giving the camp a niche as cheap mid-war reinforcements.
