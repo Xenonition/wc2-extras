@@ -106,7 +106,8 @@ function wc2_show_invest_dialog_impl(dialog_args)
 				local train_message_before = wc2_training.generate_message(v, current_grade)
 
 				local title = stringx.vformat(_ "$name Training", { name = training_info.name })
-				local desc = wc2_training.describe_training_level2(current_grade, #training_info.grade) .. wc2_color.tc_text(" → ") .. wc2_training.describe_training_level2(current_grade + 1, #training_info.grade)
+				local max_grade = #training_info.grade - 1
+				local desc = wc2_training.describe_training_level2(current_grade, max_grade) .. wc2_color.tc_text(" → ") .. wc2_training.describe_training_level2(current_grade + 1, max_grade)
 
 
 				local subnode, page = node:add_invest_item {

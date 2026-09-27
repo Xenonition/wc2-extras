@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Invest menu showed training as "level X/4" when the top level is 3, and never labelled the
+  final step "Maximum Level". Both now use the real maximum.
+- Removed leftover unit-discount code from the shop summary (it only logged warnings).
+
 ## 0.4.1 — 2026-09-27
 
 - Mercenary camp units cost half their normal price (was 1.2x). They stay plain units with no

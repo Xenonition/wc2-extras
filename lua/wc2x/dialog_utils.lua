@@ -119,7 +119,8 @@ function du.build_invest_summary(side_num)
 		for i, trainer in ipairs(trainers) do
 			local level = wc2_training.get_level(side_num, i)
 			if level > 0 then
-				local max_level = trainer.grade and #trainer.grade or "?"
+				-- grade[1] is level 0, so the top level is #grade - 1
+				local max_level = trainer.grade and (#trainer.grade - 1) or "?"
 				table.insert(training_lines, string.format("  %s: Level %d/%s", du.bold(tostring(trainer.name)), level, tostring(max_level)))
 			end
 		end
