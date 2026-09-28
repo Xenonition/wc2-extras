@@ -215,6 +215,9 @@ WC2's era plus four WC3 factions built from base-game units: **The Coil**
 
 ### Player tools
 
+- **Retrain** (right-click menu): on a unit recruited this turn, re-roll its training for 50%
+  of its recruit cost (`retrain_cost_pct`), as often as the player can pay. It replaces the
+  recruit-and-dismiss loop players used to fish for good training; veterans can't be re-rolled.
 - **Unit Finder** (right-click menu): lists traits and abilities across your units, then
   the units that have a chosen one; picking a unit scrolls to it and selects it.
 - **Debug panel** (hidden): enabled from Wocopedia → Settings → "Enable detailed logging".

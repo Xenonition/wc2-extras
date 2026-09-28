@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Retrain: right-click a unit recruited this turn to re-roll its training for 50% of its
+  recruit cost, instead of recruiting and dismissing units to fish for good rolls.
+
 ## 0.5.0 — 2026-09-27
 
 - Invest menu showed training as "level X/4" when the top level is 3, and never labelled the
