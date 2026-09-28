@@ -24,7 +24,8 @@ end
 function retrain.init(config)
 	retrain.config = config
 
-	wesnoth.game_events.add_repeating("recruit", function(ctx)
+	wesnoth.game_events.add_repeating("recruit", function()
+		local ctx = wesnoth.current.event_context
 		local u = wesnoth.units.get(ctx.x1, ctx.y1)
 		if u then u.variables.wc2x_recruit_turn = wesnoth.current.turn end
 	end)
