@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the trade caravan never paying out: its arrival check read the event location from the
+  handler argument, which is always empty, so it silently did nothing.
+
 ## 0.5.0 — 2026-09-27
 
 - Invest menu showed training as "level X/4" when the top level is 3, and never labelled the

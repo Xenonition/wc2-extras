@@ -565,7 +565,9 @@ function poi.activate(unit, poi_type)
 end
 
 -- Caravan arrival: when the caravan unit moves onto a castle/keep hex near a leader
-on_event("moveto", function(cx)
+-- add_repeating handlers get no event context as an argument; read it from wesnoth.current
+on_event("moveto", function()
+	local cx = wesnoth.current.event_context
 	if not cx.x1 or not cx.y1 then return end
 	local u = wesnoth.units.get(cx.x1, cx.y1)
 	if not u or not u.variables.wc2x_is_caravan then return end
