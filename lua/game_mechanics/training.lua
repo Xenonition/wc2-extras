@@ -216,6 +216,8 @@ function training.apply(u)
 	local side = u.side
 	local trait = {}
 	local descriptions = {}
+	-- id lets WC3's Retrain remove exactly this trait before re-rolling
+	trait.id = "wc2x_trained"
 	trait.male_name = _ "trained"
 	trait.female_name = _ "female^trained"
 	trait.generate_description = false

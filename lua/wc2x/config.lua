@@ -50,6 +50,9 @@ config.upgrade_prices = {
 }
 config.upgrade_price_escalation = 1.6
 
+-- Retrain (right-click on a unit recruited this turn): re-roll its training for this share of its cost
+config.retrain_cost_pct = 50
+
 config.barracks_spawn_interval = 4
 config.training_ground_xp_per_turn = 4
 

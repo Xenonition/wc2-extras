@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 — 2026-09-29
 
+- Retrain: right-click a unit recruited this turn to re-roll its training for 50% of its
+  recruit cost, instead of recruiting and dismissing units to fish for good rolls.
 - Fixed the trade caravan never paying out: its arrival check read the event location from the
   handler argument, which is always empty, so it silently did nothing.
 
