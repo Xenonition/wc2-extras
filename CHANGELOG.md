@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the shrine/gacha "Melee: Backstab" buff never triggering: it checked a direction
+  ("opposite") that Wesnoth does not recognise. It now uses the same check as mainline backstab,
+  and units that already have the broken buff are repaired when a save loads.
+
 ## 0.6.0 — 2026-09-29
 
 - Retrain: right-click a unit recruited this turn to re-roll its training for 50% of its

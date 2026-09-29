@@ -292,11 +292,12 @@ config.shrine_buffs = {
 		wml.tag.effect { apply_to = "attack", range = "melee",
 			wml.tag.set_specials { mode = "append", wml.tag.damage {
 				id = "backstab", name = "backstab",
-				description = "Double damage when an ally is on the opposite side of the target.",
+				description = "When used offensively, this attack deals double damage if there is an enemy of the target on the opposite side of the target, and that unit is not incapacitated (turned to stone or otherwise paralyzed).",
 				multiply = 2, active_on = "offense",
-				wml.tag.filter_opponent { wml.tag.filter_adjacent {
-					is_enemy = "yes", adjacent = "opposite",
-				}},
+				-- same check as mainline WEAPON_SPECIAL_BACKSTAB: the unit behind the target along the attack line
+				wml.tag.filter_opponent {
+					formula = "enemy_of(self, flanker) and not flanker.petrified where flanker = unit_at(direction_from(loc, other.facing))",
+				},
 			}},
 		},
 	}},

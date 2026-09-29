@@ -40,6 +40,8 @@ wc2x.item_curses = wesnoth.dofile("./wc2x/item_curses.lua")
 wc2x.item_curses.init()
 wc2x.burning = wesnoth.dofile("./wc2x/burning.lua")
 wc2x.burning.init()
+wc2x.migrations = wesnoth.dofile("./wc2x/migrations.lua")
+wc2x.migrations.init()
 
 wc2_scenario = wesnoth.dofile("./campaign/scenario.lua")
 wesnoth.dofile("./campaign/autorecall.lua")
