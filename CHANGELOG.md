@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.1 — 2026-09-30
 
 - Fixed the shrine/gacha "Melee: Backstab" buff never triggering: it checked a direction
   ("opposite") that Wesnoth does not recognise. It now uses the same check as mainline backstab,
