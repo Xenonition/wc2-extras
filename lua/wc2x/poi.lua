@@ -564,7 +564,7 @@ function poi.activate(unit, poi_type)
 	end
 end
 
--- Caravan arrival: when the caravan unit moves onto a castle/keep hex near a leader
+-- Caravan arrival: when the caravan unit moves onto any castle/keep hex
 -- add_repeating handlers get no event context as an argument; read it from wesnoth.current
 on_event("moveto", function()
 	local cx = wesnoth.current.event_context
@@ -573,13 +573,11 @@ on_event("moveto", function()
 	if not u or not u.variables.wc2x_is_caravan then return end
 
 	local terrain = tostring(wesnoth.current.map[{cx.x1, cx.y1}])
-	if not (terrain:match("K") or terrain:match("C")) then return end
+	-- castle or keep, as the base terrain or an overlay (e.g. "Ch", "Kh", "Gg^Cov")
+	if not (terrain:match("^[CK]") or terrain:match("%^[CK]")) then return end
 
-	local nearby_leader = wesnoth.units.find_on_map({
-		canrecruit = true, side = u.side,
-		wml.tag.filter_location { x = cx.x1, y = cx.y1, radius = 3 },
-	})[1]
-	if not nearby_leader then return end
+	-- artifact rewards go to the side's leader wherever it is, or drop on the arrival hex
+	local leader = wesnoth.units.find_on_map({ canrecruit = true, side = u.side })[1]
 
 	local config = poi.config
 	local side = wesnoth.sides[u.side]
@@ -605,7 +603,11 @@ on_event("moveto", function()
 				message = _ "The caravan reached safety! The merchants reward you with a rare artifact.",
 				image = "units/human-peasants/ruffian.png",
 			}
-			wc2_artifacts.give_item(nearby_leader, artifact_id, true)
+			if leader then
+				wc2_artifacts.give_item(leader, artifact_id, true)
+			else
+				wc2_artifacts.place_item(cx.x1, cx.y1, artifact_id)
+			end
 		else
 			local gold = config.caravan_gold_reward_base + (scenario_num * config.caravan_gold_reward_per_scenario)
 			side.gold = side.gold + gold

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Trade caravan pays out on any castle or keep hex; it no longer needs your leader within 3
+  hexes. Artifact rewards still go to your leader, or drop on the hex if you have none.
+
 ## 0.6.1 — 2026-09-30
 
 - Fixed the shrine/gacha "Melee: Backstab" buff never triggering: it checked a direction
