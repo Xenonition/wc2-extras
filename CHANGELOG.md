@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.2 — 2026-10-02
 
 - Trade caravan pays out on any castle or keep hex; it no longer needs your leader within 3
   hexes. Artifact rewards still go to your leader, or drop on the hex if you have none.
