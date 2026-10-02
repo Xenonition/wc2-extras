@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 — 2026-10-02
 
 - WC2 items left on the ground at the end of a scenario are no longer lost: they are delivered
   to their owner's castle at the start of the next map (the killer for drops, the finder for
