@@ -47,15 +47,29 @@ function wc2_artifact_needs_compensation(side)
 end
 
 
+-- Which player an item belongs to, for WC3's end-of-scenario carryover: the killer for death
+-- drops, otherwise the human side whose turn it is. nil means "nearest leader decides later".
+local function default_item_owner()
+	local ec = wesnoth.current.event_context
+	if ec and ec.name == "die" then
+		local killer = ec.x2 and wesnoth.units.get(ec.x2, ec.y2)
+		if killer and wc2_scenario.is_human_side(killer.side) then return killer.side end
+		return nil
+	end
+	local side = wesnoth.current.side
+	if side and wc2_scenario.is_human_side(side) then return side end
+end
+
 -- place an artifact with id @a index on the map at position @a x, y.
+-- @a owner (optional) is the side that gets it back if it is still on the ground at victory.
 -- can be used from the bug console as `lua wc2_artifacts.place_item(30,20,1)`
-function artifacts.place_item(x, y, index)
+function artifacts.place_item(x, y, index, owner)
 	wesnoth.wml_actions.item {
 		x = x,
 		y = y,
 		image = artifacts.get_artifact(index).icon,
 		z_order = 20,
-		wml.tag.variables { wc2_atrifact_id = index },
+		wml.tag.variables { wc2_atrifact_id = index, wc2x_owner = owner or default_item_owner() },
 	}
 end
 

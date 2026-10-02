@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- WC2 items left on the ground at the end of a scenario are no longer lost: they are delivered
+  to their owner's castle at the start of the next map (the killer for drops, the finder for
+  loot, the buyer for invest/shop items; otherwise the nearest player).
+
 ## 0.6.2 — 2026-10-02
 
 - Trade caravan pays out on any castle or keep hex; it no longer needs your leader within 3

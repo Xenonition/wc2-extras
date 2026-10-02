@@ -396,7 +396,7 @@ function poi.activate(unit, poi_type)
 					message = _ "Among the rubble, you discover a relic of power!",
 					image = "scenery/castle-ruins.png",
 				}
-				wc2_artifacts.place_item(drop_hex.x, drop_hex.y, artifact_id)
+				wc2_artifacts.place_item(drop_hex.x, drop_hex.y, artifact_id, unit.side)
 				return
 			end
 		end
@@ -606,7 +606,7 @@ on_event("moveto", function()
 			if leader then
 				wc2_artifacts.give_item(leader, artifact_id, true)
 			else
-				wc2_artifacts.place_item(cx.x1, cx.y1, artifact_id)
+				wc2_artifacts.place_item(cx.x1, cx.y1, artifact_id, u.side)
 			end
 		else
 			local gold = config.caravan_gold_reward_base + (scenario_num * config.caravan_gold_reward_per_scenario)

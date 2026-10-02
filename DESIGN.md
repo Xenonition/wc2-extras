@@ -87,6 +87,13 @@ Both apply the **early-finish discount**: 3% per turn left, max 50%. It applies 
 everything, including permanent upgrades — this is intentional: finishing fast is the
 strongest lever in the mod, which is the anti-farming mechanism.
 
+**Item carryover.** WC2 items still on the ground at victory (scenarios 1–4) are not lost:
+each is sent to its owner and placed at their castle at the start of the next map, through the
+same delivery as shop purchases (`lua/wc2x/item_carryover.lua`). The owner is set when the item
+appears: the killer's player for death drops, the finder for bonus points, ruins and the caravan,
+the buyer for invest and shop items. Items with no owner, or whose owner has been defeated, go to
+the player whose leader is nearest. LotI items are not affected.
+
 **Shop consumables** (random each visit): artifacts (30 + 10/scenario), training
 (40 + 8/scenario) and heroes from the unit pool (50 + 12/scenario). Artifacts bought here
 are placed next to the leader at the start of the next map — on a free castle hex if there
@@ -233,7 +240,7 @@ WC2's era plus four WC3 factions built from base-game units: **The Coil**
 
 | Path | Contents |
 |---|---|
-| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `final_boss`, `boss_roster`, `unit_finder`, `debug_panel`, `dialog_utils` |
+| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `unit_finder`, `debug_panel`, `dialog_utils` |
 | `units/` | WC3 unit types (final bosses, phylactery) |
 | `lua/campaign_main.lua` | Loads WC3 modules and LotI workarounds |
 | `lua/campaign/`, `lua/game_mechanics/`, `lua/map/` | Forked WC2 code (scenario flow, invest, artifacts, map generation) |

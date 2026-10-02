@@ -229,7 +229,7 @@ function upgrades.place_pending_artifacts(side_num)
 		if artifact_id then
 			local hex = wc2x.placement.item_hex(leader, taken)
 			if hex then
-				wc2_artifacts.place_item(hex.x, hex.y, artifact_id)
+				wc2_artifacts.place_item(hex.x, hex.y, artifact_id, side_num)
 			else
 				wc2_artifacts.give_item(leader, artifact_id, true)
 			end

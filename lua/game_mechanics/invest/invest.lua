@@ -92,7 +92,7 @@ function wc2_invest.do_item(t)
 	table.remove(items_available, i)
 	side.variables["wc2.items"] = table.concat(items_available, ",")
 
-	wc2_artifacts.place_item(x, y + 1, t)
+	wc2_artifacts.place_item(x, y + 1, t, side_num)
 end
 
 local function generate_hero_pool(count)

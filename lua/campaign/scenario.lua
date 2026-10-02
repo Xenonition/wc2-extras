@@ -108,6 +108,7 @@ on_event("victory", function(cx)
 	end
 	-- WC2X: Gacha hero + shop for each human player before advancing (skip final scenario)
 	if wc2x and wml.variables.wc2_scenario < 5 then
+		if wc2x.item_carryover then wc2x.item_carryover.sweep() end
 		-- 4p lets one leader die mid-scenario, which lowers wc2_player_count; loop over the original
 		-- sides and skip the defeated one rather than skipping the highest-numbered player
 		local last_side = wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
