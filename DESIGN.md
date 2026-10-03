@@ -301,7 +301,7 @@ runtime workarounds; none modify LotI's files.
 | Player recruits get elite mods (reflect, temptation) | LotI's `DROPS` macro hardcodes `$enemy_sides` to `1,2,...,12`, including the player side | WC3 overwrites `$enemy_sides` at prestart to only include non-human, non-neutral AI sides | `campaign_main.lua` prestart event |
 | Item pickup dialog fires for AI units | LotI's `item_pick` event uses `controller=human` filter (ignored by engine), so `[item_pick_menu]` fires for all sides | WC3 wraps `wesnoth.wml_actions.item_pick_menu` to skip non-human sides | `campaign_main.lua` item_pick_menu wrapper |
 | Player can't pick up items from own fallen units | `DROPS` die event includes player side; `on_the_ground.add` sets `dropping_side` = player, and the pickup filter excludes that side | WC3 wraps `loti.item.on_the_ground.add` to clear `dropping_side` when it's a human side | `campaign_main.lua` on_the_ground.add wrapper |
-| Uncollected items lost on victory | LotI only auto-picks items dropped on the final turn or on impassable terrain; everything else is cleared | WC3 registers a victory event that stores all remaining ground items (gems, gold, equipment) before LotI's handler runs | `campaign_main.lua` victory event |
+| Uncollected items lost on victory | LotI only auto-picks items dropped on the final turn or on impassable terrain, then clears its item list | WC3 registers a victory handler at priority 10 so it runs before LotI's (priority 0, added earlier) and stores all remaining ground items: equipment into the shared item storage, gems into the shared gem counts, gold to the side whose turn it is | `campaign_main.lua` victory event |
 
 ### Base World Conquest coexistence
 

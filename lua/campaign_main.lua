@@ -76,19 +76,20 @@ end
 
 -- LotI Era workaround: auto-collect all ground items on victory.
 -- LotI only auto-picks items dropped on the final turn or on impassable
--- terrain; everything else is lost. Collect them all into storage first.
+-- terrain, then clears its "items" list; everything else is lost. This must run
+-- before LotI's own victory handler (priority 0, added first), hence priority 10.
+-- It doesn't remove the item images: the map is discarded anyway, and
+-- [remove_item] would also delete WC2 artifacts sharing the hex before
+-- WC3's item carryover sweeps them.
 if loti and loti.item and loti.item.storage then
-	on_event("victory", function()
+	wesnoth.game_events.add_repeating("victory", function()
 		local items = wml.array_access.get("items")
 		if #items == 0 then return end
 		for _, elem in ipairs(items) do
-			local item_number = elem.type
-			local sort = elem.sort
-			loti.item.storage.add(item_number, sort)
-			wesnoth.wml_actions.remove_item { x = elem.x, y = elem.y }
+			loti.item.storage.add(elem.type, elem.sort)
 		end
 		wml.array_access.set("items", {})
-	end)
+	end, 10)
 end
 
 on_event("prestart", function(cx)

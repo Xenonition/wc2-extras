@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fixed LotI items and gems left on the ground being lost at victory. WC3's collector ran after
+  LotI's own victory handler, which had already cleared its item list; it now runs first.
+
 ## 0.8.0 — 2026-10-03
 
 - Stepping on a WC2 item now offers: pick up, leave it, or send it to another player. A sent
