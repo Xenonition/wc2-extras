@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased
+## 0.9.0 — 2026-10-04
 
+- Item pickup menu: new "Send to my leader" option, which places the item next to your own
+  leader (not shown when the unit on the item is the leader).
 - Fixed LotI items and gems left on the ground being lost at victory. WC3's collector ran after
   LotI's own victory handler, which had already cleared its item list; it now runs first.
 

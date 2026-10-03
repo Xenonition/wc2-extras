@@ -87,8 +87,9 @@ Both apply the **early-finish discount**: 3% per turn left, max 50%. It applies 
 everything, including permanent upgrades — this is intentional: finishing fast is the
 strongest lever in the mod, which is the anti-farming mechanism.
 
-**Item pickup choices.** Stepping on a WC2 item opens a choice: pick it up, leave it, or send
-it to another player who still has a leader, which places it on the nearest free hex to that
+**Item pickup choices.** Stepping on a WC2 item opens a choice: pick it up, leave it, send it
+next to your own leader (unless the unit is the leader), or send it to another player who still
+has a leader, which places it on the nearest free hex to that
 leader (castle wins ties) and makes them its owner for carryover. A unit that can't use the item
 can still leave or send it. The "skip pickup confirmation" preference still picks items up
 directly.
