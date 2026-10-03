@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Item pickup menu: new "Send to my leader" option, which places the item next to your own
+  leader (not shown when the unit on the item is the leader).
+
 ## 0.8.0 — 2026-10-03
 
 - Stepping on a WC2 item now offers: pick up, leave it, or send it to another player. A sent

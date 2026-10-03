@@ -173,8 +173,16 @@ on_event("wc2_drop_pickup", function(ec)
 		return
 	end
 
-	-- other players who still have a leader can be sent the item
+	-- the item can be sent next to your own leader (unless this unit is the leader) or to any
+	-- other player who still has a leader
 	local targets = {}
+	local own_leader = not unit.canrecruit and wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
+	if own_leader then
+		table.insert(targets, {
+			side = side_num,
+			label = string.format(tostring(_ "Send to my leader (%s)"), tostring(own_leader.name)),
+		})
+	end
 	local last_side = wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
 	for s = 1, last_side do
 		local leader = s ~= side_num and wesnoth.units.find_on_map({ side = s, canrecruit = true })[1]
@@ -212,7 +220,9 @@ on_event("wc2_drop_pickup", function(ec)
 		wc2_dropping.item_taken = true
 		artifacts.place_item(dest.x, dest.y, index, choice.side)
 		wesnoth.allow_undo(false)
-		wesnoth.interface.float_label(dest.x, dest.y, string.format(tostring(_ "item from Player %d"), side_num), "255,215,0")
+		local label = choice.side == side_num and tostring(_ "item delivered")
+			or string.format(tostring(_ "item from Player %d"), side_num)
+		wesnoth.interface.float_label(dest.x, dest.y, label, "255,215,0")
 	end
 end)
 
