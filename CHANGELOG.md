@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Stepping on a WC2 item now offers: pick up, leave it, or send it to another player. A sent
+  item appears next to that player's leader. Units that can't use an item can still send it on.
+
 ## 0.7.0 — 2026-10-02
 
 - WC2 items left on the ground at the end of a scenario are no longer lost: they are delivered

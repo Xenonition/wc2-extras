@@ -162,27 +162,58 @@ on_event("wc2_drop_pickup", function(ec)
 
 
 	local index = item.variables.wc2_atrifact_id
-	local filter = artifacts.get_artifact(index).filter
-	if filter and not unit:matches(filter) then
-		if is_human then
-			wesnoth.wml_actions.message {
-				id = unit.id,
-				message = _"I cannot pick up that item.",
-			}
-		end
+	local artifact = artifacts.get_artifact(index)
+	local can_take = not artifact.filter or unit:matches(artifact.filter)
+
+	if not is_human then
+		if not can_take then return end
+		wc2_dropping.item_taken = true
+		artifacts.give_item(unit, index, true)
+		wesnoth.allow_undo(false)
 		return
 	end
 
-	if is_human and not wml.variables["wc2_config_disable_pickup_confirm"] then
-		if not wc2_pickup_confirmation_dialog.promt_synced(unit, artifacts.get_artifact(index).icon) then
-			return
+	-- other players who still have a leader can be sent the item
+	local targets = {}
+	local last_side = wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
+	for s = 1, last_side do
+		local leader = s ~= side_num and wesnoth.units.find_on_map({ side = s, canrecruit = true })[1]
+		if leader then
+			table.insert(targets, {
+				side = s,
+				label = string.format(tostring(_ "Send to Player %d (%s)"), s, tostring(leader.name)),
+			})
 		end
 	end
 
+	local choice
+	if can_take and wml.variables["wc2_config_disable_pickup_confirm"] then
+		choice = { action = "take" }
+	elseif not can_take and #targets == 0 then
+		wesnoth.wml_actions.message { id = unit.id, message = _"I cannot pick up that item." }
+		return
+	else
+		choice = wc2_pickup_confirmation_dialog.choose_synced(unit, artifact, can_take, targets)
+	end
 
-	wc2_dropping.item_taken = true
-	artifacts.give_item(unit, index, true)
-	wesnoth.allow_undo(false)
+	if choice.action == "take" and can_take then
+		wc2_dropping.item_taken = true
+		artifacts.give_item(unit, index, true)
+		wesnoth.allow_undo(false)
+	elseif choice.action == "send" and choice.side then
+		local leader = wesnoth.units.find_on_map({ side = choice.side, canrecruit = true })[1]
+		if not leader then return end
+		-- nearest free hex to the leader (castle wins ties), else under the leader
+		local dest
+		for i, h in ipairs(wc2x.placement.hexes_near(leader)) do
+			if not dest or h.dist < dest.dist then dest = h end
+		end
+		dest = dest or { x = leader.x, y = leader.y }
+		wc2_dropping.item_taken = true
+		artifacts.place_item(dest.x, dest.y, index, choice.side)
+		wesnoth.allow_undo(false)
+		wesnoth.interface.float_label(dest.x, dest.y, string.format(tostring(_ "item from Player %d"), side_num), "255,215,0")
+	end
 end)
 
 -- returns a list of artifact ids, suitable for  the give type ('enemy' for example).
