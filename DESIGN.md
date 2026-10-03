@@ -61,7 +61,7 @@ neutral creeps (wolves, bats, scorpions…) for XP.
 | POI | Guards | Reward |
 |---|---|---|
 | Ancient Ruins | Ambush: undead rise when you first step on it | Gold (40–80 + 10–20 per scenario), 50% chance of an artifact. Loot is claimable only after the ambushers die |
-| Mercenary Camp | None | Hire one of 3 off-faction units from the shared unit pool at half their normal cost; higher levels appear in later scenarios. Mercs are plain units (no heroic trait or buffs), which is their niche against invest, gacha and shop heroes: cheap reinforcements in the middle of a fight |
+| Mercenary Camp | None | Hire one of 3 off-faction units from the shared unit pool at half their normal cost (offers are rolled on the first visit and fixed for that camp, shared by all players); higher levels appear in later scenarios. Mercs are plain units (no heroic trait or buffs), which is their niche against invest, gacha and shop heroes: cheap reinforcements in the middle of a fight |
 | Ancient Shrine | 1–4 themed guards, scaling by scenario | One random permanent buff from the buff pool for the capturing unit |
 | Trade Caravan | None; the caravan (a Ruffian with 4 moves and +10 HP) is yours to move and can be killed | Move it onto any castle or keep hex: gold (40 + 15/scenario), an artifact (given to your leader) or training |
 

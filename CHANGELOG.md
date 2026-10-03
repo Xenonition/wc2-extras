@@ -1,9 +1,11 @@
 # Changelog
 
-## Unreleased
+## 0.8.0 — 2026-10-03
 
 - Stepping on a WC2 item now offers: pick up, leave it, or send it to another player. A sent
   item appears next to that player's leader. Units that can't use an item can still send it on.
+- Mercenary camp offers are rolled on the first visit and stay fixed for that camp for the rest
+  of the scenario, shared by all players; walking in and out no longer re-rolls them.
 
 ## 0.7.0 — 2026-10-02
 
