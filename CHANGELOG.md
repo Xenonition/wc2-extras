@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Mercenary camp offers are rolled on the first visit and stay fixed for that camp for the rest
+  of the scenario, shared by all players; walking in and out no longer re-rolls them.
+
 ## 0.7.0 — 2026-10-02
 
 - WC2 items left on the ground at the end of a scenario are no longer lost: they are delivered

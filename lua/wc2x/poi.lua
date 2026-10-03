@@ -421,18 +421,32 @@ function poi.activate(unit, poi_type)
 		local offer_count = config.merc_offer_count or 3
 		local cost_mult = config.merc_cost_multiplier or 0.5
 
-		local seen_offers = {}
-		local offers = {}
-		for _ = 1, offer_count + 5 do
-			if #offers >= offer_count then break end
-			local name, lvl = pick_weighted_merc(by_level, level_weights)
-			if name and not seen_offers[name] then
-				seen_offers[name] = true
-				local utype = wesnoth.unit_types[name]
-				if utype then
-					local cost = math.floor(utype.cost * cost_mult)
-					table.insert(offers, { type_id = name, utype = utype, cost = cost, icon = utype.image, level = lvl })
+		-- Offers are rolled on the first visit and kept for this camp for the rest of the scenario,
+		-- shared by every player, so walking in and out no longer re-rolls them.
+		local offers_var = string.format("wc2x_merc_offers_s%d_%d_%d", scenario_num, unit.x, unit.y)
+		local offer_types = {}
+		local saved = wml.variables[offers_var]
+		if saved and saved ~= "" then
+			offer_types = stringx.split(saved)
+		else
+			local seen_offers = {}
+			for _ = 1, offer_count + 5 do
+				if #offer_types >= offer_count then break end
+				local name = pick_weighted_merc(by_level, level_weights)
+				if name and not seen_offers[name] and wesnoth.unit_types[name] then
+					seen_offers[name] = true
+					table.insert(offer_types, name)
 				end
+			end
+			wml.variables[offers_var] = table.concat(offer_types, ",")
+		end
+
+		local offers = {}
+		for i, name in ipairs(offer_types) do
+			local utype = wesnoth.unit_types[name]
+			if utype then
+				local cost = math.floor(utype.cost * cost_mult)
+				table.insert(offers, { type_id = name, utype = utype, cost = cost, icon = utype.image, level = utype.level })
 			end
 		end
 
