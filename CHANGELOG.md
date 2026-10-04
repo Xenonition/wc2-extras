@@ -1,10 +1,21 @@
 # Changelog
 
-## Unreleased
+## 0.10.0 — 2026-10-05
 
+- Adaptive final boss army: the escort's size follows the total value of the players'
+  units (arena 13–18, edges 10–20), escort units get 0–4 shrine buffs to match the players'
+  best units (heroes, item carriers, level 2+ and leaders, compared against their own unit
+  type), and the boss gets +5% HP per 50 enemies the players killed this campaign (up to
+  +100%). Kills are counted from this version on.
 - LotI gold left on the ground at victory is now split evenly between all players with a leader,
   instead of all of it going to whoever's turn it was. It is collected before the gacha and shop, so it
   can be spent there.
+- Heroes found at WC2 bonus points now come from the shared unit pool (like invest, the gacha,
+  shop heroes and mercenary camps), at the scenario's level, instead of WC2's faction hero lists
+  advanced after spawning.
+- Debug panel, unit Progression menu: change the XP a unit needs to level (-25%, -50%, +25%,
+  stackable) or reset those debug modifiers.
+- Debug panel "Final Boss" menu: shows the adaptive-army readout and can add campaign kills.
 
 ## 0.9.1 — 2026-10-04
 
