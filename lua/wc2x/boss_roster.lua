@@ -148,6 +148,9 @@ function lich.on_boss_death(ctx)
 	local x, y = wesnoth.paths.find_vacant_hex(ctx.cx, ctx.cy, u)
 	if not x then return false end
 	u:to_map(x, y)
+	-- the revived body keeps the campaign-kills HP bonus the first one had
+	local scale = wc2x.boss_scaling.saved()
+	wc2x.boss_scaling.apply_boss_hp(u, scale and scale.hp_pct)
 	u.hitpoints = math.floor(u.max_hitpoints / 2)
 	-- a Lich slain on its own turn must not get a second action that turn
 	u.moves = 0

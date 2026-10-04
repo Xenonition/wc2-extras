@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Adaptive final boss army: the escort's size follows the total value of the players'
+  units (arena 13–18, edges 10–20), escort units get 0–4 shrine buffs to match the players'
+  best units (heroes, item carriers, level 2+ and leaders, compared against their own unit
+  type), and the boss gets +5% HP per 50 enemies the players killed this campaign (up to
+  +100%). Kills are counted from this version on.
+- Debug panel "Final Boss" menu: shows the adaptive-army readout and can add campaign kills.
+
 ## 0.9.1 — 2026-10-04
 
 - Fixed Retrain being offered on recalled units: the "recruited this turn" mark only stored the

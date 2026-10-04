@@ -187,10 +187,28 @@ the footprint are moved to the nearest free hex outside it. POIs and creeps are 
 afterwards and keep 6 hexes from any keep, so they never land inside.
 
 **Trigger.** When every regular enemy leader is dead, the chasm opens and one of three bosses
-spawns at random (`lua/wc2x/boss_roster.lua`), with its own themed army: 13 units in the arena
-and 10 from the map edges. Killing the boss ends the campaign in victory; the between-map
-sequence does not run after scenario 5. The boss does not scale with player count — gold is
-split between players, so total player strength is roughly constant.
+spawns at random (`lua/wc2x/boss_roster.lua`), with its own themed army in the arena and from
+the map edges. Killing the boss ends the campaign in victory; the between-map sequence does
+not run after scenario 5.
+
+**Adaptive army** (`lua/wc2x/boss_scaling.lua`). Players arrive at scenario 5 with very
+different strength, so the army is measured from them at the moment the boss spawns:
+
+| Measure | From | Effect |
+|---|---|---|
+| Roster value | recruit cost of every player unit, map + recall list, all players | arena escort 13 + 1 per 300 gold above 1500 (max 18, the hexes in rings 1–2); edge units 10 + 1 per 150 gold above 1500 (max 20) |
+| Key-unit score | each player's top 5 key units (heroic, carrying a WC2 or LotI item, level 2+, or the leader), pooled and averaged | shrine-pool buffs on every escort unit: 0 below 4, then +1 per 2 points (max 4); XP buffs and abilities the unit already has are skipped |
+| Campaign kills | enemy units killed by player units, counted in `wc2x_campaign_kills` across all scenarios | boss max HP +5% per 50 kills (max +100%), quoted in a narrator line after the boss's intro; the revived Lich keeps it |
+
+A unit's score is how far it sits above a fresh, trait-less unit of its own type, so it
+doesn't matter whether a bonus came from traits, shrines, gacha or a LotI item: +1 per +20%
+max HP, +1 per +25% best attack (damage × strikes), +1 per new named weapon special, attack
+or ability (stealth abilities and unnamed hidden tiers don't count), +1 per +10% average
+resistance, +0.5 per extra move. Measured on the playtest saves: about 3 for a party's
+carries at scenario 3, 8–9 for a strong 2-player party late in scenario 4; roster value about
+1600 at scenario 3 and 2900 late in scenario 4. Only key units count because plain recruits
+all carry the same faction training, which said nothing about who is stronger. The numbers
+used are stored in `wc2x_boss_scaling`; the debug panel shows them live.
 
 **Design rule:** each boss has one signature mechanic and one phase change at 50% HP. The
 default AI controls the boss and doesn't understand gimmicks, so every mechanic is either
@@ -238,7 +256,9 @@ WC2's era plus four WC3 factions built from base-game units: **The Coil**
   Grants gold, XP, stats, any buff from the buff pool, upgrades; inspects and forces AI
   director tactics; toggles a per-side 100% shop/gacha discount and LotI free crafting. Its "Final Boss" menu
   forces which boss spawns, skips straight to scenario 5 (wins the current scenario with
-  `wc2_scenario` set to 4), and on scenario 5 kills every enemy leader to spawn the boss.
+  `wc2_scenario` set to 4), and on scenario 5 kills every enemy leader to spawn the boss. It
+  also shows the adaptive-army readout (roster value, key-unit score with the units behind it,
+  kills and the resulting army) and can add 50 campaign kills for testing.
   All mutations go through `evaluate_single` so they are MP-safe.
 
 ## Technical notes

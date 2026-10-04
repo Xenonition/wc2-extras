@@ -10,9 +10,6 @@ local ARENA_CASTLE = "Cd"
 local ARENA_RING = "Qxu"
 local ARENA_RING_CLEARED = "Rr"
 
-local ARMY_COUNT = 13
-local EDGE_COUNT = 10
-
 local arena_center = nil
 local boss_spawned = false
 local boss_side_num = nil
@@ -290,6 +287,10 @@ local function spawn_boss()
 
 	local cx, cy = arena_center[1], arena_center[2]
 
+	-- measured before anything spawns: army size, escort buffs and boss HP scale with the players
+	local scale = wc2x.boss_scaling.measure()
+	wc2x.boss_scaling.save(scale)
+
 	local kind = wc2x.boss_roster.pick()
 	local def = wc2x.boss_roster.get(kind)
 	wml.variables["wc2x_boss_kind"] = kind
@@ -314,6 +315,7 @@ local function spawn_boss()
 		local base_name = tostring(boss_unit.name)
 		if base_name == "" then base_name = def.fallback_name end
 		boss_unit.name = base_name .. " " .. tostring(title)
+		wc2x.boss_scaling.apply_boss_hp(boss_unit, scale.hp_pct)
 		boss_unit.hitpoints = boss_unit.max_hitpoints
 		boss_unit_id = boss_unit.id
 		wml.variables["wc2x_boss_id"] = boss_unit.id
@@ -327,7 +329,7 @@ local function spawn_boss()
 		table.insert(troop_hexes, h)
 	end
 	mathx.shuffle(troop_hexes)
-	for i = 1, math.min(ARMY_COUNT, #troop_hexes) do
+	for i = 1, math.min(scale.arena, #troop_hexes) do
 		local loc = troop_hexes[i]
 		wesnoth.wml_actions.unit {
 			x = loc.x, y = loc.y,
@@ -335,13 +337,14 @@ local function spawn_boss()
 			side = boss_side_num,
 			generate_name = true,
 		}
+		wc2x.boss_scaling.buff_escort(wesnoth.units.get(loc.x, loc.y), scale.bonuses)
 	end
 
 	-- extra candidates so non-flying edge units (the Usurper's cavalry) can skip water and other
 	-- hexes they can't stand on
-	local edge_hexes = find_edge_hexes(EDGE_COUNT * 4)
+	local edge_hexes = find_edge_hexes(scale.edge * 4)
 	local used = {}
-	for i = 1, EDGE_COUNT do
+	for i = 1, scale.edge do
 		local edge_unit = wesnoth.units.create {
 			type = def.edge[mathx.random(#def.edge)],
 			side = boss_side_num,
@@ -379,6 +382,7 @@ local function spawn_boss()
 			})
 			edge_unit.moves = edge_unit.max_moves
 		end
+		if placed then wc2x.boss_scaling.buff_escort(edge_unit, scale.bonuses) end
 	end
 
 	wesnoth.wml_actions.music {
@@ -394,6 +398,9 @@ local function spawn_boss()
 		canrecruit = true,
 		message = def.intro,
 	}
+	if scale.kills > 0 then
+		wesnoth.wml_actions.message { speaker = "narrator", message = wc2x.boss_scaling.intro_line(scale) }
+	end
 	if def.on_spawn then def.on_spawn(boss.context()) end
 
 	wesnoth.wml_actions.music {
