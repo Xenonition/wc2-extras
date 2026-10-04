@@ -2,8 +2,8 @@
 
 ## Unreleased
 
-- LotI gold left on the ground at victory now goes to the player whose leader is nearest, instead
-  of all of it going to whoever's turn it was. It is collected before the gacha and shop, so it
+- LotI gold left on the ground at victory is now split evenly between all players with a leader,
+  instead of all of it going to whoever's turn it was. It is collected before the gacha and shop, so it
   can be spent there.
 
 ## 0.9.1 — 2026-10-04

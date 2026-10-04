@@ -1,6 +1,7 @@
 -- World Conquest III — forked campaign main
 
 T = wml.tag
+local _ = wesnoth.textdomain 'wesnoth-wc'
 on_event = wesnoth.game_events.add_repeating
 
 wesnoth.dofile("./game_mechanics/_load.lua")
@@ -85,32 +86,37 @@ if loti and loti.item and loti.item.storage then
 	wesnoth.game_events.add_repeating("victory", function()
 		local items = wml.array_access.get("items")
 		if #items == 0 then return end
-		-- gold piles go to the player whose leader is nearest (LotI's storage.add would give all of
-		-- it to whoever's turn it is); this runs before the gacha and shop, so it is spendable there
+		-- gold piles are pooled and split evenly between players who still have a leader (LotI's
+		-- storage.add would give all of it to whoever's turn it is); this runs before the gacha and
+		-- shop, so the gold is spendable there
+		local players = {}
 		local last_side = wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
-		local leaders = {}
 		for s = 1, last_side do
-			leaders[s] = wesnoth.units.find_on_map({ side = s, canrecruit = true })[1]
+			if wesnoth.units.find_on_map({ side = s, canrecruit = true })[1] then table.insert(players, s) end
 		end
-		local function nearest_side(x, y)
-			local best, best_dist
-			for s = 1, last_side do
-				local l = leaders[s]
-				if l then
-					local d = wesnoth.map.distance_between({ x = x, y = y }, { x = l.x, y = l.y })
-					if not best or d < best_dist then best, best_dist = s, d end
-				end
-			end
-			return best
-		end
+		local pooled_gold = 0
 		for _, elem in ipairs(items) do
 			local item_type = loti.item.type[elem.type]
-			local owner = item_type and item_type.sort == "gold" and nearest_side(elem.x, elem.y)
-			if owner then
-				wesnoth.sides[owner].gold = wesnoth.sides[owner].gold + (item_type.gold_quantity or 0)
+			if item_type and item_type.sort == "gold" and #players > 0 then
+				pooled_gold = pooled_gold + (item_type.gold_quantity or 0)
 			else
 				loti.item.storage.add(elem.type, elem.sort)
 			end
+		end
+		if pooled_gold > 0 then
+			local share = math.floor(pooled_gold / #players)
+			local remainder = pooled_gold - share * #players
+			for i, s in ipairs(players) do
+				-- the leftover gold pieces go one each to the lowest-numbered players
+				local amount = share + (i <= remainder and 1 or 0)
+				wesnoth.sides[s].gold = wesnoth.sides[s].gold + amount
+			end
+			wesnoth.wml_actions.message {
+				speaker = "narrator",
+				caption = _ "Spoils Recovered",
+				message = string.format(tostring(_ "%d gold left on the battlefield was split between %d player(s)."), pooled_gold, #players),
+				image = "items/gold-coins-large.png",
+			}
 		end
 		wml.array_access.set("items", {})
 	end, 10)
