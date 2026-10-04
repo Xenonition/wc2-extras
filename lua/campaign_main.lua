@@ -85,8 +85,32 @@ if loti and loti.item and loti.item.storage then
 	wesnoth.game_events.add_repeating("victory", function()
 		local items = wml.array_access.get("items")
 		if #items == 0 then return end
+		-- gold piles go to the player whose leader is nearest (LotI's storage.add would give all of
+		-- it to whoever's turn it is); this runs before the gacha and shop, so it is spendable there
+		local last_side = wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
+		local leaders = {}
+		for s = 1, last_side do
+			leaders[s] = wesnoth.units.find_on_map({ side = s, canrecruit = true })[1]
+		end
+		local function nearest_side(x, y)
+			local best, best_dist
+			for s = 1, last_side do
+				local l = leaders[s]
+				if l then
+					local d = wesnoth.map.distance_between({ x = x, y = y }, { x = l.x, y = l.y })
+					if not best or d < best_dist then best, best_dist = s, d end
+				end
+			end
+			return best
+		end
 		for _, elem in ipairs(items) do
-			loti.item.storage.add(elem.type, elem.sort)
+			local item_type = loti.item.type[elem.type]
+			local owner = item_type and item_type.sort == "gold" and nearest_side(elem.x, elem.y)
+			if owner then
+				wesnoth.sides[owner].gold = wesnoth.sides[owner].gold + (item_type.gold_quantity or 0)
+			else
+				loti.item.storage.add(elem.type, elem.sort)
+			end
 		end
 		wml.array_access.set("items", {})
 	end, 10)

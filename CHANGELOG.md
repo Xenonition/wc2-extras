@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- LotI gold left on the ground at victory now goes to the player whose leader is nearest, instead
+  of all of it going to whoever's turn it was. It is collected before the gacha and shop, so it
+  can be spent there.
+
 ## 0.9.1 — 2026-10-04
 
 - Fixed Retrain being offered on recalled units: the "recruited this turn" mark only stored the
