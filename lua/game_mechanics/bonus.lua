@@ -119,6 +119,8 @@ on_event("wc2_drop_pickup", function(ec)
 		bonus_subtype = bonus_subtype or bonus.get_random_item()
 		bonus.found_artifact(ec, tonumber(bonus_subtype))
 	elseif bonus_type == 3 then
+		-- the map generator may pre-pick a WC2 hero type; WC3 always draws from its unit pool instead
+		if wc2x and wc2x.unit_pool then bonus_subtype = nil end
 		bonus_subtype = bonus_subtype or bonus.get_random_hero(ec.x1, ec.y1)
 		bonus.found_hero(ec, bonus_subtype)
 	end
@@ -130,7 +132,25 @@ function bonus.get_random_item()
 	return tonumber(wc2_utils.pick_random("wc2.random_items", wc2_artifacts.fresh_artifacts_list))
 end
 
+-- WC3: bonus-point heroes come from the shared unit pool (same as invest, gacha, shop and mercs),
+-- at the scenario's level range, limited to types that can stand on the bonus point's hex.
+local function get_pool_hero(x, y)
+	local min_lv, max_lv = wc2x.unit_pool.level_range_for_scenario(wc2_scenario.scenario_num())
+	local pool = wc2x.unit_pool.get_range(min_lv, max_lv)
+	mathx.shuffle(pool)
+	for i, type_id in ipairs(pool) do
+		local probe = wesnoth.units.create { type = type_id, random_traits = false }
+		if wesnoth.units.movement_on(probe, { x = x, y = y }) < 99 then
+			return type_id
+		end
+	end
+end
+
 function bonus.get_random_hero(x, y)
+	if wc2x and wc2x.unit_pool then
+		local type_id = get_pool_hero(x, y)
+		if type_id then return type_id end
+	end
 	return wc2_utils.pick_random_filtered("wc2.random_heroes", wc2_era.generate_bonus_heroes, function(unittypeid)
 		for _, sf in ipairs(wc2_era.spawn_filters) do
 			if sf.types[unittypeid] and not wesnoth.map.matches(x, y, sf.filter_location) then
@@ -165,7 +185,13 @@ function bonus.found_hero(ec, herotype)
 
 	bonus.remove_current_item(ec)
 
-	local newunit = wc2_heroes.place(herotype, finder.side, ec.x1, ec.y1)
+	-- WC3 heroes are created at their real level (no advancing after placement), next to the bonus point
+	local newunit
+	if wc2x and wc2x.gacha_hero then
+		newunit = wc2x.gacha_hero.place_hero(herotype, finder.side, { x = ec.x1, y = ec.y1 })
+	else
+		newunit = wc2_heroes.place(herotype, finder.side, ec.x1, ec.y1)
+	end
 
 	-- hero found and unit in bonus point face each other
 	wc2_utils.facing_each_other(finder, newunit)

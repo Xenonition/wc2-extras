@@ -123,7 +123,7 @@ Fortification locations are mirrored into side variables so they survive save/lo
 
 ### Shared unit pool
 
-Invest, gacha, shop heroes and the mercenary camp all draw from one pool
+Invest, gacha, shop heroes, the mercenary camp and heroes found at WC2 bonus points all draw from one pool
 (`lua/wc2x/unit_pool.lua`): every unit type that appears in any advancement tree (it
 advances to something, or something advances to it). This deliberately includes units
 players can't normally field, while excluding dead-end monsters, ships and props nobody
