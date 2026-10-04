@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Debug panel, unit Progression menu: change the XP a unit needs to level (-25%, -50%, +25%,
+  stackable) or reset those debug modifiers.
+
 ## 0.9.1 — 2026-10-04
 
 - Fixed Retrain being offered on recalled units: the "recruited this turn" mark only stored the

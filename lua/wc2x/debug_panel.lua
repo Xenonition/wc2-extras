@@ -58,6 +58,22 @@ local function apply_action(data)
 			if unit then msg(string.format("  → advanced to %s", unit.type), s) end
 		end
 
+	elseif data.action == "unit_xpmod" then
+		local unit = wesnoth.units.get(data.x, data.y)
+		if not unit then return end
+		if data.pct == "reset" then
+			unit:remove_modifications({ id = "wc3_dbg_xpmod" }, "object")
+		else
+			unit:add_modification("object", {
+				id = "wc3_dbg_xpmod",
+				wml.tag.effect { apply_to = "max_experience", increase = data.pct },
+			})
+		end
+		msg(string.format("%s: XP to level %s → %d", unit.name, data.pct, unit.max_experience), s)
+		if unit.experience >= unit.max_experience then
+			unit:advance(true, false)
+		end
+
 	elseif data.action == "unit_maxlevel" then
 		local unit = wesnoth.units.get(data.x, data.y)
 		if not unit then return end
@@ -345,11 +361,16 @@ local function collect_unit_action(unit, x, y)
 	local cat = pick_option("Unit: " .. tostring(unit.name), header, categories)
 
 	if cat == 1 then -- Progression
-		local opts = { "+50 XP", "+100 XP", "Max Level", "Back" }
+		local opts = { "+50 XP", "+100 XP", "Max Level",
+			"XP to level -25%", "XP to level -50%", "XP to level +25%", "Reset XP modifiers", "Back" }
 		local pick = pick_option("Progression", header, opts)
 		if pick == 1 then return { action = "unit_xp", x = x, y = y, amount = 50 }
 		elseif pick == 2 then return { action = "unit_xp", x = x, y = y, amount = 100 }
 		elseif pick == 3 then return { action = "unit_maxlevel", x = x, y = y }
+		elseif pick == 4 then return { action = "unit_xpmod", x = x, y = y, pct = "-25%" }
+		elseif pick == 5 then return { action = "unit_xpmod", x = x, y = y, pct = "-50%" }
+		elseif pick == 6 then return { action = "unit_xpmod", x = x, y = y, pct = "25%" }
+		elseif pick == 7 then return { action = "unit_xpmod", x = x, y = y, pct = "reset" }
 		end
 
 	elseif cat == 2 then -- Stats
