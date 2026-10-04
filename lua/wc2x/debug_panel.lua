@@ -189,6 +189,13 @@ local function apply_action(data)
 		wml.variables["wc2x_boss_force"] = data.kind ~= "" and data.kind or nil
 		msg("Final boss: " .. (data.kind ~= "" and data.kind or "random"), s)
 
+	elseif data.action == "boss_readout" then
+		wesnoth.wml_actions.message { speaker = "narrator", caption = "Boss army scaling", message = wc2x.boss_scaling.readout() }
+
+	elseif data.action == "boss_kills" then
+		wml.variables["wc2x_campaign_kills"] = wc2x.boss_scaling.kills() + data.amount
+		msg(string.format("Campaign kills: %d", wc2x.boss_scaling.kills()), s)
+
 	elseif data.action == "boss_skip" then
 		-- the victory event runs gacha/shop and advances wc2_scenario to 5
 		wml.variables["wc2_scenario"] = 4
@@ -467,7 +474,9 @@ local function collect_action(x, y)
 			return { action = "free_shop" }
 		elseif choice == offset + 4 then
 			local scenario = wml.variables["wc2_scenario"] or 1
-			local sub = { "Choose boss (current: " .. (wml.variables["wc2x_boss_force"] or "random") .. ")" }
+			local sub = { "Choose boss (current: " .. (wml.variables["wc2x_boss_force"] or "random") .. ")",
+				"Show army scaling (roster value, key units, kills)",
+				string.format("Add 50 campaign kills (now %d)", wc2x.boss_scaling.kills()) }
 			if scenario < 5 then table.insert(sub, "Skip to final scenario (win this one)") end
 			if scenario == 5 and not wml.variables["wc2x_boss_id"] then table.insert(sub, "Spawn boss now (kill all enemy leaders)") end
 			table.insert(sub, "Back")
@@ -478,6 +487,10 @@ local function collect_action(x, y)
 				if k >= 1 and k <= #kinds then
 					return { action = "boss_force", kind = k == 1 and "" or kinds[k] }
 				end
+			elseif pick == 2 then
+				return { action = "boss_readout" }
+			elseif pick == 3 then
+				return { action = "boss_kills", amount = 50 }
 			elseif sub[pick] and sub[pick]:match("^Skip") then
 				return { action = "boss_skip" }
 			elseif sub[pick] and sub[pick]:match("^Spawn") then
