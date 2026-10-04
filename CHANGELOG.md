@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Heroes found at WC2 bonus points now come from the shared unit pool (like invest, the gacha,
+  shop heroes and mercenary camps), at the scenario's level, instead of WC2's faction hero lists
+  advanced after spawning.
+
 ## 0.9.1 — 2026-10-04
 
 - Fixed Retrain being offered on recalled units: the "recruited this turn" mark only stored the
