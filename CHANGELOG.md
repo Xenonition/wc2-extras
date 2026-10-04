@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.9.1 — 2026-10-04
 
 - Fixed Retrain being offered on recalled units: the "recruited this turn" mark only stored the
   turn number and carried over between maps, so a unit recruited on turn N of an earlier map
