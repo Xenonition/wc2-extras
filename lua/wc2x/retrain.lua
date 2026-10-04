@@ -13,11 +13,17 @@ function retrain.cost(u)
 	return math.ceil((ut and ut.cost or 0) * retrain.config.retrain_cost_pct / 100)
 end
 
+-- Scenario + turn, so a unit recruited on turn N of an earlier map and recalled on turn N of
+-- this one doesn't still look like a fresh recruit (unit variables carry over between maps)
+local function recruit_stamp()
+	return string.format("s%d_t%d", wc2_scenario.scenario_num(), wesnoth.current.turn)
+end
+
 function retrain.eligible(u)
 	return u ~= nil
 		and u.side == wesnoth.current.side
 		and wc2_scenario.is_human_side(u.side)
-		and u.variables.wc2x_recruit_turn == wesnoth.current.turn
+		and u.variables.wc2x_recruit_stamp == recruit_stamp()
 		and wesnoth.sides[u.side].gold >= retrain.cost(u)
 end
 
@@ -27,7 +33,17 @@ function retrain.init(config)
 	wesnoth.game_events.add_repeating("recruit", function()
 		local ctx = wesnoth.current.event_context
 		local u = wesnoth.units.get(ctx.x1, ctx.y1)
-		if u then u.variables.wc2x_recruit_turn = wesnoth.current.turn end
+		if u then u.variables.wc2x_recruit_stamp = recruit_stamp() end
+	end)
+
+	-- a recall is never a fresh recruit, whatever mark the unit carries from earlier
+	wesnoth.game_events.add_repeating("recall", function()
+		local ctx = wesnoth.current.event_context
+		local u = wesnoth.units.get(ctx.x1, ctx.y1)
+		if u then
+			u.variables.wc2x_recruit_stamp = nil
+			u.variables.wc2x_recruit_turn = nil
+		end
 	end)
 
 	wc2_utils.menu_item {

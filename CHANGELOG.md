@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fixed Retrain being offered on recalled units: the "recruited this turn" mark only stored the
+  turn number and carried over between maps, so a unit recruited on turn N of an earlier map
+  qualified again when recalled on turn N. The mark now includes the scenario and is cleared on
+  recall.
 - Fixed points of interest (e.g. a mercenary camp) and creeps spawning on the same hex as a WC2
   bonus point or an existing unit.
 
