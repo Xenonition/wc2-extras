@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fixed points of interest (e.g. a mercenary camp) and creeps spawning on the same hex as a WC2
+  bonus point or an existing unit.
+
 ## 0.9.0 — 2026-10-04
 
 - Item pickup menu: new "Send to my leader" option, which places the item next to your own

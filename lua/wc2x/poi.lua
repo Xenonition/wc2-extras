@@ -137,6 +137,11 @@ function poi.find_placement_candidates(min_distance_from_keep)
 					break
 				end
 			end
+			-- POIs are placed at "start", after WC2's bonus points (prestart) and pre-placed units:
+			-- never share a hex with one, or both pickups fire on the same step
+			if not too_close and (#wesnoth.interface.get_items(hex.x, hex.y) > 0 or wesnoth.units.get(hex.x, hex.y)) then
+				too_close = true
+			end
 			if not too_close then
 				local adj = { wesnoth.map.get_adjacent_hexes(hex) }
 				local reachable = 0
