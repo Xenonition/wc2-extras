@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Fixed a bonus point's training reward asking you to pick an advancement for the trainer (e.g.
+  Master at Arms -> Champion/Shadowalker) on scenario 4 and later. The trainer is only shown while
+  it speaks and is then removed; WC2 advanced it to look senior, and LotI's extra advancement
+  options turned that into a choice. The trainer now appears at its base type.
+
 ## 0.10.0 — 2026-10-05
 
 - Adaptive final boss army: the escort's size follows the total value of the players'

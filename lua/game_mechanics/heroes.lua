@@ -63,7 +63,8 @@ function wc2_heroes.generate_traits(t)
 end
 
 -- @a t the unit type
-function wc2_heroes.place(t, side, x, y, is_commander)
+-- @a no_advance skips the scenario-based advancing, for units that are only shown briefly
+function wc2_heroes.place(t, side, x, y, is_commander, no_advance)
 	--print("wc2_heroes.place type=" .. t .. " side=" .. side)
 
 	local modifications = wc2_heroes.generate_traits(t)
@@ -88,7 +89,8 @@ function wc2_heroes.place(t, side, x, y, is_commander)
 
 	local scenario_num = wc2_scenario.scenario_num()
 	local advances = 0
-	if scenario_num >= 4 then advances = 2
+	if no_advance then advances = 0
+	elseif scenario_num >= 4 then advances = 2
 	elseif scenario_num >= 2 then advances = 1
 	end
 	for _ = 1, advances do

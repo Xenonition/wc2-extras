@@ -162,7 +162,9 @@ function training.give_bonus(side_num, cx, amount, traintype_index)
 	local traintype = training.get_trainer(traintype_index)
 	local cur_level = training.get_level(side_num, traintype_index)
 	local new_level = cur_level + amount
-	local teacher = wc2_heroes.place(amount > 1 and traintype.advanced_type or traintype.type, side_num, cx.x1,cx.y1)
+	-- the teacher only speaks and is removed; advancing it would make LotI ask the player to pick
+	-- an advancement for it (e.g. Master at Arms -> Champion/Shadowalker)
+	local teacher = wc2_heroes.place(amount > 1 and traintype.advanced_type or traintype.type, side_num, cx.x1, cx.y1, false, true)
 	local u = wesnoth.units.get(cx.x1, cx.y1)
 	wc2_utils.facing_each_other(u, teacher)
 
