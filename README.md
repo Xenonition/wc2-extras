@@ -35,6 +35,9 @@ Works alongside the LotI Era.
 Install from the in-game add-on server (once published), or copy this folder into
 `Documents/My Games/Wesnoth1.18/data/add-ons/`.
 
+In multiplayer every player needs the same WC3 and LotI versions. On turn 1 of each map, WC3
+posts a chat warning to any player whose unit list differs from Player 1's.
+
 ## For developers
 
 Design, numbers and technical notes: [DESIGN.md](DESIGN.md). Release notes:

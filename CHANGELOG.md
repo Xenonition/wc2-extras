@@ -1,7 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.10.1 — 2026-10-25
 
+- Fixed heroes from bonus points (and mercenary camp offers) coming out as different units on
+  each player's screen. Each machine rolled on its own copy of the unit pool, and those copies
+  can differ. The acting player's machine now rolls and sends the result to everyone; invest
+  and shop hero offers use the same path. The pool is also sorted independently of the
+  player's language setting.
+- New: on turn 1 of each map, a chat warning tells any player whose unit list differs from
+  Player 1's (usually a different LotI or WC3 version).
 - Fixed a bonus point's training reward asking you to pick an advancement for the trainer (e.g.
   Master at Arms -> Champion/Shadowalker) on scenario 4 and later. The trainer is only shown while
   it speaks and is then removed; WC2 advanced it to look senior, and LotI's extra advancement

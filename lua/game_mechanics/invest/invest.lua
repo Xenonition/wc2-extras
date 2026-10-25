@@ -99,16 +99,7 @@ local function generate_hero_pool(count)
 	if not (wc2x and wc2x.unit_pool) then return {} end
 	local scenario_num = wc2_scenario.scenario_num()
 	local min_lv, max_lv = wc2x.unit_pool.level_range_for_scenario(scenario_num)
-	local full_pool = wc2x.unit_pool.get_range(min_lv, max_lv)
-	if #full_pool == 0 then return {} end
-	local indices = {}
-	for i = 1, #full_pool do table.insert(indices, i) end
-	mathx.shuffle(indices)
-	local result = {}
-	for i = 1, math.min(count, #full_pool) do
-		table.insert(result, full_pool[indices[i]])
-	end
-	return result
+	return wc2x.unit_pool.synced_sample(min_lv, max_lv, count)
 end
 
 function wc2_invest.invest()

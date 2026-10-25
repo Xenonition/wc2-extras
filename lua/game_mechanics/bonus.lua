@@ -136,14 +136,10 @@ end
 -- at the scenario's level range, limited to types that can stand on the bonus point's hex.
 local function get_pool_hero(x, y)
 	local min_lv, max_lv = wc2x.unit_pool.level_range_for_scenario(wc2_scenario.scenario_num())
-	local pool = wc2x.unit_pool.get_range(min_lv, max_lv)
-	mathx.shuffle(pool)
-	for i, type_id in ipairs(pool) do
+	return wc2x.unit_pool.synced_sample(min_lv, max_lv, 1, function(type_id)
 		local probe = wesnoth.units.create { type = type_id, random_traits = false }
-		if wesnoth.units.movement_on(probe, { x = x, y = y }) < 99 then
-			return type_id
-		end
-	end
+		return wesnoth.units.movement_on(probe, { x = x, y = y }) < 99
+	end)[1]
 end
 
 function bonus.get_random_hero(x, y)

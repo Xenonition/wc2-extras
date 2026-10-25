@@ -69,9 +69,8 @@ function shop.build_consumable_list(side_num)
 
 	if wc2x.unit_pool then
 		local min_lv, max_lv = wc2x.unit_pool.level_range_for_scenario(scenario_num)
-		local hero_ids = wc2x.unit_pool.get_range(min_lv, max_lv)
-		mathx.shuffle(hero_ids)
-		for i = 1, math.min(slots, #hero_ids) do
+		local hero_ids = wc2x.unit_pool.synced_sample(min_lv, max_lv, slots)
+		for i = 1, #hero_ids do
 			local utype = wesnoth.unit_types[hero_ids[i]]
 			table.insert(consumables, {
 				category = "hero", id = hero_ids[i],
