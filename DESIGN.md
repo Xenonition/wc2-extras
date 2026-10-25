@@ -129,6 +129,14 @@ advances to something, or something advances to it). This deliberately includes 
 players can't normally field, while excluding dead-end monsters, ships and props nobody
 wants to invest in. Level range by scenario: S1 Lv1–2, S2 Lv2, S3 Lv2–3, S4 Lv3.
 
+The pool is built from the unit types loaded on each machine, so it can differ between players.
+Random picks therefore never run on every machine: `unit_pool.synced_sample` / `sync_ids` roll
+on the acting player's machine (via `wesnoth.sync.evaluate_single`) and send the chosen type ids
+to everyone. Inside a dialog that is already synced (the gacha) they just roll locally. The pool
+is sorted by byte order, not with Lua's locale-dependent string `<`. On turn 1 every machine
+compares a fingerprint of its pool (count + hash) with side 1's and posts a chat warning on a
+mismatch, since a hero type missing on one machine would still break that player's game.
+
 ### Buff pool (shrines and gacha)
 
 One weighted pool in `config.shrine_buffs` (41 entries, total weight 67) feeds both
