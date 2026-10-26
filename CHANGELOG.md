@@ -10,9 +10,10 @@
     diversion, regenerates +4.
   - WC2's item and training abilities: distract, tenacity, banner, forcefield, darkness,
     corruption, fury, disengage.
-- Shrines and boss escorts no longer waste a buff on a unit that can't use it: a ranged buff
-  on a unit with no ranged attack (or melee on no melee), a trait the unit already has, or
-  darkness on a unit that illuminates.
+- Shrines, Build a Hero and boss escorts no longer waste a buff on a unit that can't use it: a
+  ranged buff on a unit with no ranged attack (or melee on no melee), a trait or ability the
+  unit already has, or darkness on a unit that illuminates. A single gacha or escort roll also
+  can't contain two buffs that overlap, like regenerates +8 and +4.
 
 ## 0.10.1 — 2026-10-25
 

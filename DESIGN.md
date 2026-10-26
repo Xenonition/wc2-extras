@@ -171,8 +171,11 @@ out: escorts draw from this pool, and it would remove player heroes for good.
 
 `poi.buff_is_redundant` decides which buffs a unit would waste: a trait it already has, an
 ability id it already has, a conflicting ability (`conflicts`), or an attack buff for a range
-it has no attack in (a ranged buff on a melee-only unit). Shrines and boss escorts skip
-those; gacha rolls are made before the hero is placed and don't filter.
+it has no attack in (a ranged buff on a melee-only unit). Shrines, boss escorts and gacha all
+skip those. When several buffs are rolled at once (gacha, escorts), each pick is applied
+before the next check, so one roll can't hold two buffs that cancel out (regenerates +8 and
++4). Gacha checks against an unplaced copy of the hero (`gacha.create_hero`): hero traits
+don't depend on random rolls, so the copy matches the hero that is placed.
 
 Scaling buffs use one named `[dummy]` tag for the tooltip plus unnamed, mutually exclusive
 tiers (the same pattern mainline uses for diversion and feeding).

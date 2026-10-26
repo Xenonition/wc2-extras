@@ -201,10 +201,11 @@ function scaling.buff_escort(u, count)
 	if count <= 0 then return end
 	local pool = wc2x.config.shrine_buffs
 	local exclude = {}
-	for i, buff in ipairs(pool) do
-		if is_xp_buff(buff) or wc2x.poi.buff_is_redundant(u, buff) then exclude[i] = true end
-	end
 	for _ = 1, count do
+		-- re-checked each pick: the buffs already given can make others redundant (regenerates +8 and +4)
+		for i, buff in ipairs(pool) do
+			if not exclude[i] and (is_xp_buff(buff) or wc2x.poi.buff_is_redundant(u, buff)) then exclude[i] = true end
+		end
 		local total = 0
 		for i, buff in ipairs(pool) do
 			if not exclude[i] then total = total + buff.weight end

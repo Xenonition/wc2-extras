@@ -28,14 +28,23 @@ local function weighted_pick(pool, exclude)
 	end
 end
 
-function gacha.roll_bonuses(pool, count)
+-- @a probe (optional) is an unplaced copy of the hero the buffs are for: buffs it can't use
+-- (see poi.buff_is_redundant) are skipped, and each pick is applied to it so the next pick
+-- can't duplicate it (e.g. regenerates +8 and +4)
+function gacha.roll_bonuses(pool, count, probe)
 	local exclude = {}
 	local result = {}
 	for _ = 1, count do
+		if probe then
+			for i, buff in ipairs(pool) do
+				if not exclude[i] and wc2x.poi.buff_is_redundant(probe, buff) then exclude[i] = true end
+			end
+		end
 		local idx = weighted_pick(pool, exclude)
 		if idx then
 			table.insert(result, idx)
 			exclude[idx] = true
+			if probe then gacha.apply_bonuses(probe, { tostring(idx) }) end
 		end
 	end
 	return result
@@ -77,7 +86,7 @@ function gacha.show(side_num, discount_pct)
 		return { unit_type = "", buff_list = "", total_cost = 0 }
 	end
 	local bonus_count = mathx.random(2, 3)
-	local buffs = gacha.roll_bonuses(pool, bonus_count)
+	local buffs = gacha.roll_bonuses(pool, bonus_count, gacha.create_hero(hero_type, side_num))
 
 	local function preshow(dialog)
 		local function gold_left()
@@ -132,7 +141,7 @@ function gacha.show(side_num, discount_pct)
 			gold_spent = gold_spent + cost_reroll_all
 			hero_type = roll_hero_type()
 			bonus_count = mathx.random(2, 3)
-			buffs = gacha.roll_bonuses(pool, bonus_count)
+			buffs = gacha.roll_bonuses(pool, bonus_count, gacha.create_hero(hero_type, side_num))
 			update_display()
 		end
 
@@ -140,7 +149,7 @@ function gacha.show(side_num, discount_pct)
 			if gold_left() < cost_reroll_bonuses then return end
 			gold_spent = gold_spent + cost_reroll_bonuses
 			bonus_count = mathx.random(2, 3)
-			buffs = gacha.roll_bonuses(pool, bonus_count)
+			buffs = gacha.roll_bonuses(pool, bonus_count, gacha.create_hero(hero_type, side_num))
 			update_display()
 		end
 
@@ -148,7 +157,7 @@ function gacha.show(side_num, discount_pct)
 			if gold_left() < cost_reroll_bigger then return end
 			gold_spent = gold_spent + cost_reroll_bigger
 			bonus_count = mathx.random(4, 5)
-			buffs = gacha.roll_bonuses(pool, bonus_count)
+			buffs = gacha.roll_bonuses(pool, bonus_count, gacha.create_hero(hero_type, side_num))
 			update_display()
 		end
 
@@ -173,17 +182,22 @@ function gacha.show(side_num, discount_pct)
 	end
 end
 
-function gacha.place_hero(unit_type_id, side_num, leader)
+-- the hero exactly as place_hero creates it (its traits don't depend on random rolls), not on the map
+function gacha.create_hero(unit_type_id, side_num)
 	local modifications = wc2_heroes.generate_traits(unit_type_id)
 	table.insert(modifications, wml.tag.advancement { wc2_scenario.experience_penalty() })
 	table.insert(modifications, wc2_heroes.hero_overlay_object())
 
-	local u = wesnoth.units.create {
+	return wesnoth.units.create {
 		type = unit_type_id,
 		side = side_num,
 		random_traits = false,
 		wml.tag.modifications(modifications),
 	}
+end
+
+function gacha.place_hero(unit_type_id, side_num, leader)
+	local u = gacha.create_hero(unit_type_id, side_num)
 	wc2x.placement.unit_to_map(u, leader)
 	return u
 end
