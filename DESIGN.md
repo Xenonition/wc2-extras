@@ -139,22 +139,40 @@ mismatch, since a hero type missing on one machine would still break that player
 
 ### Buff pool (shrines and gacha)
 
-One weighted pool in `config.shrine_buffs` (41 entries, total weight 67) feeds both
-shrines and gacha rolls:
+One weighted pool in `config.shrine_buffs` (70 entries, total weight 96) feeds shrines,
+gacha rolls and the final boss's escort buffs. New entries are appended only: gacha buffs
+that aren't traits are stored on units by their index in this list.
 
-- **Stat buffs** (common): HP, melee/ranged damage and strikes, movement, XP, +15%
-  resistance per damage type.
-- **Abilities** (rare): ambush, skirmisher, regenerates, leadership, teleport (own
-  villages only), nightstalk, steadfast, cures, heals +4/+8, and WC3-exclusive:
+- **Stat buffs** (common): HP (+8 to +24), melee/ranged damage (+1 to +3) and strikes,
+  movement, XP (+20%/+40%), +15% resistance per damage type, +10% all resistances, +5%
+  defense on every terrain.
+- **Traits** (weight 1 each): strong, quick, resilient, intelligent, healthy, fearless, loyal.
+  They use the mainline trait ids, so a unit that already has the trait is skipped.
+- **Abilities** (rare): ambush, skirmisher, regenerates (+8, or +4 with the same id so a unit
+  never gets both), leadership, teleport (own villages only), nightstalk, steadfast, cures,
+  heals +4/+8; from mainline units outside the default era: concealment, burrow, diversion;
+  from WC2's items and training: distract, tenacity, banner, forcefield, darkness (skipped on
+  units that illuminate), corruption; and WC3-exclusive:
   - **Bulwark** — adjacent allies +10% all resistances.
   - **Sunder** — adjacent enemies −15% all resistances.
   - **Anchor** — +10% all resistances per adjacent enemy, up to +30% (cap 70%).
-- **Weapon specials** (rare): backstab, poison, drain, marksman, berserk, and
-  WC3-exclusive:
+- **Weapon specials** (rare): backstab, poison, drain, marksman, berserk; from mainline:
+  stun, absorb (×0.75 incoming), deflect (all attacks), arcane edge (all attacks); from WC2:
+  fury (melee, berserk capped at 3 rounds), disengage (ranged, 1 move back after attacking);
+  and WC3-exclusive:
   - **Supercharge** (melee) — ×4 damage both ways when attacking.
   - **Duelist** — +50% damage when nobody else is adjacent to either fighter.
   - **Pack Hunter** (melee) — +10% damage per other ally adjacent to the target, up to +30%.
   - **Flurry** (melee) — double strikes, half damage per strike.
+
+The WC2 abilities reuse WC2's ids, so WC2's handlers in `ability_events.lua` (corruption,
+disengage) and its aura halo effect work for them unchanged. Petrify is deliberately left
+out: escorts draw from this pool, and it would remove player heroes for good.
+
+`poi.buff_is_redundant` decides which buffs a unit would waste: a trait it already has, an
+ability id it already has, a conflicting ability (`conflicts`), or an attack buff for a range
+it has no attack in (a ranged buff on a melee-only unit). Shrines and boss escorts skip
+those; gacha rolls are made before the hero is placed and don't filter.
 
 Scaling buffs use one named `[dummy]` tag for the tooltip plus unnamed, mutually exclusive
 tiers (the same pattern mainline uses for diversion and feeding).

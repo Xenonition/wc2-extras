@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.11.0 — 2026-10-26
+
+- Shrine buff pool grows from 41 to 70 buffs (shared with gacha and the boss escorts):
+  - Filler: +3 melee or ranged damage, +24 HP, +10% all resistances, +5% defense everywhere,
+    +40% XP bonus.
+  - Traits: strong, quick, resilient, intelligent, healthy, fearless, loyal.
+  - Mainline abilities few units have: stun, absorb, deflect, arcane edge, concealment, burrow,
+    diversion, regenerates +4.
+  - WC2's item and training abilities: distract, tenacity, banner, forcefield, darkness,
+    corruption, fury, disengage.
+- Shrines and boss escorts no longer waste a buff on a unit that can't use it: a ranged buff
+  on a unit with no ranged attack (or melee on no melee), a trait the unit already has, or
+  darkness on a unit that illuminates.
+
 ## 0.10.1 — 2026-10-25
 
 - Fixed heroes from bonus points (and mercenary camp offers) coming out as different units on

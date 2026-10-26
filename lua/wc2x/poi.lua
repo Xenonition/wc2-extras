@@ -349,17 +349,35 @@ on_event("wc2_drop_pickup", function(ec)
 	end
 end)
 
--- A trait buff the unit already carries adds nothing, and a new ability whose id the unit
--- already has is dropped by the engine; skip both so a shrine visit is never wasted
-local function buff_is_redundant(unit, buff)
-	local trait = buff.trait
-	if not trait then return false end
-	if unit:matches { wml.tag.filter_wml { wml.tag.modifications { wml.tag.trait { id = trait.id } } } } then
-		return true
+-- true if the unit has no attack the effect could change (a ranged buff on a melee-only unit)
+local function lacks_attack_for(unit, effect)
+	if effect.apply_to ~= "attack" then return false end
+	for i, attack in ipairs(unit.attacks) do
+		if not effect.range or attack.range == effect.range then return false end
 	end
-	for i, effect in ipairs(trait) do
-		if effect[1] == "effect" and effect[2].apply_to == "new_ability" then
-			local abilities = wml.get_child(effect[2], "abilities")
+	return true
+end
+
+-- A buff is wasted on a unit if it already carries the trait, already has the ability id (the
+-- engine drops the duplicate), has an ability the buff conflicts with, or has no attack of the
+-- range the buff changes. Shrines and boss escorts skip such buffs so no roll is wasted.
+function poi.buff_is_redundant(unit, buff)
+	if buff.conflicts and unit:matches { ability = buff.conflicts } then return true end
+	local effects = {}
+	if buff.effect then effects[1] = buff.effect end
+	local trait = buff.trait
+	if trait then
+		if unit:matches { wml.tag.filter_wml { wml.tag.modifications { wml.tag.trait { id = trait.id } } } } then
+			return true
+		end
+		for i, child in ipairs(trait) do
+			if child[1] == "effect" then table.insert(effects, child[2]) end
+		end
+	end
+	for i, effect in ipairs(effects) do
+		if lacks_attack_for(unit, effect) then return true end
+		if effect.apply_to == "new_ability" then
+			local abilities = wml.get_child(effect, "abilities")
 			for j, ability in ipairs(abilities or {}) do
 				if ability[2].name and unit:matches { ability = ability[2].id } then
 					return true
@@ -561,7 +579,7 @@ function poi.activate(unit, poi_type)
 	elseif poi_type == "shrine" then
 		local buffs = {}
 		for i, b in ipairs(config.shrine_buffs or {}) do
-			if not buff_is_redundant(unit, b) then table.insert(buffs, b) end
+			if not poi.buff_is_redundant(unit, b) then table.insert(buffs, b) end
 		end
 		if #buffs == 0 then return end
 		local total_w = 0

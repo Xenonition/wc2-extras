@@ -402,6 +402,223 @@ config.shrine_buffs = {
 				wml.tag.filter { wml.tag.filter_adjacent { is_enemy = "yes", count = "3-6" } } },
 		}},
 	}},
+	-- 0.11.0 additions. Append only: gacha buffs are stored by their index in this list.
+	-- Filler stats
+	{ name = "+3 Melee Damage",   weight = 1, effect = { apply_to = "attack", range = "melee", increase_damage = 3 } },
+	{ name = "+3 Ranged Damage",  weight = 1, effect = { apply_to = "attack", range = "ranged", increase_damage = 3 } },
+	{ name = "+24 Hitpoints",     weight = 1, effect = { apply_to = "hitpoints", increase_total = 24 } },
+	{ name = "+10% All Resist",   weight = 1, effect = { apply_to = "resistance", replace = false,
+		wml.tag.resistance { blade = -10, pierce = -10, impact = -10, fire = -10, cold = -10, arcane = -10 } } },
+	-- replace=false adds to the size of the value and keeps its sign, so negative (capped) defenses improve too
+	{ name = "+5% Defense",       weight = 1, effect = { apply_to = "defense", replace = false,
+		wml.tag.defense { shallow_water = -5, reef = -5, swamp_water = -5, flat = -5, sand = -5, forest = -5,
+			hills = -5, mountains = -5, village = -5, castle = -5, cave = -5, frozen = -5, fungus = -5,
+			deep_water = -5, unwalkable = -5 } } },
+	{ name = "+40% XP Bonus",     weight = 1, effect = { apply_to = "max_experience", increase = "-40%" } },
+	-- Mainline traits (same ids, so a unit that already has the trait is skipped)
+	{ name = "Trait: Strong",      weight = 1, trait = {
+		id = "strong", male_name = "strong", female_name = "strong",
+		wml.tag.effect { apply_to = "attack", range = "melee", increase_damage = 1 },
+		wml.tag.effect { apply_to = "hitpoints", increase_total = 1 },
+	}},
+	{ name = "Trait: Quick",       weight = 1, trait = {
+		id = "quick", male_name = "quick", female_name = "quick",
+		wml.tag.effect { apply_to = "movement", increase = 1 },
+		wml.tag.effect { apply_to = "hitpoints", increase_total = "-5%" },
+	}},
+	{ name = "Trait: Resilient",   weight = 1, trait = {
+		id = "resilient", male_name = "resilient", female_name = "resilient",
+		wml.tag.effect { apply_to = "hitpoints", increase_total = 4 },
+		wml.tag.effect { apply_to = "hitpoints", times = "per level", increase_total = 1 },
+	}},
+	{ name = "Trait: Intelligent", weight = 1, trait = {
+		id = "intelligent", male_name = "intelligent", female_name = "intelligent",
+		wml.tag.effect { apply_to = "max_experience", increase = "-20%" },
+	}},
+	{ name = "Trait: Healthy",     weight = 1, trait = {
+		id = "healthy", male_name = "healthy", female_name = "healthy", description = "Always rest heals",
+		wml.tag.effect { apply_to = "healthy" },
+		wml.tag.effect { apply_to = "hitpoints", increase_total = 1 },
+		wml.tag.effect { apply_to = "hitpoints", times = "per level", increase_total = 1 },
+	}},
+	{ name = "Trait: Fearless",    weight = 1, trait = {
+		id = "fearless", male_name = "fearless", female_name = "fearless",
+		description = "Fights normally during unfavorable times of day/night",
+		wml.tag.effect { apply_to = "fearless" },
+	}},
+	{ name = "Trait: Loyal",       weight = 1, trait = {
+		id = "loyal", male_name = "loyal", female_name = "loyal", description = "Zero upkeep",
+		wml.tag.effect { apply_to = "loyal" },
+		wml.tag.effect { apply_to = "wc2_overlay", add = "misc/loyal-icon.png" },
+	}},
+	-- Mainline abilities and specials that few or no default-era units have
+	{ name = "Melee: Stun",          weight = 1, trait = {
+		id = "wc2x_stun", male_name = "stun", female_name = "stun",
+		-- the effect itself is mainline's data/lua/stun.lua, keyed on the [stun] special type
+		wml.tag.effect { apply_to = "attack", range = "melee",
+			wml.tag.set_specials { mode = "append", wml.tag.stun {
+				id = "stun", name = "stun",
+				description = "This attack hits so hard that the opponent is dazed and can no longer enforce a zone of control. The effect wears off on the opponent's next turn.",
+			}},
+		},
+	}},
+	{ name = "All Attacks: Deflect", weight = 1, trait = {
+		id = "wc2x_deflect", male_name = "deflect", female_name = "deflect",
+		wml.tag.effect { apply_to = "attack",
+			wml.tag.set_specials { mode = "append", wml.tag.chance_to_hit {
+				id = "deflect", name = "deflect",
+				description = "When used defensively, this attack reduces the opponent's chance to hit by 10%.",
+				sub = 10, cumulative = true, active_on = "defense", apply_to = "opponent",
+			}},
+		},
+	}},
+	{ name = "Melee: Absorb",        weight = 1, trait = {
+		id = "wc2x_absorb", male_name = "absorb", female_name = "absorb",
+		wml.tag.effect { apply_to = "attack", range = "melee",
+			wml.tag.set_specials { mode = "append", wml.tag.damage {
+				id = "absorb", name = "absorb",
+				description = "This attack puts the unit in good defensive position: enemy strikes deal 25% less damage.",
+				multiply = 0.75, apply_to = "opponent",
+			}},
+		},
+	}},
+	{ name = "All Attacks: Arcane Edge", weight = 1, trait = {
+		id = "wc2x_arcane_edge", male_name = "arcane edge", female_name = "arcane edge",
+		wml.tag.effect { apply_to = "attack",
+			wml.tag.set_specials { mode = "append", wml.tag.damage_type {
+				id = "arcane_damage", name = "arcane",
+				description = "This attack combines the arcane type with the type of weapon used so that resistance to the arcane type does not penalize the user.",
+				alternative_type = "arcane",
+			}},
+		},
+	}},
+	{ name = "Ability: Concealment", weight = 1, trait = {
+		id = "wc2x_concealment", male_name = "concealment", female_name = "concealment",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.hides { id = "concealment", name = "concealment", affect_self = true,
+				description = "This unit can hide in villages, and remain undetected by its enemies, except by those standing next to it.",
+				wml.tag.filter { wml.tag.filter_location { terrain = "*^V*" } },
+			},
+		}},
+	}},
+	{ name = "Ability: Burrow",      weight = 1, trait = {
+		id = "wc2x_burrow", male_name = "burrow", female_name = "burrow",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.hides { id = "burrow", name = "burrow", affect_self = true,
+				description = "This unit can hide in forest or sand if it is resting (has not moved for a turn), and remain undetected by its enemies.",
+				wml.tag.filter {
+					wml.tag.filter_location { terrain = "*^F*,*^Qhhf,*^Qhuf,D*^*" },
+					formula = "if(self.moves = self.max_moves, 1, 0)",
+				},
+			},
+		}},
+	}},
+	{ name = "Ability: Diversion",   weight = 1, trait = {
+		id = "wc2x_diversion", male_name = "diversion", female_name = "diversion",
+		-- mainline ABILITY_DIVERSION: a weapon special used as an ability, one [affect_adjacent] per hex axis
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.chance_to_hit { id = "diversion", name = "diversion", sub = 20, cumulative = true,
+				description = "If there is an enemy of the target on the opposite side of the target, this unit diverts the target's attention and reduces its chance to hit by 20%.",
+				affect_self = false, affect_allies = false, affect_enemies = true,
+				wml.tag.filter { wml.tag.filter_adjacent { is_enemy = true } },
+				wml.tag.affect_adjacent { adjacent = "n,s",
+					wml.tag.filter { wml.tag.filter_adjacent { is_enemy = true, count = "2-6", adjacent = "n,s" } } },
+				wml.tag.affect_adjacent { adjacent = "se,nw",
+					wml.tag.filter { wml.tag.filter_adjacent { is_enemy = true, count = "2-6", adjacent = "se,nw" } } },
+				wml.tag.affect_adjacent { adjacent = "ne,sw",
+					wml.tag.filter { wml.tag.filter_adjacent { is_enemy = true, count = "2-6", adjacent = "ne,sw" } } },
+			},
+		}},
+	}},
+	{ name = "Ability: Regenerates +4", weight = 1, trait = {
+		id = "wc2x_regenerates4", male_name = "regenerates +4", female_name = "regenerates +4",
+		-- same ability id as Regenerates (+8): a unit never gets both
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.regenerate { id = "regenerates", name = "regenerates +4", value = 4, poison = "cured", affect_self = true,
+				description = "The unit will heal itself 4 HP per turn. If it is poisoned, it will remove the poison instead of healing.",
+			},
+		}},
+	}},
+	-- WC2's own abilities and specials (same ids as WC2's items and training, so its handlers in
+	-- ability_events.lua work and a unit that already has one is skipped)
+	{ name = "Ability: Distract",    weight = 1, trait = {
+		id = "wc2x_distract", male_name = "distract", female_name = "distract",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.skirmisher { id = "distract", name = "distract", affect_self = false, affect_allies = true,
+				description = "Allied units ignore enemy zones of control adjacent to this unit.",
+				wml.tag.affect_adjacent { adjacent = "n,ne,se,s,sw,nw" },
+			},
+		}},
+	}},
+	{ name = "Ability: Tenacity",    weight = 1, trait = {
+		id = "wc2x_tenacity", male_name = "tenacity", female_name = "tenacity",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.resistance { id = "tenacity", name = "tenacity", divide = 2, max_value = 0,
+				affect_self = true, active_on = "defense",
+				description = "This unit's vulnerabilities are halved when defending.",
+				wml.tag.filter_base_value { less_than = 0 },
+			},
+		}},
+	}},
+	{ name = "Ability: Banner",      weight = 1, trait = {
+		id = "wc2x_banner", male_name = "banner", female_name = "banner",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.leadership { id = "banner", name = "banner", add = 20, cumulative = true,
+				affect_self = false, affect_allies = true,
+				description = "Adjacent allied units do 20% more damage. This is cumulative with leadership.",
+				wml.tag.affect_adjacent { adjacent = "n,ne,se,s,sw,nw" },
+			},
+		}},
+	}},
+	{ name = "Ability: Forcefield",  weight = 1, trait = {
+		id = "wc2x_forcefield", male_name = "forcefield", female_name = "forcefield",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.leadership { id = "forcefield", name = "forcefield", value = -13, cumulative = false,
+				affect_self = false, affect_allies = false, affect_enemies = true,
+				description = "Adjacent enemies do 13% less damage.",
+				wml.tag.affect_adjacent { adjacent = "n,ne,se,s,sw,nw" },
+			},
+		}},
+		wml.tag.effect { apply_to = "wc2_update_aura" },
+	}},
+	{ name = "Ability: Darkness",    weight = 1, conflicts = "illumination,illuminates", trait = {
+		id = "wc2x_darkness", male_name = "darkness", female_name = "darkness",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.illuminates { id = "darkness", name = "darkness", value = -25, min_value = -25,
+				cumulative = false, affect_self = true,
+				description = "This unit darkens the surrounding area, making chaotic units fight better, and lawful units fight worse. Any units adjacent to this unit will fight as if it were dusk when it is day, and as if it were night when it is dusk.",
+			},
+		}},
+		wml.tag.effect { apply_to = "wc2_update_aura" },
+	}},
+	{ name = "Ability: Corruption",  weight = 1, trait = {
+		id = "wc2x_corruption", male_name = "corruption", female_name = "corruption",
+		wml.tag.effect { apply_to = "new_ability", wml.tag.abilities {
+			wml.tag.dummy { id = "wc2_corruption", name = "corruption",
+				description = "This unit corrupts adjacent enemies at the beginning of our turn. Corrupted units lose 6 HP or are reduced to 1 HP. Corruption cannot, of itself, kill a unit.",
+			},
+		}},
+	}},
+	{ name = "Melee: Fury",          weight = 1, trait = {
+		id = "wc2x_fury", male_name = "fury", female_name = "fury",
+		wml.tag.effect { apply_to = "attack", range = "melee",
+			wml.tag.set_specials { mode = "append", wml.tag.berserk {
+				id = "wct_fury", name = "fury", value = 3,
+				description = "Whether used offensively or defensively, this attack presses the engagement until one of the combatants is slain, or 3 rounds of attacks have occurred.",
+			}},
+		},
+	}},
+	{ name = "Ranged: Disengage",    weight = 1, trait = {
+		id = "wc2x_disengage", male_name = "disengage", female_name = "disengage",
+		wml.tag.effect { apply_to = "attack", range = "ranged",
+			wml.tag.set_specials { mode = "append", wml.tag.dummy {
+				id = "wc2_disengage", name = "disengage",
+				description = "Attack with this weapon gives unit 1 moves at end of combat (unit doesn't gain a new attack).",
+				-- WC2's handler checks special_id_active, which needs a filter tag on the special
+				wml.tag.filter_self {},
+			}},
+		},
+	}},
 }
 
 -- Caravan settings

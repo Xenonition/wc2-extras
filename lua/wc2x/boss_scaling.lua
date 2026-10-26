@@ -186,22 +186,23 @@ function scaling.apply_boss_hp(u, hp_pct)
 	})
 end
 
+-- true if any of the buff's effects changes the XP needed to level
+local function is_xp_buff(buff)
+	if buff.effect and buff.effect.apply_to == "max_experience" then return true end
+	for _, child in ipairs(buff.trait or {}) do
+		if child[1] == "effect" and child[2].apply_to == "max_experience" then return true end
+	end
+	return false
+end
+
 -- shrine-pool buffs for an escort unit; skips buffs it can't use (XP on a unit that won't level)
--- and abilities it already has
+-- and ones the shrine would skip too (see poi.buff_is_redundant)
 function scaling.buff_escort(u, count)
 	if count <= 0 then return end
 	local pool = wc2x.config.shrine_buffs
 	local exclude = {}
 	for i, buff in ipairs(pool) do
-		if buff.effect and buff.effect.apply_to == "max_experience" then exclude[i] = true end
-		if buff.trait then
-			for _, eff in ipairs(buff.trait) do
-				local abilities = eff[1] == "effect" and wml.get_child(eff[2], "abilities")
-				for _, ab in ipairs(abilities or {}) do
-					if u:matches { ability = ab[2].id } then exclude[i] = true end
-				end
-			end
-		end
+		if is_xp_buff(buff) or wc2x.poi.buff_is_redundant(u, buff) then exclude[i] = true end
 	end
 	for _ = 1, count do
 		local total = 0
