@@ -296,13 +296,14 @@ WC2's era plus four WC3 factions built from base-game units: **The Coil**
 
 | Path | Contents |
 |---|---|
-| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `unit_finder`, `debug_panel`, `dialog_utils` |
+| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `boss_scaling`, `unit_finder`, `debug_panel`, `dialog_utils` |
 | `units/` | WC3 unit types (final bosses, phylactery) |
 | `lua/campaign_main.lua` | Loads WC3 modules and LotI workarounds |
 | `lua/campaign/`, `lua/game_mechanics/`, `lua/map/` | Forked WC2 code (scenario flow, invest, artifacts, map generation) |
 | `resources/data/` | Artifacts, training, trait data |
 | `era/factions/` | Faction definitions |
 | `gui/` | Shop, gacha, merc and help dialogs |
+| `tools/` | Dev scripts (not loaded by the game): `retag_saves.py` |
 
 `lua/wc2x/placement.lua` is the one place that decides where things appear next to a
 leader (castle hexes first, then nearest free hex, deterministic order); items, gacha
@@ -327,6 +328,11 @@ and the Micro AI id counter (`ai_director.lua`), the assassin id counter
   fallback that declines, so an AI-controlled (e.g. disconnected) side never pops a
   dialog on another client.
 - Return values from `evaluate_single` are flat tables of strings/numbers/booleans.
+- Data that can differ per client never feeds synced randomness. The unit pool is built from
+  each client's loaded unit types, so picks from it are rolled on the acting client and
+  broadcast (`unit_pool.sync_ids`); a turn-1 fingerprint check warns players whose pool
+  differs from side 1's. Before 0.10.1 each client rolled on its own pool and bonus-point
+  heroes came out as different units per player.
 - No `os.time`, `os.clock`, `tostring(table)` or other client-local values in game logic.
 
 ### Neutral POI side
@@ -367,16 +373,21 @@ warnings: `ICON_THREE`, `ICON_FOUR`, `IMAGE_ONE`, `WC2_CAMPAIGN_NEW`, `WC2_SCENA
   scenario (inherited from WC2). That player skips the gacha and shop.
 - **Shop and ruins can drop player-restricted WC2 items** (Root of the Elder Wose,
   Stormbringer, Sylph Bow). Invest respects the restriction; this is accepted.
-- **Duplicate buff rolls.** Shrines skip buffs the unit already has (same trait, or an
-  ability id it already has). The gacha can still roll an ability the hero's unit type has
-  natively; the engine then drops the duplicate.
 - **Bloodprice on turn 1** costs 4 HP with no healing to offset it, because the engine
   skips start-of-turn healing on a side's first turn.
 - **Attack preview** for adjacency-based specials (pack hunter, duelist, backstab) is
   computed before the attacker moves, so the preview numbers can differ from the real
   fight.
 
+- **Deserter advancement prompt.** WC2's starting deserter hero is advanced by scenario
+  (`wc2_heroes.place`); with LotI's extra advancement options the player may be asked to
+  pick one. It is a unit they keep, so the choice is accepted. (The bonus-point trainer,
+  which only appears briefly, is no longer advanced since 0.10.1.)
+
 ## Open items
 
 - Deferred design: a story-driven unit mechanic.
 - Boss art: custom sprites and portraits to replace the placeholders.
+- Unconfirmed bug: an artifact from a WC2 bonus point (and the bonus point) reportedly
+  disappeared after save and load. Not reproduced; no code path that clears items on load
+  was found. Needs the scenario, turn and save to investigate.

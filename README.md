@@ -44,3 +44,5 @@ posts a chat warning to any player whose unit list differs from Player 1's.
 
 Design, numbers and technical notes: [DESIGN.md](DESIGN.md). Release notes:
 [CHANGELOG.md](CHANGELOG.md). Tuning values live in `lua/wc2x/config.lua`.
+Working conventions (worktrees, release steps, multiplayer-safety rules, lint):
+[CLAUDE.md](CLAUDE.md). `tools/retag_saves.py` updates local saves to a new release.
