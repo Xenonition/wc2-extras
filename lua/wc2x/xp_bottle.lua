@@ -1,5 +1,6 @@
 -- XP bottle: finishing a map early leaves a bottle next to each player's leader on the next map,
--- worth config.xp_bottle_per_turn XP per turn left. Only the owner's units can drink it. It pays
+-- worth more the more turns are left, flattening toward a per-scenario ceiling (see config).
+-- Only the owner's units can drink it. It pays
 -- in XP, the currency players farm for, so finishing beats farming. placement.deliver_pending
 -- places it.
 
@@ -14,10 +15,13 @@ local function last_player_side()
 	return wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
 end
 
+-- for the scenario being won; integer division keeps it identical on every client
 function bottle.amount()
 	local config = wc2x.config
 	local turns_left = math.max(wesnoth.scenario.turns - wesnoth.current.turn, 0)
-	return turns_left * config.xp_bottle_per_turn
+	local ceilings = config.xp_bottle_ceiling
+	local ceiling = ceilings[math.min(wc2_scenario.scenario_num(), #ceilings)]
+	return ceiling * turns_left // (turns_left + config.xp_bottle_half_turns)
 end
 
 function bottle.place(hex, side_num, amount)
@@ -36,7 +40,8 @@ end
 
 function bottle.init()
 	-- stored for every player still in the game; scenario 5's victory ends the campaign, so its
-	-- leftover variable is never read
+	-- leftover variable is never read. Priority 10: runs before scenario.lua's victory handler
+	-- (priority 0) moves wc2_scenario on to the next map, so amount() sees the map just won.
 	on_event("victory", function()
 		local amount = bottle.amount()
 		if amount <= 0 then return end
@@ -45,7 +50,7 @@ function bottle.init()
 				wesnoth.sides[side_num].variables["wc2x_pending_xp_bottle"] = amount
 			end
 		end
-	end)
+	end, 10)
 
 	-- fired by dropping.lua when a unit stops on an [item]
 	on_event("wc2_drop_pickup", function()

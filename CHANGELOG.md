@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- XP bottle is now 4 XP per turn left with no cap (was 8 per turn, max 120).
+- XP bottle rebalanced (was 8 XP per turn left, max 120): XP = M × turns left ÷ (turns left
+  + 15), so it flattens out instead of hitting a cap, and the ceiling M grows with the map
+  won: 60 / 90 / 120 / 150. Winning map 2 with 14 turns left gives 43 XP.
 - Invested items are placed like other deliveries (free castle hex first) instead of always
   on the hex below the leader, which could be off the map, impassable or already taken.
 - Code: invest, shop, item carryover and XP bottle deliveries share one placement path

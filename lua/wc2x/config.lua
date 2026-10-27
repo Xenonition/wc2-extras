@@ -14,7 +14,11 @@ config.rout_min_turn = 3
 config.rout_max_villages = 1
 
 -- XP bottle: finishing a map early leaves one next to each player's leader on the next map
-config.xp_bottle_per_turn = 4    -- XP per turn left at victory, no cap
+-- XP = M * t // (t + k), t = turns left at victory: rises about M/k per turn, then flattens
+-- toward M, the ceiling for the scenario just won (XP is worth less to higher-level units).
+-- Whole-number maths, so every client computes the same amount.
+config.xp_bottle_ceiling = { 60, 90, 120, 150 }    -- M, by scenario won (1-4)
+config.xp_bottle_half_turns = 15                   -- k: turns left that give half of M
 
 config.difficulty_gold_scale = {
 	[6] = 0.8,

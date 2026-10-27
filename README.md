@@ -16,9 +16,9 @@ and buffs, and a final boss. 1–4 players, five random maps.
   reroll it for gold — then a shop with artifacts, training, heroes and permanent upgrades
   (extra castle hexes, supply villages, income, barracks, training grounds…).
 - **Finish fast, pay less.** Every turn left on the clock is 3% off in the shop and gacha,
-  up to 50%, plus an XP bottle worth 4 XP per turn left waiting by your leader on the next
-  map. A beaten enemy reduced to its leader is routed and stops recruiting, so there's
-  nothing left to farm.
+  up to 50%, plus an XP bottle waiting by your leader on the next map that grows with the
+  turns left and with each map won. A beaten enemy reduced to its leader is routed and
+  stops recruiting, so there's nothing left to farm.
 - **Legendary leaders:** from map two, one enemy leader per map is a titled legend with
   extra HP and damage, plus affixes like Ironclad, Colossal or Forcebound. Kill it for an artifact.
 - **New buffs** you can only get in WC3: supercharge, bulwark, sunder, duelist, pack
