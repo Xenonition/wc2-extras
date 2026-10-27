@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.13.1 — 2026-10-27
 
 - XP bottle rebalanced (was 8 XP per turn left, max 120): XP = M × turns left ÷ (turns left
   + 15), so it flattens out instead of hitting a cap, and the ceiling M grows with the map
