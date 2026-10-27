@@ -14,8 +14,7 @@ config.rout_min_turn = 3
 config.rout_max_villages = 1
 
 -- XP bottle: finishing a map early leaves one next to each player's leader on the next map
-config.xp_bottle_per_turn = 8    -- XP per turn left at victory
-config.xp_bottle_max = 120
+config.xp_bottle_per_turn = 4    -- XP per turn left at victory, no cap
 
 config.difficulty_gold_scale = {
 	[6] = 0.8,

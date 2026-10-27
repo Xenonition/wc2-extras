@@ -81,8 +81,7 @@ end
 function wc2_invest.do_item(t)
 	local side_num = wesnoth.current.side
 	local side = wesnoth.sides[side_num]
-	local leaders = wesnoth.units.find_on_map { side = side_num, canrecruit = true }
-	local x,y = leaders[1].x, leaders[1].y
+	local leader = wesnoth.units.find_on_map { side = side_num, canrecruit = true }[1]
 
 	local items_available = stringx.split(side.variables["wc2.items"] or "")
 	local i = find_index(items_available, tostring(t))
@@ -92,7 +91,9 @@ function wc2_invest.do_item(t)
 	table.remove(items_available, i)
 	side.variables["wc2.items"] = table.concat(items_available, ",")
 
-	wc2_artifacts.place_item(x, y + 1, t, side_num)
+	-- was always the hex below the leader, which could be off the map, impassable or already
+	-- holding an item
+	wc2x.placement.artifact_to_leader(leader, t)
 end
 
 local function generate_hero_pool(count)

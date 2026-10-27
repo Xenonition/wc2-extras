@@ -98,7 +98,22 @@ POI guards live on a dedicated neutral side (see *Neutral POI side*).
 ### Invest (scenario start)
 
 Each player picks two of: +70 gold (plus a supply village), a hero from 5 random offers,
-a training level, or an item. Hero offers come from the shared unit pool (below).
+a training level, or an item. Hero offers come from the shared unit pool (below). An
+invested item is placed like any other delivery (below), not on the hex under the leader.
+
+### Leader deliveries
+
+Everything handed to a player's leader goes through `lua/wc2x/placement.lua`, so it all
+lands the same way: on a free castle hex if there is one, otherwise the nearest free hex
+within 4 (never one with a unit or another item), with a deterministic order for MP.
+
+- **Now:** `placement.artifact_to_leader` (invest items); a boxed-in leader gets the
+  artifact directly. Heroes and reinforcements use `placement.unit_to_map`.
+- **Next map:** `placement.queue_artifact` stores carried-over and shop artifacts in the
+  side variable `wc2x_pending_artifacts`; `xp_bottle` stores `wc2x_pending_xp_bottle`. On
+  `wc2_start`, after the castle upgrades, `placement.deliver_pending` places both for every
+  original player side, sharing one set of taken hexes. The variable names are unchanged
+  from earlier versions, so saves taken between maps still deliver.
 
 ### Between-map sequence (after winning scenarios 1–4)
 
@@ -117,9 +132,9 @@ strongest lever in the mod, which is the anti-farming mechanism.
 
 **XP bottle** (`lua/wc2x/xp_bottle.lua`). The discount is one-off gold while farmed XP
 compounds across maps, so finishing also pays in XP: at victory, each player still in the
-game is owed 8 XP per turn left (max 120). On the next map's `wc2_start` a blue XP bottle
-(`images/items/wc3-xp-bottle.png`) labelled "+N XP" is placed next to their leader (`placement.item_hex`); only the owner's
-units can drink it, and `unit:advance` then levels the unit with the engine's synced
+game is owed 4 XP per turn left (`config.xp_bottle_per_turn`, no cap). On the next map a
+blue XP bottle (`images/items/wc3-xp-bottle.png`) labelled "+N XP" is placed next to their
+leader with the other deliveries (see *Leader deliveries*); only the owner's units can drink it, and `unit:advance` then levels the unit with the engine's synced
 advancement choice, as after a fight. An undrunk bottle is lost at the end of that map.
 
 **Item pickup choices.** Stepping on a WC2 item opens a choice: pick it up, leave it, send it

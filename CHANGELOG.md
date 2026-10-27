@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- XP bottle is now 4 XP per turn left with no cap (was 8 per turn, max 120).
+- Invested items are placed like other deliveries (free castle hex first) instead of always
+  on the hex below the leader, which could be off the map, impassable or already taken.
+- Code: invest, shop, item carryover and XP bottle deliveries share one placement path
+  (`placement.lua`).
+
 ## 0.13.0 — 2026-10-27
 
 - **Rout:** from turn 3, an enemy side down to its leader alone with at most one village

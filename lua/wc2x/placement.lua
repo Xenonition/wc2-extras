@@ -48,6 +48,49 @@ function placement.item_hex(leader, taken)
 	end
 end
 
+-- Puts an artifact next to the leader now (castle first); a boxed-in leader gets it directly
+function placement.artifact_to_leader(leader, index, taken)
+	local hex = placement.item_hex(leader, taken)
+	if hex then
+		wc2_artifacts.place_item(hex.x, hex.y, index, leader.side)
+	else
+		wc2_artifacts.give_item(leader, index, true)
+	end
+end
+
+-- Items owed to a player on the next map live in side variables, so they survive the scenario
+-- change and save/load: wc2x_pending_artifacts (comma list of artifact indices, from item
+-- carryover and the shop) and wc2x_pending_xp_bottle (XP amount, from xp_bottle).
+function placement.queue_artifact(side_num, index)
+	local vars = wesnoth.sides[side_num].variables
+	local pending = vars["wc2x_pending_artifacts"] or ""
+	vars["wc2x_pending_artifacts"] = pending == "" and tostring(index) or (pending .. "," .. index)
+end
+
+-- Places everything queued for side_num around its leader, sharing one set of taken hexes.
+-- Runs on wc2_start, after the castle upgrades, so new castle hexes are used first.
+function placement.deliver_pending(side_num)
+	local vars = wesnoth.sides[side_num].variables
+	local artifacts = vars["wc2x_pending_artifacts"] or ""
+	local xp = vars["wc2x_pending_xp_bottle"]
+	vars["wc2x_pending_artifacts"] = nil
+	vars["wc2x_pending_xp_bottle"] = nil
+
+	local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
+	if not leader then return end
+	local taken = {}
+	if artifacts ~= "" then
+		for i, id in ipairs(stringx.split(artifacts)) do
+			local index = tonumber(id)
+			if index then placement.artifact_to_leader(leader, index, taken) end
+		end
+	end
+	if xp then
+		local hex = placement.item_hex(leader, taken)
+		if hex then wc2x.xp_bottle.place(hex, side_num, xp) end
+	end
+end
+
 -- Puts an off-map unit next to the leader (castle first); falls back to the recall list if boxed in
 function placement.unit_to_map(unit, leader)
 	for i, loc in ipairs(placement.hexes_near(leader)) do

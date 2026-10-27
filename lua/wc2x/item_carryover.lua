@@ -1,5 +1,5 @@
 -- WC2 items still lying on the map at victory are sent to their owner's pending list, which
--- upgrades.place_pending_artifacts delivers next to their castle at the start of the next map.
+-- placement.deliver_pending delivers next to their castle at the start of the next map.
 -- Runs inside the victory event (synced), only for scenarios that have a next map.
 
 local _ = wesnoth.textdomain 'wesnoth-wc'
@@ -38,9 +38,7 @@ function carryover.sweep()
 				if index then
 					local owner = vars.wc2x_owner
 					if not (owner and leaders[owner]) then owner = nearest_side(x, y) end
-					local side_vars = wesnoth.sides[owner].variables
-					local pending = side_vars["wc2x_pending_artifacts"] or ""
-					side_vars["wc2x_pending_artifacts"] = pending == "" and tostring(index) or (pending .. "," .. index)
+					wc2x.placement.queue_artifact(owner, index)
 					counts[owner] = (counts[owner] or 0) + 1
 				end
 			end

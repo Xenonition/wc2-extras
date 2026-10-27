@@ -205,37 +205,13 @@ on_event("wc2_start", function(cx)
 	for side_num = 1, (wml.variables.wc2_player_count or 1) do
 		upgrades.apply_castle_hexes(side_num)
 		upgrades.apply_for_side(side_num)
-		upgrades.place_pending_artifacts(side_num)
 		persist_side(side_num)
 	end
-end)
-
-function upgrades.place_pending_artifacts(side_num)
-	local side = wesnoth.sides[side_num]
-	local pending_str = side.variables["wc2x_pending_artifacts"] or ""
-	if pending_str == "" then return end
-
-	local artifact_ids = stringx.split(pending_str)
-	side.variables["wc2x_pending_artifacts"] = ""
-
-	if not wc2_artifacts then return end
-
-	local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
-	if not leader then return end
-
-	local taken = {}
-	for _, id_str in ipairs(artifact_ids) do
-		local artifact_id = tonumber(id_str)
-		if artifact_id then
-			local hex = wc2x.placement.item_hex(leader, taken)
-			if hex then
-				wc2_artifacts.place_item(hex.x, hex.y, artifact_id, side_num)
-			else
-				wc2_artifacts.give_item(leader, artifact_id, true)
-			end
-		end
+	-- wc2_player_count drops when a 4p leader dies mid-campaign; deliveries go by original side
+	for side_num = 1, (wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1) do
+		wc2x.placement.deliver_pending(side_num)
 	end
-end
+end)
 
 -- Spawn reinforcements on turn 1
 on_event("turn 1", function(cx)

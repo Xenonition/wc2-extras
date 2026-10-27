@@ -1,6 +1,7 @@
 -- XP bottle: finishing a map early leaves a bottle next to each player's leader on the next map,
--- worth config.xp_bottle_per_turn XP per turn left (max config.xp_bottle_max). Only the owner's
--- units can drink it. It pays in XP, the currency players farm for, so finishing beats farming.
+-- worth config.xp_bottle_per_turn XP per turn left. Only the owner's units can drink it. It pays
+-- in XP, the currency players farm for, so finishing beats farming. placement.deliver_pending
+-- places it.
 
 local _ = wesnoth.textdomain 'wesnoth-wc'
 local on_event = wesnoth.game_events.add_repeating
@@ -16,14 +17,10 @@ end
 function bottle.amount()
 	local config = wc2x.config
 	local turns_left = math.max(wesnoth.scenario.turns - wesnoth.current.turn, 0)
-	return math.min(turns_left * config.xp_bottle_per_turn, config.xp_bottle_max)
+	return turns_left * config.xp_bottle_per_turn
 end
 
-local function place(side_num, amount)
-	local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
-	if not leader then return end
-	local hex = wc2x.placement.item_hex(leader)
-	if not hex then return end
+function bottle.place(hex, side_num, amount)
 	wesnoth.wml_actions.item {
 		x = hex.x, y = hex.y,
 		image = bottle.IMAGE,
@@ -46,17 +43,6 @@ function bottle.init()
 		for side_num = 1, last_player_side() do
 			if wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1] then
 				wesnoth.sides[side_num].variables["wc2x_pending_xp_bottle"] = amount
-			end
-		end
-	end)
-
-	on_event("wc2_start", function()
-		for side_num = 1, last_player_side() do
-			local side = wesnoth.sides[side_num]
-			local amount = side.variables["wc2x_pending_xp_bottle"]
-			if amount then
-				side.variables["wc2x_pending_xp_bottle"] = nil
-				place(side_num, amount)
 			end
 		end
 	end)

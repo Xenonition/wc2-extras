@@ -249,10 +249,7 @@ function shop.show_for_side(side_num)
 		side.gold = side.gold - price
 
 		if category == "artifact" then
-			local existing = side.variables["wc2x_pending_artifacts"] or ""
-			local pending = existing ~= "" and stringx.split(existing) or {}
-			table.insert(pending, tostring(id))
-			side.variables["wc2x_pending_artifacts"] = table.concat(pending, ",")
+			wc2x.placement.queue_artifact(side_num, id)
 		elseif category == "training" then
 			if wc2_training and wc2_training.available(side_num, id) then
 				wc2_training.inc_level(side_num, id, 1)
