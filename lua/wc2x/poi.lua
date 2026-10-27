@@ -617,7 +617,8 @@ on_event("moveto", function()
 	-- castle or keep, as the base terrain or an overlay (e.g. "Ch", "Kh", "Gg^Cov")
 	if not (terrain:match("^[CK]") or terrain:match("%^[CK]")) then return end
 
-	-- artifact rewards go to the side's leader wherever it is, or drop on the arrival hex
+	-- artifact rewards are dropped next to the side's leader (like invest items), so the player
+	-- picks who carries it; without a leader they drop on the arrival hex
 	local leader = wesnoth.units.find_on_map({ canrecruit = true, side = u.side })[1]
 
 	local config = poi.config
@@ -645,7 +646,7 @@ on_event("moveto", function()
 				image = "units/human-peasants/ruffian.png",
 			}
 			if leader then
-				wc2_artifacts.give_item(leader, artifact_id, true)
+				wc2x.placement.artifact_to_leader(leader, artifact_id)
 			else
 				wc2_artifacts.place_item(cx.x1, cx.y1, artifact_id, u.side)
 			end
