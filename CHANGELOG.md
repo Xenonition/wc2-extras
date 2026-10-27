@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.13.0 — 2026-10-27
 
 - **Rout:** from turn 3, an enemy side down to its leader alone with at most one village
   loses its gold and income for the rest of the map, so it stops recruiting units to farm.
