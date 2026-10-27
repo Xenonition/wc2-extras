@@ -205,11 +205,8 @@ on_event("wc2_start", function(cx)
 	for side_num = 1, (wml.variables.wc2_player_count or 1) do
 		upgrades.apply_castle_hexes(side_num)
 		upgrades.apply_for_side(side_num)
-		persist_side(side_num)
-	end
-	-- wc2_player_count drops when a 4p leader dies mid-campaign; deliveries go by original side
-	for side_num = 1, (wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1) do
 		wc2x.placement.deliver_pending(side_num)
+		persist_side(side_num)
 	end
 end)
 

@@ -111,8 +111,8 @@ within 4 (never one with a unit or another item), with a deterministic order for
   artifact directly. Heroes and reinforcements use `placement.unit_to_map`.
 - **Next map:** `placement.queue_artifact` stores carried-over and shop artifacts in the
   side variable `wc2x_pending_artifacts`; `xp_bottle` stores `wc2x_pending_xp_bottle`. On
-  `wc2_start`, after the castle upgrades, `placement.deliver_pending` places both for every
-  original player side, sharing one set of taken hexes. The variable names are unchanged
+  `wc2_start`, after the castle upgrades, `placement.deliver_pending` places both for each
+  player side, sharing one set of taken hexes. The variable names are unchanged
   from earlier versions, so saves taken between maps still deliver.
 
 ### Between-map sequence (after winning scenarios 1–4)
