@@ -1,5 +1,6 @@
--- WC3 enemy scaling — recruit expansion + assassin spawns
+-- WC3 enemy scaling — recruit expansion + assassin spawns, rout
 
+local _ = wesnoth.textdomain 'wesnoth-wc'
 local on_event = wesnoth.game_events.add_repeating
 
 local enemy_scaling = {}
@@ -20,6 +21,38 @@ function enemy_scaling.init(config)
 		if wc2_scenario.is_human_side(unit.side) then return end
 		enemy_scaling.maybe_make_assassin(unit)
 	end)
+
+	-- "side turn" fires before income is paid, so a side routed here gets none this turn
+	on_event("side turn", function()
+		enemy_scaling.check_rout(wesnoth.current.side)
+	end)
+end
+
+-- A beaten enemy side (only its leader left, almost no villages) stops getting gold and base
+-- income for the rest of the map. Otherwise its income floor buys a recruit every turn, which
+-- players farm for XP instead of finishing the map.
+function enemy_scaling.check_rout(side_num)
+	local config = enemy_scaling.config
+	if wc2_scenario.is_human_side(side_num) then return end
+	local side = wesnoth.sides[side_num]
+	if side.controller ~= "ai" or side.variables["wc2x_is_neutral"] then return end
+	if side_num == wml.variables["wc2x_boss_side"] then return end
+	-- enemy sides are new each map, so this flag never carries over
+	if side.variables["wc2x_routed"] then return end
+	if wesnoth.current.turn < config.rout_min_turn then return end
+
+	local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
+	if not leader then return end
+	if #wesnoth.units.find_on_map({ side = side_num, canrecruit = false }) > 0 then return end
+	local villages = wesnoth.map.find { gives_income = true, wml.tag.filter_owner { side = side_num } }
+	if #villages > config.rout_max_villages then return end
+
+	side.variables["wc2x_routed"] = true
+	side.gold = 0
+	side.base_income = 0
+	wesnoth.interface.float_label(leader.x, leader.y, _ "Routed", "255,140,0")
+	wesnoth.interface.add_chat_message("WC3", string.format(tostring(
+		_ "%s's army is routed: no more gold or reinforcements this map."), tostring(leader.name)))
 end
 
 local function find_types_at_level(base_recruits, level)

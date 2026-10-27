@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **Rout:** from turn 3, an enemy side down to its leader alone with at most one village
+  loses its gold and income for the rest of the map, so it stops recruiting units to farm.
+- **XP bottle:** finishing early leaves a bottle by your leader on the next map, worth 8 XP
+  per turn left (max 120). Only your units can drink it; it is lost if not drunk that map.
+- **Legendary leaders:** from scenario 2, one enemy leader per map gets +25% HP, a laurel,
+  a title and 1–2 affixes (Ironclad, Colossal, Forcebound, Unyielding, Bloodsworn, Warlord,
+  Shadowborn, Venomous). Killing it drops an artifact.
+
 ## 0.12.0 — 2026-10-27
 
 - Seven more filler buffs in the shrine pool (77 total): +4 melee or ranged damage, +32 HP,

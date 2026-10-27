@@ -13,8 +13,9 @@ playtest defaults, not final balance.
 
 1. **Territory matters.** Enemies earn income from villages like a normal MP side, so
    leaving the map to them makes the game harder.
-2. **Finish, don't farm.** Finishing a map early is rewarded (shop discount), so sitting on
-   the last enemy to farm XP has a real cost.
+2. **Finish, don't farm.** Finishing a map early is rewarded (shop discount and an XP
+   bottle), and a beaten enemy is routed so it stops feeding recruits, so sitting on the
+   last enemy to farm XP has a real cost.
 3. **Every run is different.** Heroes, shop stock, shrine buffs and the final boss are rolled
    from large pools, so no two campaigns play the same.
 4. **Decisions over free power.** New items carry real downsides; buffs are rare and random.
@@ -37,6 +38,31 @@ Enemy strength also scales by scenario:
   hunts the nearest player leader (Micro AI `assassin`).
 - **Personality:** each AI side rolls aggression, caution, village focus, leader
   aggression and recruitment habits from ranges, so enemies behave differently per map.
+- **Rout** (`enemy_scaling.check_rout`): from turn 3, an enemy side down to its leader
+  alone (no other units) with at most 1 village loses its gold and base income for the
+  rest of the map. Without this, the income floor (10 × players per turn) buys the beaten
+  leader one recruit a turn, which players farmed for XP instead of finishing. Checked on
+  "side turn", which fires before income is paid. One-way, announced in chat.
+- **Legendary leader** (`lua/wc2x/legendary.lua`): from S2, one random enemy leader per
+  map gets +25% HP, a laurel overlay, a title and affixes (1 in S2–3, 2 in S4–5), and
+  killing it drops a random WC2 artifact (owned by the killer's side, so item carryover
+  returns it if left on the ground). Picked on "start", after prestart's `[wc2_enemy]`
+  made the leaders; a narrator line and an objectives note name it.
+
+  Affixes (`config.legendary_affixes`) are data only: each is a list of shrine buff names
+  or inline effects, and parts the leader already has or can't use are skipped
+  (`poi.buff_is_redundant`). Weighted toward making the leader hard to burst down:
+
+  | Affix | Weight | Parts |
+  |---|---|---|
+  | Ironclad | 3 | steadfast, +20% all resistances |
+  | Colossal | 3 | +50% HP |
+  | Forcebound | 3 | forcefield, +10% all resistances |
+  | Unyielding | 2 | melee first strike, +1 melee strike |
+  | Bloodsworn | 1 | melee drain, regenerates |
+  | Warlord | 1 | leadership, banner |
+  | Shadowborn | 1 | darkness, corruption |
+  | Venomous | 1 | melee poison, +2 melee damage |
 
 ### AI director
 
@@ -86,6 +112,13 @@ For each surviving player, in side order:
 Both apply the **early-finish discount**: 3% per turn left, max 50%. It applies to
 everything, including permanent upgrades — this is intentional: finishing fast is the
 strongest lever in the mod, which is the anti-farming mechanism.
+
+**XP bottle** (`lua/wc2x/xp_bottle.lua`). The discount is one-off gold while farmed XP
+compounds across maps, so finishing also pays in XP: at victory, each player still in the
+game is owed 8 XP per turn left (max 120). On the next map's `wc2_start` a green potion
+labelled "+N XP" is placed next to their leader (`placement.item_hex`); only the owner's
+units can drink it, and `unit:advance` then levels the unit with the engine's synced
+advancement choice, as after a fight. An undrunk bottle is lost at the end of that map.
 
 **Item pickup choices.** Stepping on a WC2 item opens a choice: pick it up, leave it, send it
 next to your own leader (unless the unit is the leader), or send it to another player who still
@@ -296,7 +329,7 @@ WC2's era plus four WC3 factions built from base-game units: **The Coil**
 
 | Path | Contents |
 |---|---|
-| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `boss_scaling`, `unit_finder`, `debug_panel`, `dialog_utils` |
+| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `xp_bottle`, `legendary`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `boss_scaling`, `unit_finder`, `debug_panel`, `dialog_utils` |
 | `units/` | WC3 unit types (final bosses, phylactery) |
 | `lua/campaign_main.lua` | Loads WC3 modules and LotI workarounds |
 | `lua/campaign/`, `lua/game_mechanics/`, `lua/map/` | Forked WC2 code (scenario flow, invest, artifacts, map generation) |

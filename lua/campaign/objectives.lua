@@ -39,5 +39,9 @@ function wesnoth.wml_actions.wc2_objectives(cfg)
 	if boss_status then
 		table.insert(objectives, wml.tag.note { description = boss_status })
 	end
+	local legend_status = wc2x and wc2x.legendary and wc2x.legendary.status_text()
+	if legend_status then
+		table.insert(objectives, wml.tag.note { description = legend_status })
+	end
 	wesnoth.wml_actions.objectives(objectives)
 end

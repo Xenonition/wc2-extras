@@ -7,6 +7,15 @@ local config = {}
 config.enemy_gold_multiplier = 0.5
 config.enemy_gold_variance = { 0.7, 1.3 }    -- random multiplier on starting gold per side
 config.enemy_min_gold_per_turn = 10
+-- Rout: from this turn, an enemy side down to its leader (no other units) and at most this many
+-- villages loses its gold and base income for the rest of the map, so it can't feed recruits to
+-- players farming XP
+config.rout_min_turn = 3
+config.rout_max_villages = 1
+
+-- XP bottle: finishing a map early leaves one next to each player's leader on the next map
+config.xp_bottle_per_turn = 8    -- XP per turn left at victory
+config.xp_bottle_max = 120
 
 config.difficulty_gold_scale = {
 	[6] = 0.8,
@@ -631,6 +640,40 @@ config.shrine_buffs = {
 		wml.tag.defense { shallow_water = -10, reef = -10, swamp_water = -10, flat = -10, sand = -10, forest = -10,
 			hills = -10, mountains = -10, village = -10, castle = -10, cave = -10, frozen = -10, fungus = -10,
 			deep_water = -10, unwalkable = -10 } } },
+}
+
+-- Legendary leaders: from legendary_from_scenario, one random enemy leader per map gets a title,
+-- legendary_hp_bonus and affixes (count by scenario). Each affix part is a shrine buff name or an
+-- inline buff ({ effect = ... }); parts the leader already has or can't use are skipped, and an
+-- affix with no usable part isn't rolled. Killing the leader drops a WC2 artifact.
+config.legendary_from_scenario = 2
+config.legendary_hp_bonus = "25%"
+config.legendary_affix_count = { [2] = 1, [3] = 1, [4] = 2, [5] = 2 }
+config.legendary_affixes = {
+	{ title = "Ironclad",   weight = 3, desc = "steadfast, +20% resistances",
+	  parts = { "Ability: Steadfast", "+20% All Resist" } },
+	{ title = "Colossal",   weight = 3, desc = "+50% hitpoints",
+	  parts = { { effect = { apply_to = "hitpoints", increase_total = "50%" } } } },
+	{ title = "Forcebound", weight = 3, desc = "forcefield, +10% resistances",
+	  parts = { "Ability: Forcefield", "+10% All Resist" } },
+	{ title = "Unyielding", weight = 2, desc = "melee first strike, +1 melee strike",
+	  parts = {
+		{ effect = { apply_to = "attack", range = "melee",
+			wml.tag.set_specials { mode = "append", wml.tag.firststrike {
+				id = "firststrike", name = "first strike",
+				description = "This unit always strikes first with this attack, even if defending.",
+			}},
+		}},
+		"+1 Melee Strike",
+	  } },
+	{ title = "Bloodsworn", weight = 1, desc = "melee drain, regenerates",
+	  parts = { "Melee: Drain", "Ability: Regenerates" } },
+	{ title = "Warlord",    weight = 1, desc = "leadership, banner",
+	  parts = { "Ability: Leadership", "Ability: Banner" } },
+	{ title = "Shadowborn", weight = 1, desc = "darkness, corruption",
+	  parts = { "Ability: Darkness", "Ability: Corruption" } },
+	{ title = "Venomous",   weight = 1, desc = "melee poison, +2 melee damage",
+	  parts = { "Melee: Poison", "+2 Melee Damage" } },
 }
 
 -- Caravan settings
