@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Gacha heroes are cheaper: 25 + 10 gold per map won (35 / 45 / 55 / 65), was 50 + 12
+  (62 / 74 / 86 / 98). Rerolls are unchanged, so buying a decent roll beats rerolling.
+
 ## 0.13.1 — 2026-10-27
 
 - XP bottle rebalanced (was 8 XP per turn left, max 120): XP = M × turns left ÷ (turns left

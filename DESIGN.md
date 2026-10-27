@@ -120,7 +120,8 @@ within 4 (never one with a unit or another item), with a deterministic order for
 For each surviving player, in side order:
 
 1. **Build a Hero (gacha).** A random hero from the unit pool with 2–3 random buffs.
-   Cost 50 + 12 × scenario gold. Rerolls: everything (15g), buffs only (10g), or a
+   Cost 25 + 10 × map won (35 / 45 / 55 / 65g), cheap next to the rerolls so taking a
+   mediocre roll is worth it. Rerolls: everything (15g), buffs only (10g), or a
    "bigger" roll with 4–5 buffs (35g). What you see is exactly what you get — the unit is
    shown at its real level. The dialog opens even if the player can't afford anything.
 2. **Shop.** Skipped at 0 gold. Two random offers per consumable category plus all

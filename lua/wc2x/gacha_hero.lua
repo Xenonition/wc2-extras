@@ -4,8 +4,9 @@ local dialog_wml = wml.load "~add-ons/wc2-extras/gui/gacha_dialog.cfg"
 
 local gacha = {}
 
-local HERO_BASE_COST = 50
-local HERO_COST_PER_SCENARIO = 12
+-- cheap enough that settling for a mediocre roll is worth it; rerolls stay the luxury
+local HERO_BASE_COST = 25
+local HERO_COST_PER_SCENARIO = 10
 local REROLL_ALL_COST = 15
 local REROLL_BONUSES_COST = 10
 local REROLL_BIGGER_COST = 35
