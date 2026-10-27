@@ -117,8 +117,8 @@ strongest lever in the mod, which is the anti-farming mechanism.
 
 **XP bottle** (`lua/wc2x/xp_bottle.lua`). The discount is one-off gold while farmed XP
 compounds across maps, so finishing also pays in XP: at victory, each player still in the
-game is owed 8 XP per turn left (max 120). On the next map's `wc2_start` a green potion
-labelled "+N XP" is placed next to their leader (`placement.item_hex`); only the owner's
+game is owed 8 XP per turn left (max 120). On the next map's `wc2_start` a blue XP bottle
+(`images/items/wc3-xp-bottle.png`) labelled "+N XP" is placed next to their leader (`placement.item_hex`); only the owner's
 units can drink it, and `unit:advance` then levels the unit with the engine's synced
 advancement choice, as after a fight. An undrunk bottle is lost at the end of that map.
 

@@ -7,7 +7,7 @@ local on_event = wesnoth.game_events.add_repeating
 
 local bottle = {}
 
-bottle.IMAGE = "items/potion-green.png"
+bottle.IMAGE = "items/wc3-xp-bottle.png"
 
 local function last_player_side()
 	return wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
