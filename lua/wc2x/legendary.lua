@@ -1,5 +1,5 @@
--- Legendary leaders: from config.legendary_from_scenario, one random enemy leader per map gets a
--- title, the legendary trait (HP, damage, laurel overlay) and affixes from config.legendary_affixes (built from shrine
+-- Legendary leaders: from config.legendary_from_scenario, one random enemy leader per map gets
+-- the legendary trait (HP, damage, laurel overlay) and affixes from config.legendary_affixes (built from shrine
 -- buffs). Killing it drops a WC2 artifact. State: unit variable wc2x_legendary, and the WML
 -- variable wc2x_legendary (name, desc, slain) for the objectives note.
 
@@ -89,13 +89,10 @@ function legendary.make(u, count)
 	u:remove_modifications({ id = "heroic" }, "trait")
 	u:add_modification("trait", legendary.trait())
 	local picked = roll_affixes(u, count)
-	local titles, descs = {}, {}
+	-- no title of our own: LotI already titles every AI leader on "unit placed"
+	local descs = {}
 	for i, affix in ipairs(picked) do
-		table.insert(titles, affix.title)
-		table.insert(descs, affix.desc)
-	end
-	if #titles > 0 then
-		u.name = string.format("%s the %s", tostring(u.name), table.concat(titles, " "))
+		table.insert(descs, string.format("%s (%s)", affix.title, affix.desc))
 	end
 	u.max_moves = wc2x.config.legendary_moves
 	u.hitpoints = u.max_hitpoints

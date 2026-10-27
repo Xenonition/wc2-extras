@@ -645,7 +645,7 @@ config.shrine_buffs = {
 			deep_water = -10, unwalkable = -10 } } },
 }
 
--- Legendary leaders: from legendary_from_scenario, one random enemy leader per map gets a title,
+-- Legendary leaders: from legendary_from_scenario, one random enemy leader per map gets
 -- the legendary trait (legendary_hp_bonus, legendary_damage_bonus) and affixes (count by scenario). Each affix part is a shrine buff name or an
 -- inline buff ({ effect = ... }); parts the leader already has or can't use are skipped, and an
 -- affix with no usable part isn't rolled. Killing the leader drops a WC2 artifact.

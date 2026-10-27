@@ -8,6 +8,9 @@
   being equipped on the leader, so you choose who carries them.
 - Legendary leaders lose the heroic trait, get 2 moves (other enemy leaders have none), and
   their side's AI sends the leader out to fight more readily (leader aggression at least 1.0).
+- Legendary leaders no longer add "the Ironclad" etc. to their name, which stacked with
+  LotI's leader title ("Alajaih the Ironclad the Enlightened Annihilator"). The affix names
+  are listed in the announcement and objectives instead.
 
 ## 0.13.1 — 2026-10-27
 

@@ -45,10 +45,12 @@ Enemy strength also scales by scenario:
   "side turn", which fires before income is paid. One-way, announced in chat.
 - **Legendary leader** (`lua/wc2x/legendary.lua`): from S2, one random enemy leader per
   map loses WC2's heroic trait and gets the "legendary" trait instead (+25% HP, +25% damage
-  on all attacks, 2 moves, laurel overlay), a title and affixes (1 in S2–3, 2 in S4–5), and
+  on all attacks, 2 moves, laurel overlay) and affixes (1 in S2–3, 2 in S4–5), and
   killing it drops a random WC2 artifact (owned by the killer's side, so item carryover
   returns it if left on the ground). Picked on "start", after prestart's `[wc2_enemy]`
-  made the leaders; a narrator line and an objectives note name it.
+  made the leaders; a narrator line and an objectives note name it and its affixes. It gets
+  no title of its own: LotI already gives every AI leader one when it is placed
+  (`check_unit_title`), and stacking ours on top read as two titles.
 
   Other enemy leaders are made with 0 moves and never leave their keep, so the legend is the
   one leader that can step out and fight: its side's AI `leader_aggression` (rolled per side
