@@ -6,7 +6,8 @@
   loses its gold and income for the rest of the map, so it stops recruiting units to farm.
 - **XP bottle:** finishing early leaves a bottle by your leader on the next map, worth 8 XP
   per turn left (max 120). Only your units can drink it; it is lost if not drunk that map.
-- **Legendary leaders:** from scenario 2, one enemy leader per map gets +25% HP, a laurel,
+- **Legendary leaders:** from scenario 2, one enemy leader per map gets the legendary trait
+  (+25% HP, +25% damage on all attacks, a laurel),
   a title and 1–2 affixes (Ironclad, Colossal, Forcebound, Unyielding, Bloodsworn, Warlord,
   Shadowborn, Venomous). Killing it drops an artifact.
 

@@ -1,5 +1,5 @@
 -- Legendary leaders: from config.legendary_from_scenario, one random enemy leader per map gets a
--- title, extra HP, a laurel overlay and affixes from config.legendary_affixes (built from shrine
+-- title, the legendary trait (HP, damage, laurel overlay) and affixes from config.legendary_affixes (built from shrine
 -- buffs). Killing it drops a WC2 artifact. State: unit variable wc2x_legendary, and the WML
 -- variable wc2x_legendary (name, desc, slain) for the objectives note.
 
@@ -69,12 +69,23 @@ local function roll_affixes(u, count)
 	return picked
 end
 
-function legendary.make(u, count)
-	u:add_modification("object", {
-		id = "wc2x_legendary",
-		wml.tag.effect { apply_to = "hitpoints", increase_total = wc2x.config.legendary_hp_bonus },
+-- base bonus every legendary leader gets on top of its affixes, shown as a trait like heroic.
+-- No movement: enemy leaders are created with 0 moves to hold their keep, and +1 would let
+-- this one walk off it
+function legendary.trait()
+	local config = wc2x.config
+	return {
+		id = "wc2x_legendary", male_name = _ "legendary", female_name = _ "female^legendary",
+		description = string.format(tostring(_ "+%s hitpoints, +%s damage on all attacks."),
+			config.legendary_hp_bonus, config.legendary_damage_bonus),
+		wml.tag.effect { apply_to = "hitpoints", increase_total = config.legendary_hp_bonus },
+		wml.tag.effect { apply_to = "attack", increase_damage = config.legendary_damage_bonus },
 		wml.tag.effect { apply_to = "overlay", add = "misc/laurel.png" },
-	})
+	}
+end
+
+function legendary.make(u, count)
+	u:add_modification("trait", legendary.trait())
 	local picked = roll_affixes(u, count)
 	local titles, descs = {}, {}
 	for i, affix in ipairs(picked) do

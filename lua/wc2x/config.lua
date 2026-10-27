@@ -643,11 +643,12 @@ config.shrine_buffs = {
 }
 
 -- Legendary leaders: from legendary_from_scenario, one random enemy leader per map gets a title,
--- legendary_hp_bonus and affixes (count by scenario). Each affix part is a shrine buff name or an
+-- the legendary trait (legendary_hp_bonus, legendary_damage_bonus) and affixes (count by scenario). Each affix part is a shrine buff name or an
 -- inline buff ({ effect = ... }); parts the leader already has or can't use are skipped, and an
 -- affix with no usable part isn't rolled. Killing the leader drops a WC2 artifact.
 config.legendary_from_scenario = 2
 config.legendary_hp_bonus = "25%"
+config.legendary_damage_bonus = "25%"    -- all attacks
 config.legendary_affix_count = { [2] = 1, [3] = 1, [4] = 2, [5] = 2 }
 config.legendary_affixes = {
 	{ title = "Ironclad",   weight = 3, desc = "steadfast, +20% resistances",

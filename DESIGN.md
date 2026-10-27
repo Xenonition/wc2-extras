@@ -44,7 +44,9 @@ Enemy strength also scales by scenario:
   leader one recruit a turn, which players farmed for XP instead of finishing. Checked on
   "side turn", which fires before income is paid. One-way, announced in chat.
 - **Legendary leader** (`lua/wc2x/legendary.lua`): from S2, one random enemy leader per
-  map gets +25% HP, a laurel overlay, a title and affixes (1 in S2–3, 2 in S4–5), and
+  map gets the "legendary" trait (+25% HP, +25% damage on all attacks, laurel overlay;
+  no extra movement, since enemy leaders are made with 0 moves to hold their keep), a
+  title and affixes (1 in S2–3, 2 in S4–5), and
   killing it drops a random WC2 artifact (owned by the killer's side, so item carryover
   returns it if left on the ground). Picked on "start", after prestart's `[wc2_enemy]`
   made the leaders; a narrator line and an objectives note name it.
