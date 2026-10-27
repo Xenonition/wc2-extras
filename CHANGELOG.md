@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Seven more filler buffs in the shrine pool (77 total): +4 melee or ranged damage, +32 HP,
+  +4 movement, +50% XP bonus, +20% all resistances, +10% defense everywhere.
+
 ## 0.11.0 — 2026-10-26
 
 - Shrine buff pool grows from 41 to 70 buffs (shared with gacha and the boss escorts):

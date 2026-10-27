@@ -619,6 +619,18 @@ config.shrine_buffs = {
 			}},
 		},
 	}},
+	-- 0.12.0 additions: top-tier filler (append only)
+	{ name = "+4 Melee Damage",   weight = 1, effect = { apply_to = "attack", range = "melee", increase_damage = 4 } },
+	{ name = "+4 Ranged Damage",  weight = 1, effect = { apply_to = "attack", range = "ranged", increase_damage = 4 } },
+	{ name = "+32 Hitpoints",     weight = 1, effect = { apply_to = "hitpoints", increase_total = 32 } },
+	{ name = "+4 Movement",       weight = 1, effect = { apply_to = "movement", increase = 4 } },
+	{ name = "+50% XP Bonus",     weight = 1, effect = { apply_to = "max_experience", increase = "-50%" } },
+	{ name = "+20% All Resist",   weight = 1, effect = { apply_to = "resistance", replace = false,
+		wml.tag.resistance { blade = -20, pierce = -20, impact = -20, fire = -20, cold = -20, arcane = -20 } } },
+	{ name = "+10% Defense",      weight = 1, effect = { apply_to = "defense", replace = false,
+		wml.tag.defense { shallow_water = -10, reef = -10, swamp_water = -10, flat = -10, sand = -10, forest = -10,
+			hills = -10, mountains = -10, village = -10, castle = -10, cave = -10, frozen = -10, fungus = -10,
+			deep_water = -10, unwalkable = -10 } } },
 }
 
 -- Caravan settings

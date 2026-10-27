@@ -19,7 +19,7 @@ and buffs, and a final boss. 1–4 players, five random maps.
   up to 50%.
 - **New buffs** you can only get in WC3: supercharge, bulwark, sunder, duelist, pack
   hunter, flurry and anchor.
-- **70 shrine buffs**, from stats and traits to rare abilities you rarely see otherwise:
+- **77 shrine buffs**, from stats and traits to rare abilities you rarely see otherwise:
   mainline’s stun, burrow and diversion, and WC2 item powers like banner, corruption and fury.
 - **Cursed items** with real downsides, like the Bloodprice Blade (drains 100% of damage,
   but it bleeds you every turn) or the Gambler's Die (every strike is a coin flip).
