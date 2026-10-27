@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.14.0 — 2026-10-28
 
 - Gacha heroes are cheaper: 25 + 10 gold per map won (35 / 45 / 55 / 65), was 50 + 12
   (62 / 74 / 86 / 98). Rerolls are unchanged, so buying a decent roll beats rerolling.
