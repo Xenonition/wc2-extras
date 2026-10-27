@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.12.0 — 2026-10-27
 
 - Seven more filler buffs in the shrine pool (77 total): +4 melee or ranged damage, +32 HP,
   +4 movement, +50% XP bonus, +20% all resistances, +10% defense everywhere.
