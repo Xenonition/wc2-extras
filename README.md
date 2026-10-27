@@ -20,7 +20,8 @@ and buffs, and a final boss. 1–4 players, five random maps.
   turns left and with each map won. A beaten enemy reduced to its leader is routed and
   stops recruiting, so there's nothing left to farm.
 - **Legendary leaders:** from map two, one enemy leader per map is a titled legend with
-  extra HP and damage, plus affixes like Ironclad, Colossal or Forcebound. Kill it for an artifact.
+  extra HP and damage, plus affixes like Ironclad, Colossal or Forcebound. Unlike other
+  leaders it leaves its keep to fight. Kill it for an artifact.
 - **New buffs** you can only get in WC3: supercharge, bulwark, sunder, duelist, pack
   hunter, flurry and anchor.
 - **77 shrine buffs**, from stats and traits to rare abilities you rarely see otherwise:

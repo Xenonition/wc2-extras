@@ -44,12 +44,17 @@ Enemy strength also scales by scenario:
   leader one recruit a turn, which players farmed for XP instead of finishing. Checked on
   "side turn", which fires before income is paid. One-way, announced in chat.
 - **Legendary leader** (`lua/wc2x/legendary.lua`): from S2, one random enemy leader per
-  map gets the "legendary" trait (+25% HP, +25% damage on all attacks, laurel overlay;
-  no extra movement, since enemy leaders are made with 0 moves to hold their keep), a
-  title and affixes (1 in S2–3, 2 in S4–5), and
+  map loses WC2's heroic trait and gets the "legendary" trait instead (+25% HP, +25% damage
+  on all attacks, 2 moves, laurel overlay), a title and affixes (1 in S2–3, 2 in S4–5), and
   killing it drops a random WC2 artifact (owned by the killer's side, so item carryover
   returns it if left on the ground). Picked on "start", after prestart's `[wc2_enemy]`
   made the leaders; a narrator line and an objectives note name it.
+
+  Other enemy leaders are made with 0 moves and never leave their keep, so the legend is the
+  one leader that can step out and fight: its side's AI `leader_aggression` (rolled per side
+  from -5 to 1) is raised to at least `config.legendary_leader_aggression` (1.0). The moves
+  are set directly (`max_moves = 2`) because removing heroic rebuilds the unit from its type;
+  if the legend levels up, the rebuild gives it its type's full moves.
 
   Affixes (`config.legendary_affixes`) are data only: each is a list of shrine buff names
   or inline effects, and parts the leader already has or can't use are skipped

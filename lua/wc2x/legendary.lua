@@ -69,15 +69,15 @@ local function roll_affixes(u, count)
 	return picked
 end
 
--- base bonus every legendary leader gets on top of its affixes, shown as a trait like heroic.
--- No movement: enemy leaders are created with 0 moves to hold their keep, and +1 would let
--- this one walk off it
+-- base bonus every legendary leader gets on top of its affixes, in place of WC2's heroic trait.
+-- Moves are set in legendary.make, not here: enemy leaders are created with 0 moves to hold
+-- their keep, and a movement effect would add to the unit type's moves after any rebuild
 function legendary.trait()
 	local config = wc2x.config
 	return {
 		id = "wc2x_legendary", male_name = _ "legendary", female_name = _ "female^legendary",
-		description = string.format(tostring(_ "+%s hitpoints, +%s damage on all attacks."),
-			config.legendary_hp_bonus, config.legendary_damage_bonus),
+		description = string.format(tostring(_ "+%s hitpoints, +%s damage on all attacks, +%d moves."),
+			config.legendary_hp_bonus, config.legendary_damage_bonus, config.legendary_moves),
 		wml.tag.effect { apply_to = "hitpoints", increase_total = config.legendary_hp_bonus },
 		wml.tag.effect { apply_to = "attack", increase_damage = config.legendary_damage_bonus },
 		wml.tag.effect { apply_to = "overlay", add = "misc/laurel.png" },
@@ -85,6 +85,8 @@ function legendary.trait()
 end
 
 function legendary.make(u, count)
+	-- removing a trait rebuilds the unit from its type, which also undoes the leader's 0 moves
+	u:remove_modifications({ id = "heroic" }, "trait")
 	u:add_modification("trait", legendary.trait())
 	local picked = roll_affixes(u, count)
 	local titles, descs = {}, {}
@@ -95,8 +97,17 @@ function legendary.make(u, count)
 	if #titles > 0 then
 		u.name = string.format("%s the %s", tostring(u.name), table.concat(titles, " "))
 	end
+	u.max_moves = wc2x.config.legendary_moves
 	u.hitpoints = u.max_hitpoints
 	u.variables.wc2x_legendary = true
+
+	-- a legend fights: raise the side's rolled leader aggression (enemy_scaling) to at least the
+	-- legendary floor. Stored in the side variable too, which ai_director restores after castle_defense
+	local side = wesnoth.sides[u.side]
+	local la = math.max(tonumber(side.variables["wc2x_ai_leader_aggression"] or "0"),
+		wc2x.config.legendary_leader_aggression)
+	side.variables["wc2x_ai_leader_aggression"] = string.format("%.1f", la)
+	wesnoth.wml_actions.modify_side { side = u.side, wml.tag.ai { leader_aggression = la } }
 	wml.variables.wc2x_legendary = {
 		name = u.name,
 		desc = table.concat(descs, "; "),

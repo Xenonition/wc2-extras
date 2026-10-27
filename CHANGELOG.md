@@ -6,6 +6,8 @@
   (62 / 74 / 86 / 98). Rerolls are unchanged, so buying a decent roll beats rerolling.
 - Trade caravan artifacts are dropped next to your leader (free castle hex first) instead of
   being equipped on the leader, so you choose who carries them.
+- Legendary leaders lose the heroic trait, get 2 moves (other enemy leaders have none), and
+  their side's AI sends the leader out to fight more readily (leader aggression at least 1.0).
 
 ## 0.13.1 — 2026-10-27
 
