@@ -268,9 +268,11 @@ function enemy.do_gold(cfg, side)
 		side.gold = side.gold + starting_gold
 		local base_income = math.max(
 			wc2x_cfg.enemy_min_gold_per_turn * nplayers,
-			math.ceil(10 * nplayers * difficulty_scale)
+			math.ceil(wc2x_cfg.enemy_income_per_player * nplayers * difficulty_scale)
 		)
-		side.base_income = base_income
+		-- whole-number round-up so every client agrees
+		local growth = 100 + wc2x_cfg.enemy_income_growth_pct * (scenario_num - 1)
+		side.base_income = (base_income * growth + 99) // 100
 	else
 		-- Fallback to original WC2 formula
 		local factor = (cfg.nplayers + 1 ) * enemy_power/6 - 2

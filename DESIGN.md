@@ -25,9 +25,14 @@ playtest defaults, not final balance.
 ### Enemy economy: income, not a lump sum
 
 WC2 gives enemies a large starting gold pile and pre-places most of their army. WC3 gives
-enemies moderate starting gold (`enemy_gold_multiplier` 0.5 of WC2's, ±30% per side,
-scaled by difficulty 0.8–1.5×) and a minimum income of 10/turn, and pre-captures 30% of
-villages (+10% per scenario, max 80%, never within 4 hexes of a player). The default AI
+each enemy side the map file's gold (300; 350 on map 5) plus (100 + 25 × map) ×
+`enemy_gold_multiplier` (0.5) × difficulty scale (0.8–1.5×) × a random 0.7–1.3, a base
+income of max(10 × players, 10 × players × difficulty scale) per turn that grows by
+`enemy_income_growth_pct` (15%) per map after the first, 5 gold per village (players get
+2), and pre-captures 30% of villages (+10% per scenario, max 80%, never within 4 hexes of a
+player). For 3 players on Normal (×1.2) that is 36 / 42 / 47 / 53 / 58 gold per turn on
+maps 1–5: start gold stays modest, but income keeps pace with the players' between-map
+gains (heroes, upgrades, XP bottles). The default AI
 already contests villages and recruits from income, so territory matters without custom AI.
 
 Enemy strength also scales by scenario:

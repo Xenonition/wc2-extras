@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Enemy base income grows 15% per map after the first (`config.enemy_income_growth_pct`):
+  for 3 players on Normal it is 36 / 42 / 47 / 53 / 58 gold per turn on maps 1–5, where it
+  used to stay at 36. Start gold is unchanged.
 - Fixed legendary leaders' +2 moves not applying (a Dwarvish Sentinel legend had 4 moves):
   LotI rebuilds units from their type and modifications, which threw away the directly set
   moves. The bonus is now part of the legendary trait, so it adds 2 to the type's moves.

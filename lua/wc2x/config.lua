@@ -7,6 +7,10 @@ local config = {}
 config.enemy_gold_multiplier = 0.5
 config.enemy_gold_variance = { 0.7, 1.3 }    -- random multiplier on starting gold per side
 config.enemy_min_gold_per_turn = 10
+-- enemy base income per turn = max(min × players, per_player × players × difficulty scale),
+-- then +growth_pct per map after the first, so it keeps pace with players' between-map gains
+config.enemy_income_per_player = 10
+config.enemy_income_growth_pct = 15
 -- Rout: from this turn, an enemy side down to its leader (no other units) and at most this many
 -- villages loses its gold and base income for the rest of the map, so it can't feed recruits to
 -- players farming XP
