@@ -48,7 +48,7 @@ config.enemy_village_safe_radius = 4
 -- Shop settings
 -- early-finish discount % = ceiling * t // (t + half_turns), t = turns left: same curve as the
 -- XP bottle, so it keeps growing with every turn saved but never reaches the ceiling
-config.shop_discount_ceiling = 75
+config.shop_discount_ceiling = 90
 config.shop_discount_half_turns = 10  -- 10 turns left = half the ceiling
 config.shop_slots_per_category = 2
 

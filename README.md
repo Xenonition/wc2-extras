@@ -15,8 +15,8 @@ and buffs, and a final boss. 1–4 players, five random maps.
 - **After each victory:** Build a Hero — roll a random hero with 2–3 random buffs and
   reroll it for gold — then a shop with artifacts, training, heroes and permanent upgrades
   (extra castle hexes, supply villages, income, barracks, training grounds…).
-- **Finish fast, pay less.** Every turn left on the clock cuts shop and gacha prices: 25%
-  off with 5 turns left, 37% with 10, still growing past 50% for very fast wins, plus an XP bottle waiting by your leader on the next map that grows with the
+- **Finish fast, pay less.** Every turn left on the clock cuts shop and gacha prices: 30%
+  off with 5 turns left, 45% with 10, 60% with 20, still growing for very fast wins, plus an XP bottle waiting by your leader on the next map that grows with the
   turns left and with each map won. A beaten enemy reduced to its leader is routed and
   stops recruiting, so there's nothing left to farm.
 - **Legendary leaders:** from map two, one enemy leader per map is a legend with
