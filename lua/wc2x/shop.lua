@@ -18,7 +18,8 @@ function shop.get_discount(side_num)
 	local turns_left = math.max(wesnoth.scenario.turns - wesnoth.current.turn, 0)
 	-- whole-number maths so every client gets the same discount
 	local c = shop.config
-	return c.shop_discount_ceiling * turns_left // (turns_left + c.shop_discount_half_turns)
+	local t2, k2 = turns_left * turns_left, c.shop_discount_half_turns * c.shop_discount_half_turns
+	return c.shop_discount_ceiling * t2 // (t2 + k2)
 end
 
 function shop.discounted_price(base_price, discount)

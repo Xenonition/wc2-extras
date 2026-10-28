@@ -134,10 +134,11 @@ For each surviving player, in side order:
 2. **Shop.** Skipped at 0 gold. Two random offers per consumable category plus all
    permanent upgrades.
 
-Both apply the **early-finish discount**: `90 × t // (t + 10)` %, t = turns left
-(`config.shop_discount_ceiling`, `shop_discount_half_turns`), the same curve as the XP
-bottle: 30% at 5 turns left, 45% at 10, 54% at 15, 60% at 20, 67% at 30, never reaching 90%.
-It is at least the old 3%-per-turn (max 50%) at every turn count, with no flat top. It applies to
+Both apply the **early-finish discount**: `90 × t² // (t² + 12²)` %, t = turns left
+(`config.shop_discount_ceiling`, `shop_discount_half_turns`). Squaring t makes it an
+S-shaped (Hill) curve rather than the XP bottle's: a narrow win earns little (5% at 3 turns
+left, 13% at 5), it climbs fastest around 12 turns left (36% at 10, 54% at 15) and flattens
+toward 90% for very fast wins (66% at 20, 77% at 30, 82% at 40). It applies to
 everything, including permanent upgrades — this is intentional: finishing fast is the
 strongest lever in the mod, which is the anti-farming mechanism.
 

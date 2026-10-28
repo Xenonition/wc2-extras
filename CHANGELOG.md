@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- Early-finish discount is bigger and follows the XP bottle's curve: 90 × turns left ÷
-  (turns left + 10) %, so 30% at 5 turns left, 45% at 10, 60% at 20, 67% at 30, approaching
-  90%. It was 3% per turn left, capped at 50%; the new curve is higher at every turn count.
+- Early-finish discount is an S-curve, 90 × t² ÷ (t² + 144) % for t turns left: 5% at 3
+  turns left, 13% at 5, 36% at 10, 54% at 15, 66% at 20, 77% at 30, approaching 90%. It was
+  3% per turn left, capped at 50%, so narrow wins now earn a little less and fast wins much more.
 
 ## 0.14.0 — 2026-10-28
 
