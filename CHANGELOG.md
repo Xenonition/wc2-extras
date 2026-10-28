@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.14.1 — 2026-10-28
 
 - Early-finish discount is an S-curve, 90 × t² ÷ (t² + 144) % for t turns left: 5% at 3
   turns left, 13% at 5, 36% at 10, 54% at 15, 66% at 20, 77% at 30, approaching 90%. It was
