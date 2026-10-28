@@ -355,7 +355,9 @@ WC2's era plus four WC3 factions built from base-game units: **The Coil**
   the units that have a chosen one; picking a unit scrolls to it and selects it.
 - **Debug panel** (hidden): enabled from Wocopedia → Settings → "Enable detailed logging".
   Grants gold, XP, stats, any buff from the buff pool, upgrades; inspects and forces AI
-  director tactics; toggles a per-side 100% shop/gacha discount and LotI free crafting. Its "Final Boss" menu
+  director tactics; toggles a per-side 100% shop/gacha discount and LotI free crafting. A per-side
+  "Gacha Pick" toggle adds a Pick button to the gacha that sets the hero type (by level) and
+  its bonuses from the full shrine pool, skipping the can-it-use-this check. Its "Final Boss" menu
   forces which boss spawns, skips straight to scenario 5 (wins the current scenario with
   `wc2_scenario` set to 4), and on scenario 5 kills every enemy leader to spawn the boss. It
   also shows the adaptive-army readout (roster value, key-unit score with the units behind it,

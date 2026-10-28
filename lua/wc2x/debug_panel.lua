@@ -231,6 +231,16 @@ local function apply_action(data)
 			msg("100% end-of-scenario discount ON for side " .. s .. " (gacha + shop)", s)
 		end
 
+	elseif data.action == "gacha_pick" then
+		local vars = wesnoth.sides[s].variables
+		if vars["wc2x_dbg_gacha_pick"] then
+			vars["wc2x_dbg_gacha_pick"] = nil
+			msg("Gacha pick OFF for side " .. s, s)
+		else
+			vars["wc2x_dbg_gacha_pick"] = true
+			msg("Gacha pick ON for side " .. s .. ": the gacha gets a Pick button for hero and bonuses", s)
+		end
+
 	elseif data.action == "loti_free_craft" then
 		if not loti or not loti.gem then
 			msg("LotI Era not loaded — toggle has no effect", s)
@@ -444,6 +454,8 @@ local function collect_action(x, y)
 	table.insert(options, "Gold: +500")
 	local free_shop_on = wesnoth.sides[side_num].variables["wc2x_dbg_free_shop"]
 	table.insert(options, free_shop_on and "100% Shop/Gacha Discount: ON (click to disable)" or "100% Shop/Gacha Discount: OFF (click to enable)")
+	local gacha_pick_on = wesnoth.sides[side_num].variables["wc2x_dbg_gacha_pick"]
+	table.insert(options, gacha_pick_on and "Gacha Pick Hero/Bonuses: ON (click to disable)" or "Gacha Pick Hero/Bonuses: OFF (click to enable)")
 	table.insert(options, "Final Boss: " .. (wml.variables["wc2x_boss_force"] or "random"))
 	if loti and loti.gem then
 		local label = loti_free_craft_sides[side_num] and "LotI Free Craft: ON (click to disable)" or "LotI Free Craft: OFF (click to enable)"
@@ -473,6 +485,8 @@ local function collect_action(x, y)
 		elseif choice == offset + 3 then
 			return { action = "free_shop" }
 		elseif choice == offset + 4 then
+			return { action = "gacha_pick" }
+		elseif choice == offset + 5 then
 			local scenario = wml.variables["wc2_scenario"] or 1
 			local sub = { "Choose boss (current: " .. (wml.variables["wc2x_boss_force"] or "random") .. ")",
 				"Show army scaling (roster value, key units, kills)",
@@ -497,7 +511,7 @@ local function collect_action(x, y)
 				return { action = "boss_spawn_now" }
 			end
 		else
-			local loti_offset = offset + 4
+			local loti_offset = offset + 5
 			local has_loti = loti and loti.gem
 			if has_loti and choice == loti_offset + 1 then
 				return { action = "loti_free_craft" }

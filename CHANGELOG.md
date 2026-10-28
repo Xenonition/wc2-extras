@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Debug: a per-side "Gacha Pick Hero/Bonuses" toggle in the debug menu (saved like the 100%
+  discount). With it on, the gacha has a Pick button to choose the hero type and any bonuses
+  from the shrine pool, including ones the unit couldn't normally roll.
 - Enemy base income grows 15% per map after the first (`config.enemy_income_growth_pct`):
   for 3 players on Normal it is 36 / 42 / 47 / 53 / 58 gold per turn on maps 1–5, where it
   used to stay at 36. Start gold is unchanged.

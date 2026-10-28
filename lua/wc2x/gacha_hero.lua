@@ -66,6 +66,60 @@ local function roll_hero_type()
 	return wc2x.unit_pool.pick_random(min_lv, max_lv)
 end
 
+-- debug (side variable wc2x_dbg_gacha_pick, toggled in the debug menu): free choice of the hero
+-- type and its bonuses. Picks skip the redundancy check, so a bonus the unit can't use can be tested
+local function debug_pick(hero_type, buffs)
+	local pool = wc2x.config.shrine_buffs
+	local function pick(message, options)
+		return gui.show_narration({ title = "Gacha Debug", message = message }, options)
+	end
+	local function type_name(id)
+		return tostring(wesnoth.unit_types[id].name)
+	end
+	while true do
+		local names = {}
+		for _, idx in ipairs(buffs) do table.insert(names, tostring(pool[idx].name)) end
+		local choice = pick(string.format("%s\n%s", type_name(hero_type),
+				#names > 0 and table.concat(names, ", ") or "(no bonuses)"),
+			{ "Choose hero type", "Add bonus", "Remove last bonus", "Clear bonuses", "Done" })
+		if choice == 1 then
+			local levels, level_names = {}, {}
+			for lv = 0, 6 do
+				if #wc2x.unit_pool.get(lv) > 0 then
+					table.insert(levels, lv)
+					table.insert(level_names, "Level " .. lv)
+				end
+			end
+			local lv = levels[pick("Hero level:", level_names)]
+			if lv then
+				local ids = wc2x.unit_pool.get(lv)
+				table.sort(ids, function(a, b) return type_name(a) < type_name(b) end)
+				local type_names = {}
+				for i, id in ipairs(ids) do type_names[i] = type_name(id) end
+				hero_type = ids[pick("Hero type:", type_names)] or hero_type
+			end
+		elseif choice == 2 then
+			local chosen = {}
+			for _, idx in ipairs(buffs) do chosen[idx] = true end
+			local idxs, buff_names = {}, {}
+			for i, buff in ipairs(pool) do
+				if not chosen[i] then
+					table.insert(idxs, i)
+					table.insert(buff_names, tostring(buff.name))
+				end
+			end
+			local idx = idxs[pick("Add bonus:", buff_names)]
+			if idx then table.insert(buffs, idx) end
+		elseif choice == 3 then
+			table.remove(buffs)
+		elseif choice == 4 then
+			buffs = {}
+		else
+			return hero_type, buffs
+		end
+	end
+end
+
 function gacha.show(side_num, discount_pct)
 	local side = wesnoth.sides[side_num]
 	local du = wc2x.dialog_utils
@@ -131,6 +185,8 @@ function gacha.show(side_num, discount_pct)
 			dialog.reroll_bigger_btn.enabled = gl >= cost_reroll_bigger
 		end
 
+		dialog.debug_pick_btn.visible = side.variables["wc2x_dbg_gacha_pick"] and true or false
+
 		if discount_pct and discount_pct > 0 then
 			dialog.discount_label.label = du.colored(string.format(tostring(_ "Discount: %d%%"), discount_pct), "green")
 		else
@@ -167,6 +223,11 @@ function gacha.show(side_num, discount_pct)
 
 	local d_wml = wml.get_child(dialog_wml, 'resolution')
 	local ret = gui.show_dialog(d_wml, preshow)
+	-- the debug pick button closes the dialog (return value 2); reopen it with the picks
+	while ret == 2 do
+		hero_type, buffs = debug_pick(hero_type, buffs)
+		ret = gui.show_dialog(d_wml, preshow)
+	end
 
 	if ret == 1 then
 		local buff_strs = {}
