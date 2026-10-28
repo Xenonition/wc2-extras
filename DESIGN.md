@@ -211,15 +211,17 @@ mismatch, since a hero type missing on one machine would still break that player
 
 ### Buff pool (shrines and gacha)
 
-One weighted pool in `config.shrine_buffs` (77 entries, total weight 103) feeds shrines,
+One weighted pool in `config.shrine_buffs` (77 entries, 70 of them rollable, total weight 96) feeds shrines,
 gacha rolls and the final boss's escort buffs. New entries are appended only: gacha buffs
 that aren't traits are stored on units by their index in this list.
 
 - **Stat buffs** (common): HP (+8 to +32), melee/ranged damage (+1 to +4) and strikes,
   movement (+1 to +4), XP (+20%/+40%/+50%), +15% resistance per damage type, +10% or +20% all
   resistances, +5% or +10% defense on every terrain.
-- **Traits** (weight 1 each): strong, quick, resilient, intelligent, healthy, fearless, loyal.
-  They use the mainline trait ids, so a unit that already has the trait is skipped.
+- **Traits** (weight 0 since 0.14.2, so never rolled): strong, quick, resilient, intelligent,
+  healthy, fearless, loyal. Every unit already rolls its own traits, so they read as wasted
+  bonuses. They stay in the list because indices are stored, and the debug panel and gacha pick
+  still offer them. They use the mainline trait ids, so a unit that already has one is skipped.
 - **Abilities** (rare): ambush, skirmisher, regenerates (+8, or +4 with the same id so a unit
   never gets both), leadership, teleport (own villages only), nightstalk, steadfast, cures,
   heals +4/+8; from mainline units outside the default era: concealment, burrow, diversion;

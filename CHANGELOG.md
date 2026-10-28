@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- The seven mainline trait bonuses (strong, quick, resilient, intelligent, healthy, fearless,
+  loyal) no longer roll from shrines, the gacha or boss escorts: units already have their own
+  traits. They are set to weight 0 rather than removed, so existing gacha heroes keep theirs.
 - Debug: a per-side "Gacha Pick Hero/Bonuses" toggle in the debug menu (saved like the 100%
   discount). With it on, the gacha has a Pick button to choose the hero type and any bonuses
   from the shrine pool, including ones the unit couldn't normally roll.

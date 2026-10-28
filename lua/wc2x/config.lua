@@ -433,38 +433,40 @@ config.shrine_buffs = {
 			hills = -5, mountains = -5, village = -5, castle = -5, cave = -5, frozen = -5, fungus = -5,
 			deep_water = -5, unwalkable = -5 } } },
 	{ name = "+40% XP Bonus",     weight = 1, effect = { apply_to = "max_experience", increase = "-40%" } },
-	-- Mainline traits (same ids, so a unit that already has the trait is skipped)
-	{ name = "Trait: Strong",      weight = 1, trait = {
+	-- Mainline traits (same ids, so a unit that already has the trait is skipped). Weight 0 since
+	-- 0.14.2: every unit already rolls its own traits, so these felt like wasted bonuses. Kept in
+	-- the list (indices are stored) and still offered by the debug panel and gacha pick
+	{ name = "Trait: Strong",      weight = 0, trait = {
 		id = "strong", male_name = "strong", female_name = "strong",
 		wml.tag.effect { apply_to = "attack", range = "melee", increase_damage = 1 },
 		wml.tag.effect { apply_to = "hitpoints", increase_total = 1 },
 	}},
-	{ name = "Trait: Quick",       weight = 1, trait = {
+	{ name = "Trait: Quick",       weight = 0, trait = {
 		id = "quick", male_name = "quick", female_name = "quick",
 		wml.tag.effect { apply_to = "movement", increase = 1 },
 		wml.tag.effect { apply_to = "hitpoints", increase_total = "-5%" },
 	}},
-	{ name = "Trait: Resilient",   weight = 1, trait = {
+	{ name = "Trait: Resilient",   weight = 0, trait = {
 		id = "resilient", male_name = "resilient", female_name = "resilient",
 		wml.tag.effect { apply_to = "hitpoints", increase_total = 4 },
 		wml.tag.effect { apply_to = "hitpoints", times = "per level", increase_total = 1 },
 	}},
-	{ name = "Trait: Intelligent", weight = 1, trait = {
+	{ name = "Trait: Intelligent", weight = 0, trait = {
 		id = "intelligent", male_name = "intelligent", female_name = "intelligent",
 		wml.tag.effect { apply_to = "max_experience", increase = "-20%" },
 	}},
-	{ name = "Trait: Healthy",     weight = 1, trait = {
+	{ name = "Trait: Healthy",     weight = 0, trait = {
 		id = "healthy", male_name = "healthy", female_name = "healthy", description = "Always rest heals",
 		wml.tag.effect { apply_to = "healthy" },
 		wml.tag.effect { apply_to = "hitpoints", increase_total = 1 },
 		wml.tag.effect { apply_to = "hitpoints", times = "per level", increase_total = 1 },
 	}},
-	{ name = "Trait: Fearless",    weight = 1, trait = {
+	{ name = "Trait: Fearless",    weight = 0, trait = {
 		id = "fearless", male_name = "fearless", female_name = "fearless",
 		description = "Fights normally during unfavorable times of day/night",
 		wml.tag.effect { apply_to = "fearless" },
 	}},
-	{ name = "Trait: Loyal",       weight = 1, trait = {
+	{ name = "Trait: Loyal",       weight = 0, trait = {
 		id = "loyal", male_name = "loyal", female_name = "loyal", description = "Zero upkeep",
 		wml.tag.effect { apply_to = "loyal" },
 		wml.tag.effect { apply_to = "wc2_overlay", add = "misc/loyal-icon.png" },
