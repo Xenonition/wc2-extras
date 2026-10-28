@@ -70,8 +70,9 @@ local function roll_affixes(u, count)
 end
 
 -- base bonus every legendary leader gets on top of its affixes, in place of WC2's heroic trait.
--- Moves are set in legendary.make, not here: enemy leaders are created with 0 moves to hold
--- their keep, and a movement effect would add to the unit type's moves after any rebuild
+-- Moves must be an effect: WC2 creates enemy leaders with max_moves = 0, but LotI's
+-- update_stats (LotI_Era lua/stats.lua) recreates every unit from its type and modifications,
+-- so a directly set max_moves is lost and leaders end up with their type's moves
 function legendary.trait()
 	local config = wc2x.config
 	return {
@@ -80,12 +81,12 @@ function legendary.trait()
 			config.legendary_hp_bonus, config.legendary_damage_bonus, config.legendary_moves),
 		wml.tag.effect { apply_to = "hitpoints", increase_total = config.legendary_hp_bonus },
 		wml.tag.effect { apply_to = "attack", increase_damage = config.legendary_damage_bonus },
+		wml.tag.effect { apply_to = "movement", increase = config.legendary_moves },
 		wml.tag.effect { apply_to = "overlay", add = "misc/laurel.png" },
 	}
 end
 
 function legendary.make(u, count)
-	-- removing a trait rebuilds the unit from its type, which also undoes the leader's 0 moves
 	u:remove_modifications({ id = "heroic" }, "trait")
 	u:add_modification("trait", legendary.trait())
 	local picked = roll_affixes(u, count)
@@ -94,7 +95,6 @@ function legendary.make(u, count)
 	for i, affix in ipairs(picked) do
 		table.insert(descs, string.format("%s (%s)", affix.title, affix.desc))
 	end
-	u.max_moves = wc2x.config.legendary_moves
 	u.hitpoints = u.max_hitpoints
 	u.variables.wc2x_legendary = true
 

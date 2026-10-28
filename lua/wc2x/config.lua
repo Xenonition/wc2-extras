@@ -654,7 +654,7 @@ config.shrine_buffs = {
 config.legendary_from_scenario = 2
 config.legendary_hp_bonus = "25%"
 config.legendary_damage_bonus = "25%"    -- all attacks
-config.legendary_moves = 2               -- other enemy leaders have 0 and never leave the keep
+config.legendary_moves = 2               -- added to the leader type's moves
 config.legendary_leader_aggression = 1.0 -- floor; enemy sides roll -5 (stays home) to 1
 config.legendary_affix_count = { [2] = 1, [3] = 1, [4] = 2, [5] = 2 }
 config.legendary_affixes = {

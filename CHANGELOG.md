@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Fixed legendary leaders' +2 moves not applying (a Dwarvish Sentinel legend had 4 moves):
+  LotI rebuilds units from their type and modifications, which threw away the directly set
+  moves. The bonus is now part of the legendary trait, so it adds 2 to the type's moves.
+
 ## 0.14.1 — 2026-10-28
 
 - Early-finish discount is an S-curve, 90 × t² ÷ (t² + 144) % for t turns left: 5% at 3
