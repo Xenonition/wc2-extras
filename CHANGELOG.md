@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Early-finish discount follows the XP bottle's curve: 75 × turns left ÷ (turns left + 10)
+  %, so 25% at 5 turns left, 37% at 10, 50% at 20, 56% at 30. It was 3% per turn left,
+  capped at 50%; the new curve is higher for quick wins (except 1–3 points lower at 16–19
+  turns left) and keeps growing instead of flattening.
+
 ## 0.14.0 — 2026-10-28
 
 - Gacha heroes are cheaper: 25 + 10 gold per map won (35 / 45 / 55 / 65), was 50 + 12

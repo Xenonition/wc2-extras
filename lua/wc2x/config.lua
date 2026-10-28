@@ -46,8 +46,10 @@ config.enemy_village_max_pct = 80
 config.enemy_village_safe_radius = 4
 
 -- Shop settings
-config.shop_discount_per_turn_early = 3
-config.shop_max_discount = 50
+-- early-finish discount % = ceiling * t // (t + half_turns), t = turns left: same curve as the
+-- XP bottle, so it keeps growing with every turn saved but never reaches the ceiling
+config.shop_discount_ceiling = 75
+config.shop_discount_half_turns = 10  -- 10 turns left = half the ceiling
 config.shop_slots_per_category = 2
 
 -- Permanent upgrade base prices
