@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.14.2 — 2026-10-29
 
 - The seven mainline trait bonuses (strong, quick, resilient, intelligent, healthy, fearless,
   loyal) no longer roll from shrines, the gacha or boss escorts: units already have their own
