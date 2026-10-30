@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.14.3 — 2026-10-30
 
 - A legendary leader's affixes are now traits shown beside "legendary" in the unit's traits
   (e.g. "legendary, ironclad, venomous"), with what each one gives in its tooltip. Since
