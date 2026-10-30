@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- A legendary leader's affixes are now traits shown beside "legendary" in the unit's traits
+  (e.g. "legendary, ironclad, venomous"), with what each one gives in its tooltip. Since
+  0.14.0 dropped the affix titles from the leader's name, they were only named in the
+  narrator line and objectives. Ability parts no longer show as separate traits
+  ("steadfast"): they are part of the affix.
+
 ## 0.14.2 — 2026-10-29
 
 - The seven mainline trait bonuses (strong, quick, resilient, intelligent, healthy, fearless,

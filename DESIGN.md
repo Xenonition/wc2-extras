@@ -66,7 +66,10 @@ Enemy strength also scales by scenario:
 
   Affixes (`config.legendary_affixes`) are data only: each is a list of shrine buff names
   or inline effects, and parts the leader already has or can't use are skipped
-  (`poi.buff_is_redundant`). Weighted toward making the leader hard to burst down:
+  (`poi.buff_is_redundant`). Each rolled affix is added as one trait named after it
+  (id `wc2x_affix_<title>`, tooltip from `desc`) holding the effects of its usable parts, so
+  the sidebar reads "legendary, ironclad, …"; a part that is a trait of its own (Ability:
+  Steadfast) contributes only its effects, so it isn't listed twice. Weighted toward making the leader hard to burst down:
 
   | Affix | Weight | Parts |
   |---|---|---|

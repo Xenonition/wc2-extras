@@ -1,6 +1,6 @@
 -- Legendary leaders: from config.legendary_from_scenario, one random enemy leader per map gets
 -- the legendary trait (HP, damage, laurel overlay) and affixes from config.legendary_affixes (built from shrine
--- buffs). Killing it drops a WC2 artifact. State: unit variable wc2x_legendary, and the WML
+-- buffs), each its own trait. Killing it drops a WC2 artifact. State: unit variable wc2x_legendary, and the WML
 -- variable wc2x_legendary (name, desc, slain) for the objectives note.
 
 local _ = wesnoth.textdomain 'wesnoth-wc'
@@ -25,21 +25,24 @@ local function usable_parts(u, affix)
 	return parts
 end
 
-local function apply_affix(u, affix, affix_index)
-	-- re-checked per part: an earlier part can make a later one redundant
-	for j, part in ipairs(affix.parts) do
-		local buff = resolve(part)
-		if not wc2x.poi.buff_is_redundant(u, buff) then
-			if buff.trait then
-				u:add_modification("trait", buff.trait)
-			else
-				u:add_modification("object", {
-					id = string.format("wc2x_legendary_%d_%d", affix_index, j),
-					wml.tag.effect(buff.effect),
-				})
+-- the affix is one trait named after it (shown beside "legendary"), holding the effects of its
+-- usable parts; a part that is a trait of its own (Ability: Steadfast...) gives up its effects
+local function apply_affix(u, affix)
+	local title = string.lower(affix.title)
+	local trait = {
+		id = "wc2x_affix_" .. title, male_name = title, female_name = title,
+		description = string.upper(affix.desc:sub(1, 1)) .. affix.desc:sub(2) .. ".",
+	}
+	for i, buff in ipairs(usable_parts(u, affix)) do
+		if buff.trait then
+			for j, child in ipairs(buff.trait) do
+				if child[1] == "effect" then table.insert(trait, child) end
 			end
+		else
+			table.insert(trait, wml.tag.effect(buff.effect))
 		end
 	end
+	u:add_modification("trait", trait)
 end
 
 -- weighted pick without replacement; affixes with no usable part are skipped
@@ -59,7 +62,7 @@ local function roll_affixes(u, count)
 				cum = cum + affix.weight
 				if roll <= cum then
 					exclude[i] = true
-					apply_affix(u, affix, i)
+					apply_affix(u, affix)
 					table.insert(picked, affix)
 					break
 				end
