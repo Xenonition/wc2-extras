@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.14.4 — 2026-11-02
 
 - The final boss now scales with difficulty: Lieutenant is unchanged; boss HP / damage is
   −20% / −10% on Peasant, −10% HP on Sergeant, +15% / +10% on General, +30% / +15% on Grand
