@@ -148,7 +148,7 @@ function lich.on_boss_death(ctx)
 	local x, y = wesnoth.paths.find_vacant_hex(ctx.cx, ctx.cy, u)
 	if not x then return false end
 	u:to_map(x, y)
-	-- the revived body keeps the campaign-kills and difficulty bonuses the first one had
+	-- the revived body keeps the strength and difficulty HP bonuses the first one had
 	local scale = wc2x.boss_scaling.saved()
 	wc2x.boss_scaling.apply_boss_hp(u, scale and scale.hp_pct)
 	wc2x.boss_scaling.apply_boss_difficulty(u, scale)

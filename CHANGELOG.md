@@ -8,6 +8,10 @@
   more on Grand Marshal and Nightmare. The narrator line at the boss's arrival names it, and a
   revived Lich keeps it. Before, the boss ignored difficulty, which elsewhere works mostly through
   enemy gold and training, neither of which reaches the boss.
+- The final boss's bonus HP now comes from your best units instead of your kill count: +10%
+  per point of the key-unit score above 4 (the score that already sets escort buffs), up to
+  +60%. Kills used to give +5% per 50 (up to +100%), which made the boss tougher for slower
+  parties and easier for ones that steamrolled. Kills are still counted for the narrator line.
 
 ## 0.14.3 — 2026-10-30
 

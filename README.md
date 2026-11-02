@@ -31,8 +31,8 @@ and buffs, and a final boss. 1–4 players, five random maps.
   but it bleeds you every turn) or the Gambler's Die (every strike is a coin flip).
 - **A final boss** on map five: one of three — a Lich you must hunt phylacteries to kill, a
   dragon whose aura burns everyone beside it, or a Usurper shielded by his lieutenants. Its
-  army grows with your roster, its escorts get shrine buffs to match your best units, and
-  every enemy you kill along the way makes it tougher. Harder difficulties make it stronger too.
+  army grows with your roster, and it and its escorts get stronger to match your best units
+  and the difficulty.
 - **Four new factions:** The Coil, Magnoshutadt, The Swarm and Monsters.
 - **Unit Finder** (right-click): find which of your units has a given trait or ability.
 

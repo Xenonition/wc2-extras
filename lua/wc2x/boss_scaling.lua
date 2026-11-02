@@ -2,7 +2,8 @@
 --   army size  <- combined recruit value of every player unit (map + recall list)
 --   escort buffs <- how far the players' key units are above their unit type (source-agnostic:
 --                   traits, shrines, gacha, WC2 and LotI items all show up as plain stat changes)
---   boss HP    <- enemies killed by players over the whole campaign
+--   boss HP    <- the same key-unit score (campaign kills are only counted for the narrator line:
+--                 a party that steamrolls kills fewer enemies, so they measured time, not strength)
 --   difficulty -> boss HP and damage, and escort buffs (config.boss_difficulty)
 -- Everything here is computed from synced game state, so all clients get the same result.
 
@@ -21,9 +22,8 @@ scaling.KEY_UNITS_PER_PLAYER = 5
 scaling.BONUS_THRESHOLD = 4 -- below this key-unit score the escort gets no buffs
 scaling.BONUS_STEP = 2      -- then +1 buff per this many points
 scaling.BONUS_CAP = 4
-scaling.KILLS_PER_STEP = 50
-scaling.HP_PCT_PER_STEP = 5
-scaling.HP_PCT_CAP = 100
+scaling.HP_PCT_PER_POINT = 10 -- boss HP per key-unit score point above BONUS_THRESHOLD
+scaling.HP_PCT_CAP = 60
 
 local function player_sides()
 	local list = {}
@@ -155,7 +155,8 @@ function scaling.measure()
 	local diff = scaling.difficulty()
 	bonuses = math.max(0, math.min(scaling.BONUS_CAP, bonuses + diff.escort_buffs))
 	local kills = scaling.kills()
-	local hp_pct = math.min(scaling.HP_PCT_CAP, math.floor(kills / scaling.KILLS_PER_STEP) * scaling.HP_PCT_PER_STEP)
+	local hp_pct = math.min(scaling.HP_PCT_CAP,
+		math.floor(math.max(0, score - scaling.BONUS_THRESHOLD) * scaling.HP_PCT_PER_POINT))
 
 	return {
 		gold = gold, score = score, key_units = key_count,
@@ -191,7 +192,7 @@ end
 function scaling.apply_boss_hp(u, hp_pct)
 	if not u or (hp_pct or 0) <= 0 then return end
 	u:add_modification("object", {
-		id = "wc2x_boss_slaughter_hp",
+		id = "wc2x_boss_strength_hp",
 		wml.tag.effect { apply_to = "hitpoints", increase_total = hp_pct .. "%" },
 	})
 end
@@ -251,13 +252,14 @@ function scaling.buff_escort(u, count)
 	u.moves = u.max_moves
 end
 
--- nil when there is nothing to say (no kills, baseline difficulty)
+-- nil when there is nothing to say (no kills, no HP bonus, baseline difficulty)
 function scaling.intro_line(result)
 	local lines = {}
-	if result.hp_pct > 0 then
-		table.insert(lines, string.format(tostring(_ "Your armies have slain %d foes on the road to this place. The slaughter has fed the enemy's master: +%d%% hitpoints."), result.kills, result.hp_pct))
-	elseif result.kills > 0 then
+	if result.kills > 0 then
 		table.insert(lines, string.format(tostring(_ "Your armies have slain %d foes on the road to this place."), result.kills))
+	end
+	if result.hp_pct > 0 then
+		table.insert(lines, string.format(tostring(_ "The fame of your champions has reached the enemy's master, and it has prepared: +%d%% hitpoints."), result.hp_pct))
 	end
 	if result.diff_hp ~= 0 or result.diff_damage ~= 0 then
 		table.insert(lines, string.format(tostring(_ "%s difficulty: the enemy's master has %+d%% hitpoints and %+d%% damage."),
@@ -275,7 +277,8 @@ function scaling.readout()
 		string.format("  -> arena escort %d (13-%d), edge units %d (10-%d)", r.arena, scaling.ARENA.cap, r.edge, scaling.EDGE.cap),
 		string.format("Key-unit score: %.2f (top %d per player, %d key units)", r.score, scaling.KEY_UNITS_PER_PLAYER, r.key_units),
 		string.format("  -> %d shrine buffs per escort unit", r.bonuses),
-		string.format("Campaign kills: %d -> boss +%d%% HP", r.kills, r.hp_pct),
+		string.format("  -> boss +%d%% HP (+%d per point above %d, max +%d)", r.hp_pct, scaling.HP_PCT_PER_POINT, scaling.BONUS_THRESHOLD, scaling.HP_PCT_CAP),
+		string.format("Campaign kills: %d (narrator line only)", r.kills),
 		string.format("Difficulty %s: boss %+d%% HP, %+d%% damage, escort buffs %+d (included above)",
 			tostring(wesnoth.scenario.difficulty), r.diff_hp, r.diff_damage, scaling.difficulty().escort_buffs),
 		"Top key units:", r.detail,
