@@ -7,6 +7,7 @@
 - The Rainbow: Mage / Dark Adept replace Sergeant / Orcish Leader, so the faction has a
   magic-attack pair instead of two leadership units. Sergeant and Orcish Leader move to its hero
   list (and Mage and Dark Adept out of it).
+- The Rainbow gets an eighth pair, Dwarvish Fighter / Dune Soldier, as its regular infantry.
 
 ## 0.15.0 — 2026-11-02
 

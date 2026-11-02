@@ -354,8 +354,9 @@ rules but, like WC2's Empire, mixes every faction and has its own hero lists
 (`Rainbow_commanders/heroes/deserters` in `era/campaign/heroes.cfg`). Its pairs are
 cross-faction roles: healers (Elvish Shaman / Dune Herbalist), birds (Raven / Falcon), riders
 (Skeleton Rider / Gryphon Rider), levies (Walking Corpse / Peasant), casters (Mage / Dark
-Adept), tanks (Heavy Infantryman / Troll Whelp) and firepower (Drake Burner / Elvish
-Archer). Peasant and Walking Corpse are otherwise only WC2 heroes, and Skeleton Rider isn't
+Adept), tanks (Heavy Infantryman / Troll Whelp), firepower (Drake Burner / Elvish
+Archer) and infantry (Dwarvish Fighter / Dune Soldier): eight pairs where WC2 factions have
+six or seven, which nothing in the code limits. Peasant and Walking Corpse are otherwise only WC2 heroes, and Skeleton Rider isn't
 available at all; level-0 pairs are kept to two because every recruit gets the faction's
 training regardless of cost. Magnoshutadt and The Swarm were removed in
 0.15.0. A save that used them still plays (pairs and hero lists live in side variables) but
