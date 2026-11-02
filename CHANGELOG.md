@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.15.0 — 2026-11-02
 
 - New permanent upgrade **Quartermaster** (35 gold): recalling costs 3 gold less per purchase,
   down to 5. It replaces Scout Network; Scout Networks you already own become Quartermasters.
