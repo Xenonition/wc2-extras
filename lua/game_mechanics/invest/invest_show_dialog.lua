@@ -52,7 +52,7 @@ function wc2_show_invest_dialog_impl(dialog_args)
 		if du then
 			local status_node = root_node:add_invest_category(_ "Current Status")
 			local subnode, page = status_node:add_invest_item {
-				icon = "icons/coins_gold.png",
+				icon = "items/gold-coins-small.png",
 				name = _ "View Current Bonuses",
 				desc = du.gray(tostring(_ "Your team's acquired bonuses")),
 				result = { pick = "status" }

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Fixed the invest menu's "View Current Bonuses" entry showing no icon (it pointed at an image
+  that doesn't exist in 1.18).
+
 ## 0.15.0 — 2026-11-02
 
 - New permanent upgrade **Quartermaster** (35 gold): recalling costs 3 gold less per purchase,
