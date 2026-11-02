@@ -348,8 +348,16 @@ the files swaps the art without code changes.
 
 ### Factions
 
-WC2's era plus two WC3 factions built from base-game units: **The Coil**
-(naga/saurian/merfolk) and **Monsters** (beasts). Magnoshutadt and The Swarm were removed in
+WC2's era plus three WC3 factions built from base-game units: **The Coil**
+(naga/saurian/merfolk), **Monsters** (beasts) and **The Rainbow**. The Rainbow follows WC2's
+rules but, like WC2's Empire, mixes every faction and has its own hero lists
+(`Rainbow_commanders/heroes/deserters` in `era/campaign/heroes.cfg`). Its pairs are
+cross-faction roles: healers (Elvish Shaman / Dune Herbalist), birds (Raven / Falcon), riders
+(Skeleton Rider / Gryphon Rider), levies (Walking Corpse / Peasant), officers (Sergeant /
+Orcish Leader), tanks (Heavy Infantryman / Troll Whelp) and firepower (Drake Burner / Elvish
+Archer). Peasant, Walking Corpse, Sergeant and Skeleton Rider are otherwise only WC2 heroes or
+not available at all; level-0 pairs are kept to two because every recruit gets the faction's
+training regardless of cost. Magnoshutadt and The Swarm were removed in
 0.15.0. A save that used them still plays (pairs and hero lists live in side variables) but
 loses the faction lookup, e.g. the recruit-info dialog.
 

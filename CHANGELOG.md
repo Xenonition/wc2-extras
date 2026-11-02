@@ -6,6 +6,11 @@
   down to 5. It replaces Scout Network; Scout Networks you already own become Quartermasters.
   It applies to the next map's recalls straight away.
 - Removed the Magnoshutadt and The Swarm factions.
+- New faction **The Rainbow**: one unit from every faction in seven cross-faction pairs —
+  Elvish Shaman / Dune Herbalist, Raven / Falcon, Skeleton Rider / Gryphon Rider, Walking
+  Corpse / Peasant, Sergeant / Orcish Leader, Heavy Infantryman / Troll Whelp and Drake Burner
+  / Elvish Archer. Leaders: Lieutenant, Elvish Druid, Orcish Warrior, Drake Flare, Dwarvish
+  Steelclad or Troll. Its heroes, deserters and commanders also come from every faction.
 
 ## 0.14.4 — 2026-11-02
 
