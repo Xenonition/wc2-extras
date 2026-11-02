@@ -4,6 +4,9 @@
 
 - Fixed the invest menu's "View Current Bonuses" entry showing no icon (it pointed at an image
   that doesn't exist in 1.18).
+- The Rainbow: Mage / Dark Adept replace Sergeant / Orcish Leader, so the faction has a
+  magic-attack pair instead of two leadership units. Sergeant and Orcish Leader move to its hero
+  list (and Mage and Dark Adept out of it).
 
 ## 0.15.0 — 2026-11-02
 
