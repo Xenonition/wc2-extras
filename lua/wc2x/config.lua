@@ -690,6 +690,18 @@ config.legendary_affixes = {
 	  parts = { "Melee: Poison", "+2 Melee Damage" } },
 }
 
+-- Final boss by difficulty (wesnoth.scenario.difficulty), on top of the army-based scaling in
+-- boss_scaling: boss HP and damage in %, and extra shrine buffs per escort unit (kept within
+-- 0..BONUS_CAP). Lieutenant is the baseline the fight was tuned on.
+config.boss_difficulty = {
+	VERY_EASY = { hp = -20, damage = -10, escort_buffs = -1 },
+	EASY      = { hp = -10, damage = 0,   escort_buffs = 0 },
+	NORMAL    = { hp = 0,   damage = 0,   escort_buffs = 0 },
+	HARD      = { hp = 15,  damage = 10,  escort_buffs = 0 },
+	VERY_HARD = { hp = 30,  damage = 15,  escort_buffs = 1 },
+	NIGHTMARE = { hp = 50,  damage = 25,  escort_buffs = 1 },
+}
+
 -- Caravan settings
 config.caravan_gold_reward_base = 40
 config.caravan_gold_reward_per_scenario = 15

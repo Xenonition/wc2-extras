@@ -305,6 +305,7 @@ different strength, so the army is measured from them at the moment the boss spa
 | Roster value | recruit cost of every player unit, map + recall list, all players | arena escort 13 + 1 per 300 gold above 1500 (max 18, the hexes in rings 1–2); edge units 10 + 1 per 150 gold above 1500 (max 20) |
 | Key-unit score | each player's top 5 key units (heroic, carrying a WC2 or LotI item, level 2+, or the leader), pooled and averaged | shrine-pool buffs on every escort unit: 0 below 4, then +1 per 2 points (max 4); XP buffs and abilities the unit already has are skipped |
 | Campaign kills | enemy units killed by player units, counted in `wc2x_campaign_kills` across all scenarios | boss max HP +5% per 50 kills (max +100%), quoted in a narrator line after the boss's intro; the revived Lich keeps it |
+| Difficulty | `wesnoth.scenario.difficulty`, table `config.boss_difficulty` | boss HP / damage: Peasant −20/−10%, Sergeant −10/0%, Lieutenant 0/0 (baseline), General +15/+10%, Grand Marshal +30/+15%, Nightmare +50/+25%, as one object (`wc2x_boss_difficulty`) that multiplies with the kills bonus; escort buffs −1 on Peasant, +1 on Grand Marshal and Nightmare, kept within 0–4. Quoted in the same narrator line; the revived Lich keeps it. Keyed by difficulty rather than `enemy_power` because Lieutenant and General share power 8 |
 
 A unit's score is how far it sits above a fresh, trait-less unit of its own type, so it
 doesn't matter whether a bonus came from traits, shrines, gacha or a LotI item: +1 per +20%

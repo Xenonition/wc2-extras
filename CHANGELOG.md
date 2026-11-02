@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- The final boss now scales with difficulty: Lieutenant is unchanged; boss HP / damage is
+  −20% / −10% on Peasant, −10% HP on Sergeant, +15% / +10% on General, +30% / +15% on Grand
+  Marshal and +50% / +25% on Nightmare. Escorts get one shrine buff fewer on Peasant and one
+  more on Grand Marshal and Nightmare. The narrator line at the boss's arrival names it, and a
+  revived Lich keeps it. Before, the boss ignored difficulty, which elsewhere works mostly through
+  enemy gold and training, neither of which reaches the boss.
+
 ## 0.14.3 — 2026-10-30
 
 - A legendary leader's affixes are now traits shown beside "legendary" in the unit's traits

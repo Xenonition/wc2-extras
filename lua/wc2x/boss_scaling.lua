@@ -3,6 +3,7 @@
 --   escort buffs <- how far the players' key units are above their unit type (source-agnostic:
 --                   traits, shrines, gacha, WC2 and LotI items all show up as plain stat changes)
 --   boss HP    <- enemies killed by players over the whole campaign
+--   difficulty -> boss HP and damage, and escort buffs (config.boss_difficulty)
 -- Everything here is computed from synced game state, so all clients get the same result.
 
 local _ = wesnoth.textdomain "wesnoth-wc"
@@ -151,6 +152,8 @@ function scaling.measure()
 	if score >= scaling.BONUS_THRESHOLD then
 		bonuses = math.min(scaling.BONUS_CAP, 1 + math.floor((score - scaling.BONUS_THRESHOLD) / scaling.BONUS_STEP))
 	end
+	local diff = scaling.difficulty()
+	bonuses = math.max(0, math.min(scaling.BONUS_CAP, bonuses + diff.escort_buffs))
 	local kills = scaling.kills()
 	local hp_pct = math.min(scaling.HP_PCT_CAP, math.floor(kills / scaling.KILLS_PER_STEP) * scaling.HP_PCT_PER_STEP)
 
@@ -158,8 +161,14 @@ function scaling.measure()
 		gold = gold, score = score, key_units = key_count,
 		arena = size(scaling.ARENA), edge = size(scaling.EDGE),
 		bonuses = bonuses, kills = kills, hp_pct = hp_pct,
+		diff_hp = diff.hp, diff_damage = diff.damage,
 		detail = table.concat(detail, "\n"),
 	}
+end
+
+function scaling.difficulty()
+	local d = wc2x.config.boss_difficulty[wesnoth.scenario.difficulty] or {}
+	return { hp = d.hp or 0, damage = d.damage or 0, escort_buffs = d.escort_buffs or 0 }
 end
 
 function scaling.kills()
@@ -171,6 +180,7 @@ function scaling.save(result)
 	wml.variables[RESULT_VAR] = {
 		gold = result.gold, score = result.score, arena = result.arena, edge = result.edge,
 		bonuses = result.bonuses, kills = result.kills, hp_pct = result.hp_pct,
+		diff_hp = result.diff_hp, diff_damage = result.diff_damage,
 	}
 end
 
@@ -184,6 +194,16 @@ function scaling.apply_boss_hp(u, hp_pct)
 		id = "wc2x_boss_slaughter_hp",
 		wml.tag.effect { apply_to = "hitpoints", increase_total = hp_pct .. "%" },
 	})
+end
+
+-- result: measure() or saved(); a save from before this existed has no diff_ fields
+function scaling.apply_boss_difficulty(u, result)
+	local hp, damage = result and result.diff_hp or 0, result and result.diff_damage or 0
+	if not u or (hp == 0 and damage == 0) then return end
+	local obj = { id = "wc2x_boss_difficulty" }
+	if hp ~= 0 then table.insert(obj, wml.tag.effect { apply_to = "hitpoints", increase_total = hp .. "%" }) end
+	if damage ~= 0 then table.insert(obj, wml.tag.effect { apply_to = "attack", increase_damage = damage .. "%" }) end
+	u:add_modification("object", obj)
 end
 
 -- true if any of the buff's effects changes the XP needed to level
@@ -231,11 +251,20 @@ function scaling.buff_escort(u, count)
 	u.moves = u.max_moves
 end
 
+-- nil when there is nothing to say (no kills, baseline difficulty)
 function scaling.intro_line(result)
+	local lines = {}
 	if result.hp_pct > 0 then
-		return string.format(tostring(_ "Your armies have slain %d foes on the road to this place. The slaughter has fed the enemy's master: +%d%% hitpoints."), result.kills, result.hp_pct)
+		table.insert(lines, string.format(tostring(_ "Your armies have slain %d foes on the road to this place. The slaughter has fed the enemy's master: +%d%% hitpoints."), result.kills, result.hp_pct))
+	elseif result.kills > 0 then
+		table.insert(lines, string.format(tostring(_ "Your armies have slain %d foes on the road to this place."), result.kills))
 	end
-	return string.format(tostring(_ "Your armies have slain %d foes on the road to this place."), result.kills)
+	if result.diff_hp ~= 0 or result.diff_damage ~= 0 then
+		table.insert(lines, string.format(tostring(_ "%s difficulty: the enemy's master has %+d%% hitpoints and %+d%% damage."),
+			tostring(wml.variables["wc2_difficulty.name"] or ""), result.diff_hp, result.diff_damage))
+	end
+	if #lines == 0 then return nil end
+	return table.concat(lines, "\n")
 end
 
 function scaling.readout()
@@ -247,10 +276,13 @@ function scaling.readout()
 		string.format("Key-unit score: %.2f (top %d per player, %d key units)", r.score, scaling.KEY_UNITS_PER_PLAYER, r.key_units),
 		string.format("  -> %d shrine buffs per escort unit", r.bonuses),
 		string.format("Campaign kills: %d -> boss +%d%% HP", r.kills, r.hp_pct),
+		string.format("Difficulty %s: boss %+d%% HP, %+d%% damage, escort buffs %+d (included above)",
+			tostring(wesnoth.scenario.difficulty), r.diff_hp, r.diff_damage, scaling.difficulty().escort_buffs),
 		"Top key units:", r.detail,
 	}
 	if saved then
-		table.insert(lines, string.format("Used at spawn: escort %d + %d, %d buffs, +%d%% HP", saved.arena, saved.edge, saved.bonuses, saved.hp_pct))
+		table.insert(lines, string.format("Used at spawn: escort %d + %d, %d buffs, +%d%% HP, difficulty %+d%% HP %+d%% damage",
+			saved.arena, saved.edge, saved.bonuses, saved.hp_pct, saved.diff_hp or 0, saved.diff_damage or 0))
 	end
 	return table.concat(lines, "\n")
 end

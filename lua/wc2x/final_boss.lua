@@ -316,6 +316,7 @@ local function spawn_boss()
 		if base_name == "" then base_name = def.fallback_name end
 		boss_unit.name = base_name .. " " .. tostring(title)
 		wc2x.boss_scaling.apply_boss_hp(boss_unit, scale.hp_pct)
+		wc2x.boss_scaling.apply_boss_difficulty(boss_unit, scale)
 		boss_unit.hitpoints = boss_unit.max_hitpoints
 		boss_unit_id = boss_unit.id
 		wml.variables["wc2x_boss_id"] = boss_unit.id
@@ -398,8 +399,9 @@ local function spawn_boss()
 		canrecruit = true,
 		message = def.intro,
 	}
-	if scale.kills > 0 then
-		wesnoth.wml_actions.message { speaker = "narrator", message = wc2x.boss_scaling.intro_line(scale) }
+	local intro = wc2x.boss_scaling.intro_line(scale)
+	if intro then
+		wesnoth.wml_actions.message { speaker = "narrator", message = intro }
 	end
 	if def.on_spawn then def.on_spawn(boss.context()) end
 
