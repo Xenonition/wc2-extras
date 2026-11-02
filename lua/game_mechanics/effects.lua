@@ -166,5 +166,13 @@ end
 -- The implementation of this mods reduced recall costs, all units get an object with this effect.
 function wesnoth.effects.wc2_recall_cost(u, cfg)
 	local t = wesnoth.unit_types[u.type]
-	u.recall_cost = math.min(20, t.cost + 3)
+	local cost = math.min(20, t.cost + 3)
+	-- WC3 Quartermaster upgrade
+	if wc2x and wc2x.upgrades and wesnoth.sides[u.side] then
+		local discount = wc2x.upgrades.get_count(u.side, "quartermaster") * wc2x.config.quartermaster_recall_discount
+		if discount > 0 then
+			cost = math.min(cost, math.max(wc2x.config.quartermaster_min_recall, cost - discount))
+		end
+	end
+	u.recall_cost = cost
 end

@@ -188,7 +188,7 @@ is one, otherwise the nearest free hex outside the castle.
 | Castle Hex | 50 | +1 castle hex next to your keep each map |
 | Supply Village | 80 | Castle hex with a village (healing, income, recruit slot) |
 | Trade Route | 30 | +3 base income per turn |
-| Scout Network | 35 | +3 hex fog reveal around your leader at map start |
+| Quartermaster | 35 | −3 gold recall cost (WC2's is unit cost + 3, max 20), down to 5. Applied when the map is won (`wc2_set_recall_cost` re-runs the effect on map and recall-list units). Replaced Scout Network (fog reveal) in 0.15.0, which did too little; `migrations.lua` converts owned Scout Networks 1:1 and refreshes recall costs |
 | Reinforcements | 70 | +1 free random recruit next to your leader on turn 1 |
 | Barracks | 120 | Castle hex that spawns a free recruit every 4 turns |
 | Training Ground | 90 | Castle hex; non-leaders ending a turn there gain 4 XP |
@@ -348,9 +348,10 @@ the files swaps the art without code changes.
 
 ### Factions
 
-WC2's era plus four WC3 factions built from base-game units: **The Coil**
-(naga/saurian/merfolk), **Magnoshutadt** (mage academy with elite summons), **The Swarm**
-(insects with purchasable level-3 queens) and **Monsters** (beasts).
+WC2's era plus two WC3 factions built from base-game units: **The Coil**
+(naga/saurian/merfolk) and **Monsters** (beasts). Magnoshutadt and The Swarm were removed in
+0.15.0. A save that used them still plays (pairs and hero lists live in side variables) but
+loses the faction lookup, e.g. the recruit-info dialog.
 
 ### Player tools
 

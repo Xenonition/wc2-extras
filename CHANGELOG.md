@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- New permanent upgrade **Quartermaster** (35 gold): recalling costs 3 gold less per purchase,
+  down to 5. It replaces Scout Network; Scout Networks you already own become Quartermasters.
+  It applies to the next map's recalls straight away.
+- Removed the Magnoshutadt and The Swarm factions.
+
 ## 0.14.4 — 2026-11-02
 
 - The final boss now scales with difficulty: Lieutenant is unchanged; boss HP / damage is

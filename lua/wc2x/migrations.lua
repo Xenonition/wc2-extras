@@ -30,9 +30,25 @@ local function repair_backstab()
 	end
 end
 
+-- 0.15.0 replaced the Scout Network upgrade with Quartermaster: carry each purchase over 1:1
+local function convert_scout_network()
+	local converted = false
+	for i, side in ipairs(wesnoth.sides) do
+		local scouts = side.variables["wc2x_upgrades.vision_radius"]
+		if scouts and scouts > 0 then
+			side.variables["wc2x_upgrades.quartermaster"] = (side.variables["wc2x_upgrades.quartermaster"] or 0) + scouts
+			side.variables["wc2x_upgrades.vision_radius"] = nil
+			converted = true
+		end
+	end
+	-- recall costs are otherwise only refreshed when a map is won
+	if converted then wesnoth.wml_actions.wc2_set_recall_cost {} end
+end
+
 function migrations.init()
 	wesnoth.game_events.add_repeating("preload", function()
 		repair_backstab()
+		convert_scout_network()
 	end)
 end
 

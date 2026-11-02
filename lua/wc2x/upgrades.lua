@@ -86,19 +86,6 @@ function upgrades.apply_for_side(side_num)
 		}
 	end
 
-	local vision_count = upgrades.get_count(side_num, "vision_radius")
-	if vision_count > 0 then
-		local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
-		if leader then
-			wesnoth.wml_actions.lift_fog {
-				wml.tag.filter_side { side = side_num },
-				x = leader.x, y = leader.y,
-				radius = vision_count * 3,
-				multiturn = true,
-			}
-		end
-	end
-
 	local reinf_count = upgrades.get_count(side_num, "reinforcements")
 	if reinf_count > 0 then
 		upgrades.pending_reinforcements = upgrades.pending_reinforcements or {}

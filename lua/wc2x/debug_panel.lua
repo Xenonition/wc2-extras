@@ -16,7 +16,7 @@ local loti_orig_add = nil
 ---------------------------------------------------------------------------
 -- Shared definitions — both clients reference these by index
 ---------------------------------------------------------------------------
-local UPGRADE_IDS = { "castle_hex", "supply_village", "base_income", "vision_radius", "reinforcements", "barracks", "training_ground" }
+local UPGRADE_IDS = { "castle_hex", "supply_village", "base_income", "quartermaster", "reinforcements", "barracks", "training_ground" }
 
 ---------------------------------------------------------------------------
 -- Helpers

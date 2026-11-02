@@ -61,12 +61,15 @@ config.upgrade_prices = {
 	castle_hex = 50,
 	supply_village = 80,
 	base_income = 30,
-	vision_radius = 35,
+	quartermaster = 35,
 	reinforcements = 70,
 	barracks = 120,
 	training_ground = 90,
 }
 config.upgrade_price_escalation = 1.6
+-- Quartermaster: each purchase cuts the side's recall cost (WC2: unit cost + 3, max 20) by this much
+config.quartermaster_recall_discount = 3
+config.quartermaster_min_recall = 5
 
 -- Retrain (right-click on a unit recruited this turn): re-roll its training for this share of its cost
 config.retrain_cost_pct = 50
