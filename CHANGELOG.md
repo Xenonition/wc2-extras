@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.15.1 — 2026-11-02
 
 - Fixed the invest menu's "View Current Bonuses" entry showing no icon (it pointed at an image
   that doesn't exist in 1.18).
