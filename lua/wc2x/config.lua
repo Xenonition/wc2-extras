@@ -10,12 +10,18 @@ config.enemy_min_gold_per_turn = 10
 -- enemy base income per turn = max(min × players, per_player × players × difficulty scale),
 -- then +growth_pct per map after the first, so it keeps pace with players' between-map gains
 config.enemy_income_per_player = 10
-config.enemy_income_growth_pct = 15
--- Rout: from this turn, an enemy side down to its leader (no other units) and at most this many
--- villages loses its gold and base income for the rest of the map, so it can't feed recruits to
--- players farming XP
-config.rout_min_turn = 3
-config.rout_max_villages = 1
+config.enemy_income_growth_pct = 20
+-- Hardened reinforcements: enemy units recruited on turn T get +HP% and +damage% of
+-- (T - start_turn)² // divisor, capped. Kill XP doesn't grow with it, so late recruits are poor
+-- XP targets (+2% at turn 8, +18% at 12, +50% at 16, +98% at 20). Chat announces it each turn
+-- from announce_pct.
+config.harden_start_turn = 6
+config.harden_divisor = 2
+config.harden_cap_pct = 100
+config.harden_announce_pct = 10
+-- War chest: at victory (maps 1-4) each player gets this % of their income (base + villages,
+-- before upkeep) for every turn left, before the gacha and shop, so finishing beats stalling
+config.war_chest_income_pct = 60
 
 -- XP bottle: finishing a map early leaves one next to each player's leader on the next map
 -- XP = M * t // (t + k), t = turns left at victory: rises about M/k per turn, then flattens

@@ -50,7 +50,8 @@ function wesnoth.wml_actions.wc2_store_carryover(cfg)
 	local player_gold = 0
 
 	for side_num, side in ipairs(human_sides) do
-		player_gold = player_gold + side.gold
+		-- WC2X: the war chest was just paid at higher priority; it isn't carryover
+		player_gold = player_gold + side.gold - (wc2x and wc2x.war_chest and wc2x.war_chest.paid(side.side) or 0)
 	end
 	player_gold = math.max(player_gold / #human_sides, 0)
 	wml.variables.wc2_carryover = math.ceil( (nvillages*turns_left + player_gold) * 0.15)

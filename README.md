@@ -18,8 +18,8 @@ and buffs, and a final boss. 1–4 players, five random maps.
 - **Finish fast, pay less.** Every turn left on the clock cuts shop and gacha prices, a
   little for a narrow win (13% off with 5 turns left) and a lot for a fast one (54% with 15,
   66% with 20, up to about 80%), plus an XP bottle waiting by your leader on the next map that grows with the
-  turns left and with each map won. A beaten enemy reduced to its leader is routed and
-  stops recruiting, so there's nothing left to farm.
+  turns left and with each map won. Each turn left also pays a war chest of 60% of your
+  income, and enemy recruits get tougher as the map drags on, so stalling to farm doesn't pay.
 - **Legendary leaders:** from map two, one enemy leader per map is a legend with
   extra HP and damage, plus affixes like Ironclad, Colossal or Forcebound. Unlike other
   leaders it leaves its keep to fight. Kill it for an artifact.

@@ -13,9 +13,9 @@ playtest defaults, not final balance.
 
 1. **Territory matters.** Enemies earn income from villages like a normal MP side, so
    leaving the map to them makes the game harder.
-2. **Finish, don't farm.** Finishing a map early is rewarded (shop discount and an XP
-   bottle), and a beaten enemy is routed so it stops feeding recruits, so sitting on the
-   last enemy to farm XP has a real cost.
+2. **Finish, don't farm.** Finishing a map early is rewarded (war chest, shop discount and
+   an XP bottle), and enemy recruits harden as the map goes on, so sitting on the last enemy
+   to farm XP costs gold and gets riskier every turn.
 3. **Every run is different.** Heroes, shop stock, shrine buffs and the final boss are rolled
    from large pools, so no two campaigns play the same.
 4. **Decisions over free power.** New items carry real downsides; buffs are rare and random.
@@ -28,11 +28,12 @@ WC2 gives enemies a large starting gold pile and pre-places most of their army. 
 each enemy side the map file's gold (300; 350 on map 5) plus (100 + 25 × map) ×
 `enemy_gold_multiplier` (0.5) × difficulty scale (0.8–1.5×) × a random 0.7–1.3, a base
 income of max(10 × players, 10 × players × difficulty scale) per turn that grows by
-`enemy_income_growth_pct` (15%) per map after the first, 5 gold per village (players get
+`enemy_income_growth_pct` (20%) per map after the first, 5 gold per village (players get
 2), and pre-captures 30% of villages (+10% per scenario, max 80%, never within 4 hexes of a
-player). For 3 players on Normal (×1.2) that is 36 / 42 / 47 / 53 / 58 gold per turn on
+player). For 3 players on Normal (×1.2) that is 36 / 44 / 51 / 58 / 65 gold per turn on
 maps 1–5: start gold stays modest, but income keeps pace with the players' between-map
-gains (heroes, upgrades, XP bottles). The default AI
+gains (heroes, upgrades, XP bottles, war chests). Growth went from 15% to 20% with the
+war chest (0.16.0), which pays teams that finish normally gold they didn't get before. The default AI
 already contests villages and recruits from income, so territory matters without custom AI.
 
 Enemy strength also scales by scenario:
@@ -43,11 +44,14 @@ Enemy strength also scales by scenario:
   hunts the nearest player leader (Micro AI `assassin`).
 - **Personality:** each AI side rolls aggression, caution, village focus, leader
   aggression and recruitment habits from ranges, so enemies behave differently per map.
-- **Rout** (`enemy_scaling.check_rout`): from turn 3, an enemy side down to its leader
-  alone (no other units) with at most 1 village loses its gold and base income for the
-  rest of the map. Without this, the income floor (10 × players per turn) buys the beaten
-  leader one recruit a turn, which players farmed for XP instead of finishing. Checked on
-  "side turn", which fires before income is paid. One-way, announced in chat.
+- **Hardened reinforcements** (`enemy_scaling.harden`): an enemy unit recruited on turn T
+  gets an object (`wc2x_hardened`) with +p% HP and +p% damage, p = (T − 6)² // 2, capped at
+  100% (`config.harden_*`): +2% at turn 8, +18% at 12, +50% at 16, +98% at 20. Kill XP is
+  8 × the victim's level, so late recruits give the same XP for more risk. This replaced the
+  rout (0.16.0), which cut a beaten side's income once it was down to its leader and ≤1
+  village; players could hold the enemy just above that line, and an income floor buys a
+  beaten leader a recruit every turn. A turn-based curve has no line to stay above. Neutral
+  sides and the final boss side are exempt. Chat announces it on "new turn" from +10%.
 - **Legendary leader** (`lua/wc2x/legendary.lua`): from S2, one random enemy leader per
   map loses WC2's heroic trait and gets the "legendary" trait instead (+25% HP, +25% damage
   on all attacks, +2 moves, laurel overlay) and affixes (1 in S2–3, 2 in S4–5), and
@@ -150,6 +154,17 @@ left, 13% at 5), it climbs fastest around 12 turns left (36% at 10, 54% at 15) a
 toward 90% for very fast wins (66% at 20, 77% at 30, 82% at 40). It applies to
 everything, including permanent upgrades — this is intentional: finishing fast is the
 strongest lever in the mod, which is the anti-farming mechanism.
+
+**War chest** (`lua/wc2x/war_chest.lua`). Holding a won map open earns about one income per
+turn, which beat the discount's shrinkage (playtest: a team kept a beaten leader alive to
+farm). So at victory (maps 1–4) each player with a leader gets
+`total_income × t × 60 // 100` gold, t = turns left (`config.war_chest_income_pct`).
+`side.total_income` is the engine's base income + villages × village gold, before upkeep.
+Paid at victory priority 10, before the gacha and shop, with a chat line showing the sum.
+The amount is stored in the side variable `wc2x_war_chest_paid`, and `wc2_store_carryover`
+subtracts it so it isn't also counted into carryover. 60% (not 100%) because finishing
+also earns the discount, carryover and bottle, and hardened reinforcements make stalling
+riskier, so near-parity on gold is enough.
 
 **XP bottle** (`lua/wc2x/xp_bottle.lua`). The discount is one-off gold while farmed XP
 compounds across maps, so finishing also pays in XP: at victory, each player still in the
@@ -386,7 +401,7 @@ loses the faction lookup, e.g. the recruit-info dialog.
 
 | Path | Contents |
 |---|---|
-| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `xp_bottle`, `legendary`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `boss_scaling`, `unit_finder`, `debug_panel`, `dialog_utils` |
+| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `xp_bottle`, `war_chest`, `legendary`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `boss_scaling`, `unit_finder`, `debug_panel`, `dialog_utils` |
 | `units/` | WC3 unit types (final bosses, phylactery) |
 | `lua/campaign_main.lua` | Loads WC3 modules and LotI workarounds |
 | `lua/campaign/`, `lua/game_mechanics/`, `lua/map/` | Forked WC2 code (scenario flow, invest, artifacts, map generation) |

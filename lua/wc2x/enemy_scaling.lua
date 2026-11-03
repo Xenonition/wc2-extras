@@ -1,4 +1,4 @@
--- WC3 enemy scaling — recruit expansion + assassin spawns, rout
+-- WC3 enemy scaling — recruit expansion + assassin spawns, hardened reinforcements
 
 local _ = wesnoth.textdomain 'wesnoth-wc'
 local on_event = wesnoth.game_events.add_repeating
@@ -20,39 +20,51 @@ function enemy_scaling.init(config)
 		if not unit then return end
 		if wc2_scenario.is_human_side(unit.side) then return end
 		enemy_scaling.maybe_make_assassin(unit)
+		-- the assassin roll may have changed the unit, so look it up again
+		unit = wesnoth.units.get(wesnoth.current.event_context.x1, wesnoth.current.event_context.y1)
+		if unit then enemy_scaling.harden(unit) end
 	end)
 
-	-- "side turn" fires before income is paid, so a side routed here gets none this turn
-	on_event("side turn", function()
-		enemy_scaling.check_rout(wesnoth.current.side)
+	on_event("new turn", function()
+		enemy_scaling.announce_hardening()
 	end)
 end
 
--- A beaten enemy side (only its leader left, almost no villages) stops getting gold and base
--- income for the rest of the map. Otherwise its income floor buys a recruit every turn, which
--- players farm for XP instead of finishing the map.
-function enemy_scaling.check_rout(side_num)
+-- Reinforcements harden: enemy units recruited later in a map get more HP and damage, growing
+-- with the square of the turns since config.harden_start_turn. Kill XP depends only on the
+-- victim's level, so late recruits stop being worth farming however the map is going; there is
+-- no beaten-enemy threshold for players to keep the enemy just above.
+function enemy_scaling.hardening_pct()
 	local config = enemy_scaling.config
-	if wc2_scenario.is_human_side(side_num) then return end
-	local side = wesnoth.sides[side_num]
-	if side.controller ~= "ai" or side.variables["wc2x_is_neutral"] then return end
-	if side_num == wml.variables["wc2x_boss_side"] then return end
-	-- enemy sides are new each map, so this flag never carries over
-	if side.variables["wc2x_routed"] then return end
-	if wesnoth.current.turn < config.rout_min_turn then return end
+	local t = wesnoth.current.turn - config.harden_start_turn
+	if t <= 0 then return 0 end
+	return math.min(config.harden_cap_pct, t * t // config.harden_divisor)
+end
 
-	local leader = wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1]
-	if not leader then return end
-	if #wesnoth.units.find_on_map({ side = side_num, canrecruit = false }) > 0 then return end
-	local villages = wesnoth.map.find { gives_income = true, wml.tag.filter_owner { side = side_num } }
-	if #villages > config.rout_max_villages then return end
+local function hardens(side_num)
+	if wc2_scenario.is_human_side(side_num) then return false end
+	if wesnoth.sides[side_num].variables["wc2x_is_neutral"] then return false end
+	return side_num ~= wml.variables["wc2x_boss_side"]
+end
 
-	side.variables["wc2x_routed"] = true
-	side.gold = 0
-	side.base_income = 0
-	wesnoth.interface.float_label(leader.x, leader.y, _ "Routed", "255,140,0")
+function enemy_scaling.harden(unit)
+	if not hardens(unit.side) then return end
+	local pct = enemy_scaling.hardening_pct()
+	if pct <= 0 then return end
+	unit:add_modification("object", {
+		id = "wc2x_hardened",
+		wml.tag.effect { apply_to = "hitpoints", increase_total = pct .. "%" },
+		wml.tag.effect { apply_to = "attack", increase_damage = pct .. "%" },
+	})
+	-- a fresh recruit starts at full health
+	unit.hitpoints = unit.max_hitpoints
+end
+
+function enemy_scaling.announce_hardening()
+	local pct = enemy_scaling.hardening_pct()
+	if pct < enemy_scaling.config.harden_announce_pct then return end
 	wesnoth.interface.add_chat_message("WC3", string.format(tostring(
-		_ "%s's army is routed: no more gold or reinforcements this map."), tostring(leader.name)))
+		_ "Enemy reinforcements harden: units recruited this turn get +%d%% HP and damage."), pct))
 end
 
 local function find_types_at_level(base_recruits, level)

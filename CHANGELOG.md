@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **War chest:** winning a map pays each player 60% of their income for every turn left, before
+  the gacha and shop, shown in chat. Keeping a beaten enemy alive to farm used to out-earn
+  finishing; now finishing pays nearly as much gold, plus the discount and XP bottle.
+- **Hardened reinforcements** replace the rout: enemy units recruited later in a map get extra
+  HP and damage (+2% at turn 8, +18% at 12, +50% at 16, up to +100%), announced in chat
+  from +10%. They give the same XP, so late enemies stop being worth farming. The rout (a
+  beaten enemy's income cut off) could be dodged by leaving the enemy one more village or unit.
+- Enemy income now grows 20% per map instead of 15%, to keep up with the war chest.
+
 ## 0.15.1 — 2026-11-02
 
 - Fixed the invest menu's "View Current Bonuses" entry showing no icon (it pointed at an image
