@@ -30,34 +30,24 @@ poi.types = {
 		id = "ruins",
 		name = _ "Ancient Ruins",
 		image = "scenery/castle-ruins.png",
-		guard_types = nil,
-		guard_count = { 0, 0 },
-		ambush_types = { "Skeleton", "Walking Corpse", "Wolf", "Vampire Bat", "Footpad", "Poacher", "Mudcrawler" },
-		ambush_count = { 1, 3 },
 		weight = 3,
 	},
 	{
 		id = "mercenary_camp",
 		name = _ "Mercenary Camp",
 		image = "scenery/tent-fancy-red.png",
-		guard_types = nil,
-		guard_count = { 0, 0 },
 		weight = 2,
 	},
 	{
 		id = "shrine",
 		name = _ "Ancient Shrine",
 		image = "scenery/temple1.png",
-		guard_types = { "Orcish Warrior", "Troll Whelp", "Wolf Rider", "Footpad", "Poacher", "Thug", "Mage" },
-		guard_count = { 2, 3 },
 		weight = 2,
 	},
 	{
 		id = "caravan",
 		name = _ "Trade Caravan",
 		image = "units/human-peasants/ruffian.png",
-		guard_types = nil,
-		guard_count = { 0, 0 },
 		weight = 1,
 		min_scenario = 2,
 	},
@@ -160,15 +150,13 @@ function poi.find_placement_candidates(min_distance_from_keep)
 	return candidates
 end
 
-local function resolve_guard_tier(poi_id, scenario_num)
-	local scaling = poi.config.poi_guard_scaling
-	if not scaling or not scaling[poi_id] then return nil end
-	local tiers = scaling[poi_id]
-	local best = nil
-	for _, tier in ipairs(tiers) do
-		if scenario_num >= tier.scenario then best = tier end
+-- unit types the ruins' guardian is picked from: the latest tier at or below this scenario
+local function ruin_guardian_types(scenario_num)
+	local types
+	for _, tier in ipairs(poi.config.ruin_guardian_types) do
+		if scenario_num >= tier.scenario then types = tier.types end
 	end
-	return best
+	return types
 end
 
 local function weighted_pick(pool)
@@ -186,7 +174,7 @@ end
 function poi.place_all()
 	local player_count = wml.variables.wc2_player_count or 1
 	-- Find the dedicated neutral side (marked with wc2x_is_neutral variable),
-	-- added after all enemy sides. Uses idle_ai so guards never move.
+	-- added after all enemy sides. Uses idle_ai so its units never move.
 	poi.neutral_side = nil
 	for i = 1, #wesnoth.sides do
 		if wesnoth.sides[i].variables["wc2x_is_neutral"] then
@@ -228,34 +216,6 @@ function poi.place_all()
 		}
 		wesnoth.wml_actions.label { x = loc.x, y = loc.y, text = poi_type.name }
 
-		local guard_types = poi_type.guard_types
-		local guard_count = poi_type.guard_count
-		if not poi_type.ambush_types then
-			local tier = resolve_guard_tier(poi_type.id, scenario_num)
-			if tier then guard_types = tier.types; guard_count = tier.count end
-		end
-		if guard_types and #guard_types > 0 then
-			local num_guards = mathx.random(guard_count[1], guard_count[2])
-			local adj = adjacent_hexes(loc)
-			mathx.shuffle(adj)
-			local g = 0
-			for _, a in ipairs(adj) do
-				if g >= num_guards then break end
-				if not wesnoth.units.get(a.x, a.y) then
-					local terr = wesnoth.current.map[a]
-					if terr and not tostring(terr):match("[XQ]") then
-						wesnoth.wml_actions.unit {
-							side = poi.neutral_side,
-							type = guard_types[mathx.random(#guard_types)],
-							x = a.x, y = a.y,
-							generate_name = true, random_traits = true, upkeep = "free",
-							wml.tag.ai { ai_special = "guardian" },
-						}
-						g = g + 1
-					end
-				end
-			end
-		end
 	end
 
 	for i = 1, config.creep_count_per_map do
@@ -287,7 +247,7 @@ on_event("wc2_drop_pickup", function(ec)
 
 	local poi_type_id = item.variables.wc2x_poi_type
 
-	-- Guard check: if any of THIS POI's guards are still alive, block pickup
+	-- saves from before this change: a ruin whose ambushers are still alive stays blocked
 	local poi_key = x .. "," .. y
 	for _, adj in ipairs(adjacent_hexes(x, y)) do
 		local guard = wesnoth.units.get(adj.x, adj.y)
@@ -299,47 +259,19 @@ on_event("wc2_drop_pickup", function(ec)
 	local unit = wesnoth.units.get(x, y)
 	if not unit then return end
 
-	-- Ambush: spawn guards on first contact, block pickup until they're dead
-	local poi_def = nil
-	for _, t in ipairs(poi.types) do
-		if t.id == poi_type_id then poi_def = t; break end
-	end
-	if poi_def and poi_def.ambush_types and not item.variables.wc2x_ambush_triggered then
-		item.variables.wc2x_ambush_triggered = true
-		local scenario_num = wc2_scenario.scenario_num()
-		local tier = resolve_guard_tier(poi_def.id, scenario_num)
-		local ambush_types = tier and tier.types or poi_def.ambush_types
-		local ambush_count = tier and tier.count or poi_def.ambush_count
-		local num = mathx.random(ambush_count[1], ambush_count[2])
-		local adj = adjacent_hexes(x, y)
-		mathx.shuffle(adj)
-		local spawned = 0
-		for _, a in ipairs(adj) do
-			if spawned >= num then break end
-			if not wesnoth.units.get(a.x, a.y) then
-				local terr = wesnoth.current.map[a]
-				if terr and not tostring(terr):match("[XQ]") then
-					local u = wesnoth.units.create {
-						side = poi.get_neutral_side(),
-						type = ambush_types[mathx.random(#ambush_types)],
-						x = a.x, y = a.y,
-						generate_name = true, random_traits = true, upkeep = "free",
-						wml.tag.ai { ai_special = "guardian" },
-					}
-					u.variables.wc2x_poi_guard = x .. "," .. y
-					u:to_map()
-					spawned = spawned + 1
-				end
-			end
-		end
-		if spawned > 0 then
-			wesnoth.wml_actions.message {
-				speaker = "narrator", caption = poi_def.name,
-				message = _ "The dead stir as you disturb the ruins! Defeat them, then return to claim the treasure.",
-				image = poi_def.image,
-			}
-			return
-		end
+	-- Ruins: disturbing them raises one guardian and the ruins are spent; killing the guardian
+	-- pays the reward (see the "die" handler), so nobody has to walk back. An old save's ruin
+	-- whose ambush already ran just pays out.
+	if poi_type_id == "ruins" and not item.variables.wc2x_ambush_triggered
+		and poi.spawn_ruin_guardian(x, y, side_num) then
+		wc2_dropping.remove_current_item()
+		wesnoth.wml_actions.label { x = x, y = y, text = "" }
+		wesnoth.wml_actions.message {
+			speaker = "narrator", caption = _ "Ancient Ruins",
+			message = _ "The dead stir as you disturb the ruins! Destroy the guardian to claim its treasure.",
+			image = "scenery/castle-ruins.png",
+		}
+		return
 	end
 
 	local consumed = poi.activate(unit, poi_type_id)
@@ -388,47 +320,78 @@ function poi.buff_is_redundant(unit, buff)
 	return false
 end
 
-function poi.activate(unit, poi_type)
+-- WML action, Lua [unit] and WC2 items all skip impassable and unwalkable hexes
+local function can_stand(hex)
+	if wesnoth.units.get(hex.x, hex.y) then return false end
+	local terr = wesnoth.current.map[hex]
+	return terr ~= nil and not tostring(terr):match("[XQ]")
+end
+
+-- One guardian on the neutral side next to the ruins at (x, y); false if no hex is free.
+-- side_num, the player who disturbed it, gets the reward if no player lands the kill.
+function poi.spawn_ruin_guardian(x, y, side_num)
+	local types = ruin_guardian_types(wc2_scenario.scenario_num())
+	local adj = adjacent_hexes(x, y)
+	mathx.shuffle(adj)
+	for _, hex in ipairs(adj) do
+		if can_stand(hex) then
+			local u = wesnoth.units.create {
+				side = poi.get_neutral_side(),
+				type = types[mathx.random(#types)],
+				x = hex.x, y = hex.y,
+				generate_name = true, random_traits = true, upkeep = "free",
+				wml.tag.ai { ai_special = "guardian" },
+			}
+			u.variables.wc2x_ruin_guardian = side_num
+			u:to_map()
+			return true
+		end
+	end
+	return false
+end
+
+-- Gold, or (half the time) an artifact dropped at (x, y) and owned by side_num
+function poi.ruins_reward(side_num, x, y)
 	local config = poi.config
 	local scenario_num = wc2_scenario.scenario_num()
+	if mathx.random(2) == 1 and wc2_artifacts then
+		local artifact_list = wc2_artifacts.get_artifact_list()
+		if #artifact_list > 0 then
+			local artifact_id = mathx.random(#artifact_list)
+			wesnoth.wml_actions.message {
+				speaker = "narrator", caption = _ "Ancient Ruins",
+				message = _ "Among the rubble, you discover a relic of power!",
+				image = "scenery/castle-ruins.png",
+			}
+			wc2_artifacts.place_item(x, y, artifact_id, side_num)
+			return
+		end
+	end
+	local base = config.poi_gold_reward_base
+	local per_sc = config.poi_gold_reward_per_scenario
+	local gold_base = type(base) == "table" and mathx.random(base[1], base[2]) or base
+	local gold_scale = type(per_sc) == "table" and mathx.random(per_sc[1], per_sc[2]) or per_sc
+	local gold = gold_base + (scenario_num * gold_scale)
+	local side = wesnoth.sides[side_num]
+	side.gold = side.gold + gold
+	wesnoth.wml_actions.message {
+		speaker = "narrator", caption = _ "Ancient Ruins",
+		message = string.format(tostring(_ "You find %d gold hidden in the ruins."), gold),
+		image = "scenery/castle-ruins.png",
+	}
+end
+
+function poi.activate(unit, poi_type)
+	local config = poi.config
 	local side = wesnoth.sides[unit.side]
 
 	if poi_type == "ruins" then
-		local base = config.poi_gold_reward_base
-		local per_sc = config.poi_gold_reward_per_scenario
-		local gold_base = type(base) == "table" and mathx.random(base[1], base[2]) or base
-		local gold_scale = type(per_sc) == "table" and mathx.random(per_sc[1], per_sc[2]) or per_sc
-		local gold = gold_base + (scenario_num * gold_scale)
-		if mathx.random(2) == 1 and wc2_artifacts then
-			local artifact_list = wc2_artifacts.get_artifact_list()
-			if #artifact_list > 0 then
-				local artifact_id = mathx.random(#artifact_list)
-				local drop_hex = nil
-				for _, hex in ipairs(adjacent_hexes(unit)) do
-					if not wesnoth.units.get(hex.x, hex.y) then
-						local terr = wesnoth.current.map[hex]
-						if terr and not tostring(terr):match("[XQ]") then
-							drop_hex = hex
-							break
-						end
-					end
-				end
-				if not drop_hex then drop_hex = { x = unit.x, y = unit.y } end
-				wesnoth.wml_actions.message {
-					speaker = "narrator", caption = _ "Ancient Ruins",
-					message = _ "Among the rubble, you discover a relic of power!",
-					image = "scenery/castle-ruins.png",
-				}
-				wc2_artifacts.place_item(drop_hex.x, drop_hex.y, artifact_id, unit.side)
-				return
-			end
+		-- no free hex for a guardian: the treasure is simply there, dropped next to the finder
+		local drop = { x = unit.x, y = unit.y }
+		for _, hex in ipairs(adjacent_hexes(unit)) do
+			if can_stand(hex) then drop = hex; break end
 		end
-		side.gold = side.gold + gold
-		wesnoth.wml_actions.message {
-			speaker = "narrator", caption = _ "Ancient Ruins",
-			message = string.format(tostring(_ "You find %d gold hidden in the ruins."), gold),
-			image = "scenery/castle-ruins.png",
-		}
+		poi.ruins_reward(unit.side, drop.x, drop.y)
 
 	elseif poi_type == "mercenary_camp" then
 		local by_level = poi.get_mercenary_pool()
@@ -688,6 +651,13 @@ on_event("moveto", function()
 end)
 
 on_event("die", function()
+	local disturber = wml.variables["unit.variables.wc2x_ruin_guardian"]
+	if disturber then
+		-- the killing player gets it; burning or a non-player kill falls back to the disturber
+		local killer = wml.variables["second_unit.side"]
+		local side_num = (killer and wc2_scenario.is_human_side(killer)) and killer or disturber
+		poi.ruins_reward(side_num, wml.variables["unit.x"], wml.variables["unit.y"])
+	end
 	if wml.variables["unit.variables.wc2x_is_caravan"] then
 		wesnoth.wml_actions.message {
 			speaker = "narrator", caption = _ "Caravan Lost",

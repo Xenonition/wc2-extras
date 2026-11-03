@@ -108,12 +108,14 @@ neutral creeps (wolves, bats, scorpions…) for XP.
 
 | POI | Guards | Reward |
 |---|---|---|
-| Ancient Ruins | Ambush: undead rise when you first step on it | Gold (40–80 + 10–20 per scenario), 50% chance of an artifact. Loot is claimable only after the ambushers die |
+| Ancient Ruins | One guardian rises next to the ruins when a player first steps on them (type by scenario, `config.ruin_guardian_types`); the ruins are then gone | Paid when the guardian dies: gold (40–80 + 10–20 per scenario), or 50% chance of an artifact dropped where it died. The killing player gets it, or the player who disturbed the ruins if no player landed the kill. No free hex for a guardian: paid at once |
 | Mercenary Camp | None | Hire one of 3 off-faction units from the shared unit pool at half their normal cost (offers are rolled on the first visit and fixed for that camp, shared by all players); higher levels appear in later scenarios. Mercs are plain units (no heroic trait or buffs), which is their niche against invest, gacha and shop heroes: cheap reinforcements in the middle of a fight |
-| Ancient Shrine | 1–4 themed guards, scaling by scenario | One random permanent buff from the buff pool for the capturing unit |
+| Ancient Shrine | None | One random permanent buff from the buff pool for the capturing unit |
 | Trade Caravan | None; the caravan (a Ruffian with 4 moves and +10 HP) is yours to move and can be killed | Move it onto any castle or keep hex: gold (40 + 15/scenario), an artifact (dropped next to your leader, castle first, like invest items) or training |
 
-POI guards live on a dedicated neutral side (see *Neutral POI side*).
+Ruin guardians live on a dedicated neutral side (see *Neutral POI side*). Until 0.17.0 ruins
+raised 1–4 ambushers and paid out only when a player came back, and shrines had 1–4 guards;
+an old save's ruin with ambushers still alive stays blocked until they die, then pays on the next visit.
 
 ### Invest (scenario start)
 
@@ -442,9 +444,9 @@ and the Micro AI id counter (`ai_director.lua`), the assassin id counter
 
 ### Neutral POI side
 
-POI guards and creeps live on a dedicated side with:
-- `team_name = "wc2_enemy"` — allied with enemies so the AI doesn't waste turns on guards
-- `ai_algorithm = "idle_ai"` — guards never move or attack; defence is automatic
+Ruin guardians and creeps live on a dedicated side with:
+- `team_name = "wc2_enemy"` — allied with enemies so the AI doesn't waste turns on them
+- `ai_algorithm = "idle_ai"` — they never move or attack; defence is automatic
 - `wc2x_is_neutral = true` side variable — identifies the side in code
 - Excluded from the AI director, village capture, enemy scaling and recruit events
 

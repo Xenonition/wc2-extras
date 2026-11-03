@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Ancient Ruins** now raise a single guardian instead of 1–4 ambushers, and the reward (gold or
+  an artifact) comes when the guardian dies — no walking back to the ruins. The player who lands
+  the kill gets it.
+- **Ancient Shrines** no longer have guards.
+
 ## 0.16.0 — 2026-11-03
 
 - **War chest:** winning a map pays each player 60% of their income for every turn left, before
