@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.16.0 — 2026-11-03
 
 - **War chest:** winning a map pays each player 60% of their income for every turn left, before
   the gacha and shop, shown in chat. Keeping a beaten enemy alive to farm used to out-earn
