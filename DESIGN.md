@@ -44,8 +44,10 @@ Enemy strength also scales by scenario:
   hunts the nearest player leader (Micro AI `assassin`).
 - **Personality:** each AI side rolls aggression, caution, village focus, leader
   aggression and recruitment habits from ranges, so enemies behave differently per map.
-- **Dawnbreakers** (`lua/wc2x/dawnbreakers.lua`): from turn 8, every 3 turns (on "new turn"),
-  near-legendary enemy units march in from the map edge to rescue the enemy side with a living
+- **Dawnbreakers** (`lua/wc2x/dawnbreakers.lua`): from 70% of the map's turn limit (rounded
+  up, `config.dawnbreakers_start_pct`; turn 18 of 25 on a 2-player map 1, 40 of 56 on a
+  1-player map 5), every 3 turns (on "new turn"),
+  near-legendary enemy units arrive from the map edge to rescue the enemy side with a living
   leader and the fewest villages (ties: lowest side number). Each is a leader-level unit (level 2
   on map 1, 3 on maps 2–3, 4 on map 4, 5 on map 5, as `config.enemy_leader_level`) drawn from
   that faction's WC2 leader list and resolved like its leader (`wc2_enemy.resolve_leader_type`);
@@ -56,7 +58,19 @@ Enemy strength also scales by scenario:
   (`config.dawnbreakers_tiers`): under 50%, 1 unit with 1 affix; 50–74%, 2 with 1; 75%+, 3 with
   2. They enter on free edge hexes hidden from every player, nearest the rescued leader (visible
   edge hexes only when no hidden one is free), skipping hexes the unit can't enter; chat names the
-  size and share. They give leader-level kill XP (8 × level) but cost far more to beat, so
+  size and the side rescued.
+
+  They belong to their own side, **Dawnbreakers** (`add_dawnbreaker_side` in
+  `side_definitions.lua`, side variable `wc2x_is_dawnbreaker`, placed before the neutral side):
+  leaderless AI on the enemy team with no gold or income and an offensive AI config
+  (`village_value = 0`). On their own side no enemy side's AI-director tactic can claim them (one
+  that joined the rescued side was parked by a hold-position tactic and never moved). A side with
+  no leader counts as defeated (`defeat_condition = no_leader_left`, `game_board.cpp`), so it never
+  blocks victory but still takes its turns, like the final boss side. They hold no villages: a
+  "capture" by them is handed back to the previous owner (`owner_side`). The AI director, the
+  map-start enemy village grab and the rescue pick skip the side; it stays in LotI's
+  `$enemy_sides`, so LotI drops still apply. Saves from before 0.18.0 have no such side, so there
+  Dawnbreakers join the rescued side until the next map. They give leader-level kill XP (8 × level) but cost far more to beat, so
   stalling a won map is a real fight rather than a farm. Neutral sides and the final boss side
   are never rescued. LotI's drop chance applies to them like any enemy.
 
@@ -118,19 +132,24 @@ slots must be too, or a reload would leave orphaned Micro AIs running.
 
 ### Points of interest (POIs)
 
-3 POIs per map, +1 every two scenarios, placed during map generation, plus 4 scattered
-neutral creeps (wolves, bats, scorpions…) for XP.
+3 POIs per map, +1 every two scenarios, placed during map generation. (Until 0.18.0, 4
+neutral creeps were scattered too; they sat as idle guardians players never had a reason to
+visit, so they were removed.)
 
 | POI | Guards | Reward |
 |---|---|---|
-| Ancient Ruins | One guardian rises next to the ruins when a player first steps on them (type by scenario, `config.ruin_guardian_types`); the ruins are then gone | Paid when the guardian dies: gold (40–80 + 10–20 per scenario), or 50% chance of an artifact dropped where it died. The killing player gets it, or the player who disturbed the ruins if no player landed the kill. No free hex for a guardian: paid at once |
+| Guarded Hoard (id `ruins`) | One guardian (type by scenario, `config.ruin_guardian_types`) stands on the hoard's hex from the start, neutral side, `ai_special=guardian` | Paid when the guardian dies: gold (40–80 + 10–20 per scenario), or 50% chance of an artifact dropped where it died. The killing player gets it; if no player landed the kill (e.g. burning), the player with the nearest unit. The chest image (`[item]` named `wc2x_hoard`) and label are cleared then. If the guardian can't stand on the hex, the hoard is unguarded and pays whoever steps on it |
 | Mercenary Camp | None | Hire one of 3 off-faction units from the shared unit pool at half their normal cost (offers are rolled on the first visit and fixed for that camp, shared by all players); higher levels appear in later scenarios. Mercs are plain units (no heroic trait or buffs), which is their niche against invest, gacha and shop heroes: cheap reinforcements in the middle of a fight |
 | Ancient Shrine | None | One random permanent buff from the buff pool for the capturing unit |
 | Trade Caravan | None; the caravan (a Ruffian with 4 moves and +10 HP) is yours to move and can be killed | Move it onto any castle or keep hex: gold (40 + 15/scenario), an artifact (dropped next to your leader, castle first, like invest items) or training |
 
-Ruin guardians live on a dedicated neutral side (see *Neutral POI side*). Until 0.17.0 ruins
-raised 1–4 ambushers and paid out only when a player came back, and shrines had 1–4 guards;
-an old save's ruin with ambushers still alive stays blocked until they die, then pays on the next visit.
+Hoard guardians live on a dedicated neutral side (see *Neutral POI side*). History: until
+0.17.0 "Ancient Ruins" raised 1–4 ambushers and paid out only when a player came back, and
+shrines had 1–4 guards; 0.17.0 raised one guardian next to the ruins on first visit and paid on
+its death; 0.18.0 places the guardian on the hex at map start and renames the POI. Saves keep
+working: a 0.17.0 ruin still raises its guardian when visited (that guardian's
+`wc2x_ruin_guardian` is the disturber's side, the fallback payee), and an old ruin with
+ambushers still alive stays blocked until they die.
 
 ### Invest (scenario start)
 
@@ -348,7 +367,7 @@ it only picks allies still wounded after normal healing. Ankh and Quiver icons a
 **Arena.** At prestart an arena (a keep, two rings of castle and an impassable chasm ring) is
 stamped at the best site within 6 hexes of the map centre: its footprint may not cover a keep
 or a leader, and sites covering villages, items, units or water score worse. Units already in
-the footprint are moved to the nearest free hex outside it. POIs and creeps are placed
+the footprint are moved to the nearest free hex outside it. POIs are placed
 afterwards and keep 6 hexes from any keep, so they never land inside.
 
 **Trigger.** When every regular enemy leader is dead, the chasm opens and one of three bosses
@@ -496,7 +515,7 @@ and the Micro AI id counter (`ai_director.lua`), the assassin id counter
 
 ### Neutral POI side
 
-Ruin guardians and creeps live on a dedicated side with:
+Ruin guardians live on a dedicated side with:
 - `team_name = "wc2_enemy"` — allied with enemies so the AI doesn't waste turns on them
 - `ai_algorithm = "idle_ai"` — they never move or attack; defence is automatic
 - `wc2x_is_neutral = true` side variable — identifies the side in code

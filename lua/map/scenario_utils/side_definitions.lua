@@ -88,6 +88,39 @@ local function add_empty_side(scenario)
 	table.insert(scenario.side, side)
 end
 
+-- WC3 Dawnbreakers (lua/wc2x/dawnbreakers.lua): their own leaderless AI side on the enemy team,
+-- so no enemy side's AI tactics can claim them. No gold or income (it never recruits); a side
+-- with no leader counts as defeated, so it never blocks victory. Village captures are undone by
+-- dawnbreakers.lua, so the AI is told not to go for villages either.
+local function add_dawnbreaker_side(scenario)
+	local side_num = #scenario.side + 1
+	local side = {
+		side = side_num,
+		controller = "ai",
+		no_leader = true,
+		allow_player = false,
+		hidden = false,
+		team_name = "wc2_enemy",
+		user_team_name = _ "Dawnbreakers",
+		gold = 0,
+		income = -2,
+		village_gold = 0,
+		fog = false,
+		terrain_liked = "",
+		wml.tag.ai {
+			aggression = 0.8,
+			caution = 0.1,
+			village_value = 0,
+			villages_per_scout = 0,
+			grouping = "offensive",
+		},
+		wml.tag.variables {
+			wc2x_is_dawnbreaker = true,
+		},
+	}
+	table.insert(scenario.side, side)
+end
+
 local function add_neutral_side(scenario)
 	local side_num = #scenario.side + 1
 	local side = {
@@ -176,5 +209,6 @@ function wc_ii_generate_sides(scenario, prestart_event, nplayers, scenario_num, 
 		scenario.wc2x_boss_side = add_boss_side(scenario)
 	end
 
+	add_dawnbreaker_side(scenario)
 	add_neutral_side(scenario)
 end

@@ -7,6 +7,15 @@
   Rider, Falcon / Vampire Bat, Elvish Shaman / Saurian Augur and Mage / Dark Adept. Leaders:
   Dragoon, Elvish Rider, Goblin Knight, Gryphon Master or Dune Sunderer. Its heavy line units
   (Heavy Infantryman, Troll Whelp, dwarves…) come only as heroes, deserters and commanders.
+- **Dawnbreakers** now fight as their own side (shown as "Dawnbreakers") instead of joining the
+  enemy they rescue, so the enemy's AI can no longer hold them back. They don't take villages.
+- Dawnbreakers start arriving at 70% of the map's turn limit (turn 18 of 25, for example)
+  instead of turn 8, and their chat message no longer quotes your share of the villages.
+- **Ancient Ruins are now Guarded Hoards:** the guardian stands on the hoard from the start of
+  the map. Kill it and its gold or artifact is yours, with no visit needed. Ruins already on
+  the map in a saved game work the old way until that map ends.
+- Removed the neutral creeps (wolves, bats, scorpions…) scattered over each map: they never
+  moved and nobody had a reason to fight them.
 
 ## 0.17.0 — 2026-11-21
 

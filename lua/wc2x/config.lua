@@ -11,12 +11,12 @@ config.enemy_min_gold_per_turn = 10
 -- then +growth_pct per map after the first, so it keeps pace with players' between-map gains
 config.enemy_income_per_player = 10
 config.enemy_income_growth_pct = 20
--- Dawnbreakers (dawnbreakers.lua): from dawnbreakers_start_turn, every dawnbreakers_interval
--- turns, enemy units march in from the map edge to rescue the enemy side with the fewest
+-- Dawnbreakers (dawnbreakers.lua): from dawnbreakers_start_pct of the map's turn limit, every
+-- dawnbreakers_interval turns, enemy units march in from the map edge to rescue the enemy side with the fewest
 -- villages. They are near-legendaries: leader-level units from that faction's leader list, with
 -- the dawnbreaker trait (+HP, +damage, legendary_moves, no upkeep) and legendary affixes, but no artifact drop.
 -- The tier is the first whose max_pct is above the % of villages the players hold.
-config.dawnbreakers_start_turn = 8
+config.dawnbreakers_start_pct = 70
 config.dawnbreakers_interval = 3
 config.dawnbreakers_hp_bonus = "25%"
 config.dawnbreakers_damage_bonus = "25%"
@@ -49,12 +49,6 @@ config.poi_base_count = 3
 config.poi_per_scenario = 0.5
 config.poi_gold_reward_base = { 40, 80 }
 config.poi_gold_reward_per_scenario = { 10, 20 }
-
-config.creep_count_per_map = 4
-config.creep_types = {
-	"Wolf", "Vampire Bat", "Giant Scorpion", "Mudcrawler",
-	"Giant Rat", "Fire Guardian", "Water Serpent",
-}
 
 -- Enemy village capture at map start
 config.enemy_village_base_pct = 30

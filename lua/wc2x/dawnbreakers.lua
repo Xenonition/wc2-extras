@@ -1,4 +1,5 @@
--- Dawnbreakers: from config.dawnbreakers_start_turn, every config.dawnbreakers_interval turns,
+-- Dawnbreakers: from config.dawnbreakers_start_pct of the map's turn limit, every
+-- config.dawnbreakers_interval turns,
 -- near-legendary enemy units march in from the map edge to rescue the enemy side that is losing
 -- worst (fewest villages): leader-level units from that faction's leader list with the
 -- "dawnbreaker" trait and legendary affixes, but no artifact drop. They give leader-level XP but
@@ -12,8 +13,17 @@ local dawnbreakers = {}
 
 local function is_enemy_side(side_num)
 	if wc2_scenario.is_human_side(side_num) then return false end
-	if wesnoth.sides[side_num].variables["wc2x_is_neutral"] then return false end
+	local vars = wesnoth.sides[side_num].variables
+	if vars["wc2x_is_neutral"] or vars["wc2x_is_dawnbreaker"] then return false end
 	return side_num ~= wml.variables["wc2x_boss_side"]
+end
+
+-- the Dawnbreakers' own side (side_definitions.lua); nil in saves from before 0.18.0, where they
+-- join the rescued side instead
+function dawnbreakers.side()
+	for _i, side in ipairs(wesnoth.sides) do
+		if side.variables["wc2x_is_dawnbreaker"] then return side.side end
+	end
 end
 
 local function human_sides()
@@ -133,12 +143,13 @@ local function spawn_wave()
 	local types = leader_types(side, count)
 	if #types == 0 then return end
 
+	local own_side = dawnbreakers.side()
 	local hexes = edge_hexes(side.side, leader)
 	local used = {}
 	local spawned = 0
 	for _n = 1, #types do
 		local u = wesnoth.units.create {
-			type = types[_n], side = side.side, generate_name = true,
+			type = types[_n], side = own_side or side.side, generate_name = true,
 		}
 		u:add_modification("trait", dawnbreakers.trait())
 		wc2x.legendary.roll_affixes(u, tier.affixes)
@@ -163,21 +174,37 @@ local function spawn_wave()
 		local msg
 		if spawned == 1 then
 			msg = string.format(tostring(
-				_ "A Dawnbreaker marches in from the map edge to rescue side %d (players hold %d%% of the villages)."),
-				side.side, pct)
+				_ "A Dawnbreaker arrives from the map edge to rescue side %d."),
+				side.side)
 		else
 			msg = string.format(tostring(
-				_ "%d Dawnbreakers march in from the map edge to rescue side %d (players hold %d%% of the villages)."),
-				spawned, side.side, pct)
+				_ "%d Dawnbreakers arrive from the map edge to rescue side %d."),
+				spawned, side.side)
 		end
 		wesnoth.interface.add_chat_message("WC3", msg)
 	end
 end
 
+-- first wave: config.dawnbreakers_start_pct of the turn limit, rounded up (whole numbers, so
+-- every client agrees)
+function dawnbreakers.start_turn()
+	return math.max(1, (wesnoth.scenario.turns * wc2x.config.dawnbreakers_start_pct + 99) // 100)
+end
+
 function dawnbreakers.init()
+	-- Dawnbreakers hold no villages: moving onto one hands it back to its previous owner (owner_side
+	-- is the engine's variable for that during "capture", 0 if it had none)
+	on_event("capture", function()
+		local own_side = dawnbreakers.side()
+		local ec = wesnoth.current.event_context
+		local u = wesnoth.units.get(ec.x1, ec.y1)
+		if not (own_side and u and u.side == own_side) then return end
+		wesnoth.map.set_owner({ ec.x1, ec.y1 }, wml.variables.owner_side or 0)
+	end)
+
 	on_event("new turn", function()
 		local config = wc2x.config
-		local t = wesnoth.current.turn - config.dawnbreakers_start_turn
+		local t = wesnoth.current.turn - dawnbreakers.start_turn()
 		if t < 0 or t % config.dawnbreakers_interval ~= 0 then return end
 		spawn_wave()
 	end)
