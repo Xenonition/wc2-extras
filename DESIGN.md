@@ -124,14 +124,18 @@ visit, so they were removed.)
 
 | POI | Guards | Reward |
 |---|---|---|
-| Ancient Ruins | One guardian rises next to the ruins when a player first steps on them (type by scenario, `config.ruin_guardian_types`); the ruins are then gone | Paid when the guardian dies: gold (40–80 + 10–20 per scenario), or 50% chance of an artifact dropped where it died. The killing player gets it, or the player who disturbed the ruins if no player landed the kill. No free hex for a guardian: paid at once |
+| Guarded Hoard (id `ruins`) | One guardian (type by scenario, `config.ruin_guardian_types`) stands on the hoard's hex from the start, neutral side, `ai_special=guardian` | Paid when the guardian dies: gold (40–80 + 10–20 per scenario), or 50% chance of an artifact dropped where it died. The killing player gets it; if no player landed the kill (e.g. burning), the player with the nearest unit. The chest image (`[item]` named `wc2x_hoard`) and label are cleared then. If the guardian can't stand on the hex, the hoard is unguarded and pays whoever steps on it |
 | Mercenary Camp | None | Hire one of 3 off-faction units from the shared unit pool at half their normal cost (offers are rolled on the first visit and fixed for that camp, shared by all players); higher levels appear in later scenarios. Mercs are plain units (no heroic trait or buffs), which is their niche against invest, gacha and shop heroes: cheap reinforcements in the middle of a fight |
 | Ancient Shrine | None | One random permanent buff from the buff pool for the capturing unit |
 | Trade Caravan | None; the caravan (a Ruffian with 4 moves and +10 HP) is yours to move and can be killed | Move it onto any castle or keep hex: gold (40 + 15/scenario), an artifact (dropped next to your leader, castle first, like invest items) or training |
 
-Ruin guardians live on a dedicated neutral side (see *Neutral POI side*). Until 0.17.0 ruins
-raised 1–4 ambushers and paid out only when a player came back, and shrines had 1–4 guards;
-an old save's ruin with ambushers still alive stays blocked until they die, then pays on the next visit.
+Hoard guardians live on a dedicated neutral side (see *Neutral POI side*). History: until
+0.17.0 "Ancient Ruins" raised 1–4 ambushers and paid out only when a player came back, and
+shrines had 1–4 guards; 0.17.0 raised one guardian next to the ruins on first visit and paid on
+its death; 0.18.0 places the guardian on the hex at map start and renames the POI. Saves keep
+working: a 0.17.0 ruin still raises its guardian when visited (that guardian's
+`wc2x_ruin_guardian` is the disturber's side, the fallback payee), and an old ruin with
+ambushers still alive stays blocked until they die.
 
 ### Invest (scenario start)
 

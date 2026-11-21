@@ -9,7 +9,7 @@ and buffs, and a final boss. 1–4 players, five random maps.
 - **Enemies earn income.** They start with less gold but take villages and recruit every
   turn, and each AI rolls its own personality and switches tactics mid-map (rushes,
   turtling, raids on your leader, forest ambushes, assassins).
-- **Points of interest** on every map: ruins whose guardian drops treasure when it dies, unguarded shrines
+- **Points of interest** on every map: Guarded Hoards (kill the guardian standing on the hoard to take its gold or artifact), unguarded shrines
   that grant a unit a permanent random buff, mercenary camps with off-faction units, and
   merchant caravans to escort.
 - **After each victory:** Build a Hero — roll a random hero with 2–3 random buffs and

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Ancient Ruins are now Guarded Hoards:** the guardian stands on the hoard from the start of
+  the map. Kill it and its gold or artifact is yours, with no visit needed. Ruins already on
+  the map in a saved game work the old way until that map ends.
 - Removed the neutral creeps (wolves, bats, scorpions…) scattered over each map: they never
   moved and nobody had a reason to fight them.
 

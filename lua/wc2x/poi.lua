@@ -25,11 +25,14 @@ function poi.get_neutral_side()
 	return poi.neutral_side
 end
 
+local HOARD_ITEM = "wc2x_hoard"
+
 poi.types = {
 	{
+		-- "ruins" is the id saves know; shown as the Guarded Hoard since 0.18.0
 		id = "ruins",
-		name = _ "Ancient Ruins",
-		image = "scenery/castle-ruins.png",
+		name = _ "Guarded Hoard",
+		image = "items/chest.png",
 		weight = 3,
 	},
 	{
@@ -210,10 +213,19 @@ function poi.place_all()
 		placed = placed + 1
 		local loc = candidates[placed]
 
-		wesnoth.wml_actions.item {
-			x = loc.x, y = loc.y, image = poi_type.image, z_order = 10,
-			wml.tag.variables { wc2x_poi_type = poi_type.id },
-		}
+		if poi_type.id == "ruins" and poi.place_hoard_guardian(loc) then
+			-- decoration only (no wc2x_poi_type): the guardian holds the tile, its death pays out
+			wesnoth.wml_actions.item {
+				x = loc.x, y = loc.y, image = poi_type.image, z_order = 10, name = HOARD_ITEM,
+				wml.tag.variables { wc2x_hoard = true },
+			}
+		else
+			-- a hoard whose guardian can't stand here is simply there for the taking (poi.activate)
+			wesnoth.wml_actions.item {
+				x = loc.x, y = loc.y, image = poi_type.image, z_order = 10,
+				wml.tag.variables { wc2x_poi_type = poi_type.id, wc2x_ambush_triggered = true },
+			}
+		end
 		wesnoth.wml_actions.label { x = loc.x, y = loc.y, text = poi_type.name }
 
 	end
@@ -314,7 +326,27 @@ local function can_stand(hex)
 	return terr ~= nil and not tostring(terr):match("[XQ]")
 end
 
--- One guardian on the neutral side next to the ruins at (x, y); false if no hex is free.
+-- Guarded Hoard: one guardian (type by scenario) stands on the hoard's hex from the start, on the
+-- neutral side with ai_special=guardian so it holds the tile. Its death pays the reward (see the
+-- "die" handler). false if the guardian can't stand there.
+function poi.place_hoard_guardian(loc)
+	if not can_stand(loc) then return false end
+	local types = ruin_guardian_types(wc2_scenario.scenario_num())
+	local u = wesnoth.units.create {
+		side = poi.get_neutral_side(),
+		type = types[mathx.random(#types)],
+		generate_name = true, random_traits = true, upkeep = "free",
+		wml.tag.ai { ai_special = "guardian" },
+	}
+	if wesnoth.units.movement_on(u, wesnoth.current.map[loc]) > u.max_moves then return false end
+	u.variables.wc2x_ruin_guardian = 0       -- no disturber: the killer (or nearest player) is paid
+	u.variables.wc2x_hoard_x = loc.x
+	u.variables.wc2x_hoard_y = loc.y
+	u:to_map(loc.x, loc.y)
+	return true
+end
+
+-- 0.17.0 saves: one guardian on the neutral side next to the ruins at (x, y); false if no hex is free.
 -- side_num, the player who disturbed it, gets the reward if no player lands the kill.
 function poi.spawn_ruin_guardian(x, y, side_num)
 	local types = ruin_guardian_types(wc2_scenario.scenario_num())
@@ -345,9 +377,9 @@ function poi.ruins_reward(side_num, x, y)
 		local artifact_id = wc2_artifacts.random_artifact()
 		if artifact_id then
 			wesnoth.wml_actions.message {
-				speaker = "narrator", caption = _ "Ancient Ruins",
-				message = _ "Among the rubble, you discover a relic of power!",
-				image = "scenery/castle-ruins.png",
+				speaker = "narrator", caption = _ "Guarded Hoard",
+				message = _ "The guardian falls, and its hoard yields a relic of power!",
+				image = "items/chest.png",
 			}
 			wc2_artifacts.place_item(x, y, artifact_id, side_num)
 			return
@@ -361,9 +393,9 @@ function poi.ruins_reward(side_num, x, y)
 	local side = wesnoth.sides[side_num]
 	side.gold = side.gold + gold
 	wesnoth.wml_actions.message {
-		speaker = "narrator", caption = _ "Ancient Ruins",
-		message = string.format(tostring(_ "You find %d gold hidden in the ruins."), gold),
-		image = "scenery/castle-ruins.png",
+		speaker = "narrator", caption = _ "Guarded Hoard",
+		message = string.format(tostring(_ "The guardian falls, and its hoard holds %d gold."), gold),
+		image = "items/chest.png",
 	}
 end
 
@@ -638,10 +670,28 @@ end)
 on_event("die", function()
 	local disturber = wml.variables["unit.variables.wc2x_ruin_guardian"]
 	if disturber then
+		local x, y = wml.variables["unit.x"], wml.variables["unit.y"]
 		-- the killing player gets it; burning or a non-player kill falls back to the disturber
+		-- (0.17.0 ruins) or, for a Guarded Hoard, the player with the nearest unit
 		local killer = wml.variables["second_unit.side"]
-		local side_num = (killer and wc2_scenario.is_human_side(killer)) and killer or disturber
-		poi.ruins_reward(side_num, wml.variables["unit.x"], wml.variables["unit.y"])
+		local side_num = (killer and wc2_scenario.is_human_side(killer)) and killer or nil
+		if not side_num and disturber ~= 0 then side_num = disturber end
+		if not side_num then
+			local best
+			for _, u in ipairs(wesnoth.units.find_on_map {}) do
+				if wc2_scenario.is_human_side(u.side) then
+					local d = wesnoth.map.distance_between(u.x, u.y, x, y)
+					if not best or d < best then best, side_num = d, u.side end
+				end
+			end
+		end
+		local hx = wml.variables["unit.variables.wc2x_hoard_x"]
+		local hy = wml.variables["unit.variables.wc2x_hoard_y"]
+		if hx and hy then
+			wesnoth.interface.remove_item(hx, hy, HOARD_ITEM)
+			wesnoth.wml_actions.label { x = hx, y = hy, text = "" }
+		end
+		if side_num then poi.ruins_reward(side_num, x, y) end
 	end
 	if wml.variables["unit.variables.wc2x_is_caravan"] then
 		wesnoth.wml_actions.message {
