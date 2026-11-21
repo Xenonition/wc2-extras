@@ -23,7 +23,7 @@ paths and the dev loop: `../CLAUDE.md`. Open work: beads board, `bd list` filter
 
 ## Checks
 
-- `luacheck lua` — compare the warning total with master (currently 43); new code adds none.
+- `luacheck lua` — compare the warning total with master (currently 42); new code adds none.
 - `lint.bat` also runs lua-language-server; its stubs lack many Wesnoth APIs (4-argument
   `evaluate_single`, `synced_state`, `add_chat_message`…), so judge it as a diff against master.
 - Verify every engine API, WML key and special against the 1.18 source or wiki before using

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.17.0 — 2026-11-21
 
 - **War chest** now pays on the income you would have if you took every village you don't hold
   yet (your income plus an even share of the rest), at 40% instead of 60% per turn left. Grabbing
@@ -13,7 +13,7 @@
   the kill gets it.
 - **Ancient Shrines** no longer have guards.
 - **Thunder Maul** and WC2's **Azure pearl** no longer turn up anywhere (shop, ruins, caravans,
-  legends, bonus points, enemies, invest); replacements are coming. Units already carrying one
+  legends, bonus points, enemies, invest), replaced by the two new items below. Units already carrying one
   keep it. Ruins, caravans and legendary leaders now roll only from items that can still drop.
 - With LotI loaded, the shop also offers three LotI items (from LotI's normal drop pool) at
   the artifact price. Bought items go to the shared item storage, ready to equip.
