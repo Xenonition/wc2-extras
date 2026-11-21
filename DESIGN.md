@@ -14,7 +14,7 @@ playtest defaults, not final balance.
 1. **Territory matters.** Enemies earn income from villages like a normal MP side, so
    leaving the map to them makes the game harder.
 2. **Finish, don't farm.** Finishing a map early is rewarded (war chest, shop discount and
-   an XP bottle), and enemy recruits harden as the map goes on, so sitting on the last enemy
+   an XP bottle), and enemy Dawnbreakers march in as the map goes on, so sitting on the last enemy
    to farm XP costs gold and gets riskier every turn.
 3. **Every run is different.** Heroes, shop stock, shrine buffs and the final boss are rolled
    from large pools, so no two campaigns play the same.
@@ -44,14 +44,27 @@ Enemy strength also scales by scenario:
   hunts the nearest player leader (Micro AI `assassin`).
 - **Personality:** each AI side rolls aggression, caution, village focus, leader
   aggression and recruitment habits from ranges, so enemies behave differently per map.
-- **Hardened reinforcements** (`enemy_scaling.harden`): an enemy unit recruited on turn T
-  gets an object (`wc2x_hardened`) with +p% HP and +p% damage, p = (T − 6)² // 2, capped at
-  100% (`config.harden_*`): +2% at turn 8, +18% at 12, +50% at 16, +98% at 20. Kill XP is
-  8 × the victim's level, so late recruits give the same XP for more risk. This replaced the
-  rout (0.16.0), which cut a beaten side's income once it was down to its leader and ≤1
-  village; players could hold the enemy just above that line, and an income floor buys a
-  beaten leader a recruit every turn. A turn-based curve has no line to stay above. Neutral
-  sides and the final boss side are exempt. Chat announces it on "new turn" from +10%.
+- **Dawnbreakers** (`lua/wc2x/dawnbreakers.lua`): from turn 8, every 3 turns (on "new turn"),
+  near-legendary enemy units march in from the map edge to rescue the enemy side with a living
+  leader and the fewest villages (ties: lowest side number). Each is a leader-level unit (level 2
+  on map 1, 3 on maps 2–3, 4 on map 4, 5 on map 5, as `config.enemy_leader_level`) drawn from
+  that faction's WC2 leader list and resolved like its leader (`wc2_enemy.resolve_leader_type`);
+  the list is read, not consumed, and if the faction is unknown the shared unit pool at that
+  level is used (`unit_pool.synced_sample`). They get the "dawnbreaker" trait (+25% HP, +25%
+  damage, +2 moves as `config.legendary_moves`, loyal: no upkeep) and legendary affixes
+  (`legendary.roll_affixes`), but no artifact drop. The wave grows with the % of villages players hold
+  (`config.dawnbreakers_tiers`): under 50%, 1 unit with 1 affix; 50–74%, 2 with 1; 75%+, 3 with
+  2. They enter on free edge hexes hidden from every player, nearest the rescued leader (visible
+  edge hexes only when no hidden one is free), skipping hexes the unit can't enter; chat names the
+  size and share. They give leader-level kill XP (8 × level) but cost far more to beat, so
+  stalling a won map is a real fight rather than a farm. Neutral sides and the final boss side
+  are never rescued. LotI's drop chance applies to them like any enemy.
+
+  History: 0.16.0's hardened reinforcements gave every enemy recruit +HP/damage growing with the
+  turn number ((T − 6)² // 2 %, capped at 100%), which made late recruits poor XP but also made
+  every enemy recruit tougher whether the players were winning or not. That replaced the rout
+  (cutting a beaten side's income at ≤1 village), which players dodged by holding the enemy just
+  above the line. Dawnbreakers scale with how far ahead the players are instead.
 - **Legendary leader** (`lua/wc2x/legendary.lua`): from S2, one random enemy leader per
   map loses WC2's heroic trait and gets the "legendary" trait instead (+25% HP, +25% damage
   on all attacks, +2 moves, laurel overlay) and affixes (1 in S2–3, 2 in S4–5), and
@@ -169,7 +182,7 @@ Paid at victory priority 10, before the gacha and shop (priority 0.5), with a ch
 the sum. It is ordinary gold afterwards, so what isn't spent counts toward carryover like any
 other gold (0.16.0 kept it out by subtracting it, which went negative when it was spent in the
 shop and cut everyone's carryover). 40% (not 100%) because finishing also earns the discount,
-carryover and bottle, and hardened reinforcements make stalling riskier, so near-parity on gold
+carryover and bottle, and Dawnbreakers make stalling riskier, so near-parity on gold
 is enough; it was 60% of actual income in 0.16.0, which pays about the same for a team holding
 two thirds of the villages.
 
@@ -430,7 +443,7 @@ loses the faction lookup, e.g. the recruit-info dialog.
 
 | Path | Contents |
 |---|---|
-| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `xp_bottle`, `war_chest`, `legendary`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `boss_scaling`, `unit_finder`, `debug_panel`, `dialog_utils` |
+| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `xp_bottle`, `war_chest`, `legendary`, `dawnbreakers`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `boss_scaling`, `unit_finder`, `debug_panel`, `dialog_utils` |
 | `units/` | WC3 unit types (final bosses, phylactery) |
 | `lua/campaign_main.lua` | Loads WC3 modules and LotI workarounds |
 | `lua/campaign/`, `lua/game_mechanics/`, `lua/map/` | Forked WC2 code (scenario flow, invest, artifacts, map generation) |

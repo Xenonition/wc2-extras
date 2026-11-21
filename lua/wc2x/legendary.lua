@@ -89,6 +89,9 @@ function legendary.trait()
 	}
 end
 
+-- Dawnbreakers (dawnbreakers.lua) roll from the same affix table
+legendary.roll_affixes = roll_affixes
+
 function legendary.make(u, count)
 	u:remove_modifications({ id = "heroic" }, "trait")
 	u:add_modification("trait", legendary.trait())

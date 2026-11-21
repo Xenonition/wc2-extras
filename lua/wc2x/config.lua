@@ -11,14 +11,20 @@ config.enemy_min_gold_per_turn = 10
 -- then +growth_pct per map after the first, so it keeps pace with players' between-map gains
 config.enemy_income_per_player = 10
 config.enemy_income_growth_pct = 20
--- Hardened reinforcements: enemy units recruited on turn T get +HP% and +damage% of
--- (T - start_turn)² // divisor, capped. Kill XP doesn't grow with it, so late recruits are poor
--- XP targets (+2% at turn 8, +18% at 12, +50% at 16, +98% at 20). Chat announces it each turn
--- from announce_pct.
-config.harden_start_turn = 6
-config.harden_divisor = 2
-config.harden_cap_pct = 100
-config.harden_announce_pct = 10
+-- Dawnbreakers (dawnbreakers.lua): from dawnbreakers_start_turn, every dawnbreakers_interval
+-- turns, enemy units march in from the map edge to rescue the enemy side with the fewest
+-- villages. They are near-legendaries: leader-level units from that faction's leader list, with
+-- the dawnbreaker trait (+HP, +damage, legendary_moves, no upkeep) and legendary affixes, but no artifact drop.
+-- The tier is the first whose max_pct is above the % of villages the players hold.
+config.dawnbreakers_start_turn = 8
+config.dawnbreakers_interval = 3
+config.dawnbreakers_hp_bonus = "25%"
+config.dawnbreakers_damage_bonus = "25%"
+config.dawnbreakers_tiers = {
+	{ max_pct = 50,  count = 1, affixes = 1 },
+	{ max_pct = 75,  count = 2, affixes = 1 },
+	{ max_pct = 101, count = 3, affixes = 2 },
+}
 -- War chest: at victory (maps 1-4) each player gets this % of their theoretical income for every
 -- turn left, before the gacha and shop, so finishing beats stalling. Theoretical income = own income
 -- (base + villages, before upkeep) + an even share of the villages the players don't hold.
