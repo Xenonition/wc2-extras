@@ -89,7 +89,7 @@ function legendary.trait()
 	}
 end
 
--- Keepers (keepers.lua) roll from the same affix table
+-- Dawnbreakers (dawnbreakers.lua) roll from the same affix table
 legendary.roll_affixes = roll_affixes
 
 function legendary.make(u, count)

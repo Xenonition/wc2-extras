@@ -19,7 +19,7 @@ and buffs, and a final boss. 1–4 players, five random maps.
   little for a narrow win (13% off with 5 turns left) and a lot for a fast one (54% with 15,
   66% with 20, up to about 80%), plus an XP bottle waiting by your leader on the next map that grows with the
   turns left and with each map won. Each turn left also pays a war chest of 60% of your
-  income, and enemy Keepers (tough units with legendary affixes) march in from the map edge as the
+  income, and enemy Dawnbreakers (tough units with legendary affixes) march in from the map edge as the
   map drags on, bigger the more of the map you hold, so stalling to farm doesn't pay.
 - **Legendary leaders:** from map two, one enemy leader per map is a legend with
   extra HP and damage, plus affixes like Ironclad, Colossal or Forcebound. Unlike other

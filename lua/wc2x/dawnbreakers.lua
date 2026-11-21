@@ -1,6 +1,6 @@
--- Keepers: from config.keepers_start_turn, every config.keepers_interval turns a few enemy
+-- Dawnbreakers: from config.dawnbreakers_start_turn, every config.dawnbreakers_interval turns a few enemy
 -- units march in from the map edge to rescue the enemy side that is losing worst (fewest
--- villages). They are that side's ordinary recruits made tougher by the "keeper" trait and one
+-- villages). They are that side's ordinary recruits made tougher by the "dawnbreaker" trait and one
 -- or two legendary affixes, at their normal level, so they give ordinary kill XP for a much
 -- harder fight: stalling a won map gets more dangerous without becoming an XP farm. The wave
 -- grows with how much of the map the players hold. Replaced hardened reinforcements (0.17.0).
@@ -8,7 +8,7 @@
 local _ = wesnoth.textdomain 'wesnoth-wc'
 local on_event = wesnoth.game_events.add_repeating
 
-local keepers = {}
+local dawnbreakers = {}
 
 local function is_enemy_side(side_num)
 	if wc2_scenario.is_human_side(side_num) then return false end
@@ -25,7 +25,7 @@ local function human_sides()
 end
 
 -- % of the map's villages held by players (whole number, so every client agrees)
-function keepers.player_village_pct()
+function dawnbreakers.player_village_pct()
 	local total = #wesnoth.map.find { gives_income = true }
 	if total == 0 then return 0 end
 	local held = 0
@@ -47,21 +47,21 @@ end
 
 -- the first tier whose max_pct is above the players' village share
 local function pick_tier(pct)
-	for _i, tier in ipairs(wc2x.config.keepers_tiers) do
+	for _i, tier in ipairs(wc2x.config.dawnbreakers_tiers) do
 		if pct < tier.max_pct then return tier end
 	end
-	return wc2x.config.keepers_tiers[#wc2x.config.keepers_tiers]
+	return wc2x.config.dawnbreakers_tiers[#wc2x.config.dawnbreakers_tiers]
 end
 
-function keepers.trait()
+function dawnbreakers.trait()
 	local config = wc2x.config
 	return {
-		id = "wc2x_keeper", male_name = _ "keeper", female_name = _ "female^keeper",
+		id = "wc2x_dawnbreaker", male_name = _ "dawnbreaker", female_name = _ "female^dawnbreaker",
 		description = string.format(tostring(
-			_ "One of the Keepers, sent to rescue a losing side: +%s hitpoints, +%s damage on all attacks, no upkeep."),
-			config.keepers_hp_bonus, config.keepers_damage_bonus),
-		wml.tag.effect { apply_to = "hitpoints", increase_total = config.keepers_hp_bonus },
-		wml.tag.effect { apply_to = "attack", increase_damage = config.keepers_damage_bonus },
+			_ "One of the Dawnbreakers, sent to rescue a losing side: +%s hitpoints, +%s damage on all attacks, no upkeep."),
+			config.dawnbreakers_hp_bonus, config.dawnbreakers_damage_bonus),
+		wml.tag.effect { apply_to = "hitpoints", increase_total = config.dawnbreakers_hp_bonus },
+		wml.tag.effect { apply_to = "attack", increase_damage = config.dawnbreakers_damage_bonus },
 		wml.tag.effect { apply_to = "loyal" },
 	}
 end
@@ -103,7 +103,7 @@ local function spawn_wave()
 	local side = pick_rescued_side()
 	if not side then return end
 	local leader = wesnoth.units.find_on_map({ side = side.side, canrecruit = true })[1]
-	local pct = keepers.player_village_pct()
+	local pct = dawnbreakers.player_village_pct()
 	local tier = pick_tier(pct)
 	local count = tier.base + wc2_scenario.scenario_num() * tier.per_scenario
 
@@ -118,10 +118,10 @@ local function spawn_wave()
 		local u = wesnoth.units.create {
 			type = types[mathx.random(#types)], side = side.side, generate_name = true,
 		}
-		u:add_modification("trait", keepers.trait())
+		u:add_modification("trait", dawnbreakers.trait())
 		wc2x.legendary.roll_affixes(u, tier.affixes)
 		u.hitpoints = u.max_hitpoints
-		u.variables.wc2x_keeper = true
+		u.variables.wc2x_dawnbreaker = true
 		local spot
 		for _i, hex in ipairs(hexes) do
 			local key = hex.x .. "," .. hex.y
@@ -133,7 +133,7 @@ local function spawn_wave()
 		end
 		if spot then
 			u:to_map(spot.x, spot.y)
-			wesnoth.interface.float_label(spot.x, spot.y, _ "Keepers!", "255,140,0")
+			wesnoth.interface.float_label(spot.x, spot.y, _ "Dawnbreakers!", "255,140,0")
 			spawned = spawned + 1
 		end
 	end
@@ -141,24 +141,24 @@ local function spawn_wave()
 		local msg
 		if spawned == 1 then
 			msg = string.format(tostring(
-				_ "A Keeper marches in from the map edge to rescue side %d (players hold %d%% of the villages)."),
+				_ "A Dawnbreaker marches in from the map edge to rescue side %d (players hold %d%% of the villages)."),
 				side.side, pct)
 		else
 			msg = string.format(tostring(
-				_ "%d Keepers march in from the map edge to rescue side %d (players hold %d%% of the villages)."),
+				_ "%d Dawnbreakers march in from the map edge to rescue side %d (players hold %d%% of the villages)."),
 				spawned, side.side, pct)
 		end
 		wesnoth.interface.add_chat_message("WC3", msg)
 	end
 end
 
-function keepers.init()
+function dawnbreakers.init()
 	on_event("new turn", function()
 		local config = wc2x.config
-		local t = wesnoth.current.turn - config.keepers_start_turn
-		if t < 0 or t % config.keepers_interval ~= 0 then return end
+		local t = wesnoth.current.turn - config.dawnbreakers_start_turn
+		if t < 0 or t % config.dawnbreakers_interval ~= 0 then return end
 		spawn_wave()
 	end)
 end
 
-return keepers
+return dawnbreakers
