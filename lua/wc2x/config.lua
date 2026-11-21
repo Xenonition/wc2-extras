@@ -50,12 +50,6 @@ config.poi_per_scenario = 0.5
 config.poi_gold_reward_base = { 40, 80 }
 config.poi_gold_reward_per_scenario = { 10, 20 }
 
-config.creep_count_per_map = 4
-config.creep_types = {
-	"Wolf", "Vampire Bat", "Giant Scorpion", "Mudcrawler",
-	"Giant Rat", "Fire Guardian", "Water Serpent",
-}
-
 -- Enemy village capture at map start
 config.enemy_village_base_pct = 30
 config.enemy_village_pct_per_scenario = 10

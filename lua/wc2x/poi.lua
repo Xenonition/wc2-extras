@@ -217,19 +217,6 @@ function poi.place_all()
 		wesnoth.wml_actions.label { x = loc.x, y = loc.y, text = poi_type.name }
 
 	end
-
-	for i = 1, config.creep_count_per_map do
-		if placed >= #candidates then break end
-		placed = placed + 1
-		local loc = candidates[placed]
-		wesnoth.wml_actions.unit {
-			side = poi.neutral_side,
-			type = config.creep_types[mathx.random(#config.creep_types)],
-			x = loc.x, y = loc.y,
-			generate_name = true, random_traits = true, upkeep = "free",
-			wml.tag.ai { ai_special = "guardian" },
-		}
-	end
 end
 
 -- Pickup via WC2's dropping.lua wc2_drop_pickup event.

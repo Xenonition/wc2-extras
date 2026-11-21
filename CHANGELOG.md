@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Removed the neutral creeps (wolves, bats, scorpions…) scattered over each map: they never
+  moved and nobody had a reason to fight them.
+
 ## 0.17.0 — 2026-11-21
 
 - **War chest** now pays on the income you would have if you took every village you don't hold

@@ -118,8 +118,9 @@ slots must be too, or a reload would leave orphaned Micro AIs running.
 
 ### Points of interest (POIs)
 
-3 POIs per map, +1 every two scenarios, placed during map generation, plus 4 scattered
-neutral creeps (wolves, bats, scorpions…) for XP.
+3 POIs per map, +1 every two scenarios, placed during map generation. (Until 0.18.0, 4
+neutral creeps were scattered too; they sat as idle guardians players never had a reason to
+visit, so they were removed.)
 
 | POI | Guards | Reward |
 |---|---|---|
@@ -348,7 +349,7 @@ it only picks allies still wounded after normal healing. Ankh and Quiver icons a
 **Arena.** At prestart an arena (a keep, two rings of castle and an impassable chasm ring) is
 stamped at the best site within 6 hexes of the map centre: its footprint may not cover a keep
 or a leader, and sites covering villages, items, units or water score worse. Units already in
-the footprint are moved to the nearest free hex outside it. POIs and creeps are placed
+the footprint are moved to the nearest free hex outside it. POIs are placed
 afterwards and keep 6 hexes from any keep, so they never land inside.
 
 **Trigger.** When every regular enemy leader is dead, the chasm opens and one of three bosses
@@ -486,7 +487,7 @@ and the Micro AI id counter (`ai_director.lua`), the assassin id counter
 
 ### Neutral POI side
 
-Ruin guardians and creeps live on a dedicated side with:
+Ruin guardians live on a dedicated side with:
 - `team_name = "wc2_enemy"` — allied with enemies so the AI doesn't waste turns on them
 - `ai_algorithm = "idle_ai"` — they never move or attack; defence is automatic
 - `wc2x_is_neutral = true` side variable — identifies the side in code
