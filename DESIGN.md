@@ -407,8 +407,8 @@ the files swaps the art without code changes.
 
 ### Factions
 
-WC2's era plus three WC3 factions built from base-game units: **The Coil**
-(naga/saurian/merfolk), **Monsters** (beasts) and **The Rainbow**. The Rainbow follows WC2's
+WC2's era plus four WC3 factions built from base-game units: **The Coil**
+(naga/saurian/merfolk), **Monsters** (beasts), **The Rainbow** and **The Outriders**. The Rainbow follows WC2's
 rules but, like WC2's Empire, mixes every faction and has its own hero lists
 (`Rainbow_commanders/heroes/deserters` in `era/campaign/heroes.cfg`). Its pairs are
 cross-faction roles: healers (Elvish Shaman / Dune Herbalist), birds (Raven / Falcon), riders
@@ -420,6 +420,16 @@ available at all; level-0 pairs are kept to two because every recruit gets the f
 training regardless of cost. Magnoshutadt and The Swarm were removed in
 0.15.0. A save that used them still plays (pairs and hero lists live in side variables) but
 loses the faction lookup, e.g. the recruit-info dialog.
+
+**The Outriders** (`era/factions/The_Outriders.cfg`, 0.18.0) is the mobile faction: twelve
+of its sixteen recruits move 7 or more. Pairs: skirmish (Cavalryman / Wolf Rider), ranged
+riders (Dune Rider / Elvish Scout), shock (Horseman / Gryphon Rider), fire support (Drake
+Glider / Saurian Skirmisher), undead raiders (Ghost / Skeleton Rider), level-0 flyers (Falcon /
+Vampire Bat), support (Elvish Shaman / Saurian Augur) and casters (Mage / Dark Adept). The last
+two pairs are slow because no mobile level-1 healer or caster exists. Leaders are fast level 2s:
+Dragoon, Elvish Rider, Goblin Knight, Gryphon Master, Dune Sunderer. The line-holders it lacks
+(Heavy Infantryman, Troll Whelp, dwarves, Dune Soldier…) come only from its own
+`Outriders_commanders/heroes/deserters` lists.
 
 ### Player tools
 
