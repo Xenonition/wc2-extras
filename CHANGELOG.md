@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Dawnbreakers no longer arrive on a hex with an item lying on it, where they looked like they
+  were carrying it.
 - **Ancient Ruins are now Guarded Hoards:** the guardian stands on the hoard from the start of
   the map. Kill it and its gold or artifact is yours, with no visit needed. Ruins already on
   the map in a saved game work the old way until that map ends.
