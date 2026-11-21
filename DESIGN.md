@@ -44,10 +44,10 @@ Enemy strength also scales by scenario:
   hunts the nearest player leader (Micro AI `assassin`).
 - **Personality:** each AI side rolls aggression, caution, village focus, leader
   aggression and recruitment habits from ranges, so enemies behave differently per map.
-- **Dawnbreakers** (`lua/wc2x/dawnbreakers.lua`): from half the map's turn limit (rounded
-  up, `config.dawnbreakers_start_pct`; turn 13 of 25 on a 2-player map 1, 28 of 56 on a
+- **Dawnbreakers** (`lua/wc2x/dawnbreakers.lua`): from 70% of the map's turn limit (rounded
+  up, `config.dawnbreakers_start_pct`; turn 18 of 25 on a 2-player map 1, 40 of 56 on a
   1-player map 5), every 3 turns (on "new turn"),
-  near-legendary enemy units march in from the map edge to rescue the enemy side with a living
+  near-legendary enemy units arrive from the map edge to rescue the enemy side with a living
   leader and the fewest villages (ties: lowest side number). Each is a leader-level unit (level 2
   on map 1, 3 on maps 2–3, 4 on map 4, 5 on map 5, as `config.enemy_leader_level`) drawn from
   that faction's WC2 leader list and resolved like its leader (`wc2_enemy.resolve_leader_type`);
@@ -58,7 +58,19 @@ Enemy strength also scales by scenario:
   (`config.dawnbreakers_tiers`): under 50%, 1 unit with 1 affix; 50–74%, 2 with 1; 75%+, 3 with
   2. They enter on free edge hexes hidden from every player, nearest the rescued leader (visible
   edge hexes only when no hidden one is free), skipping hexes the unit can't enter; chat names the
-  size and the side rescued. They give leader-level kill XP (8 × level) but cost far more to beat, so
+  size and the side rescued.
+
+  They belong to their own side, **Dawnbreakers** (`add_dawnbreaker_side` in
+  `side_definitions.lua`, side variable `wc2x_is_dawnbreaker`, placed before the neutral side):
+  leaderless AI on the enemy team with no gold or income and an offensive AI config
+  (`village_value = 0`). On their own side no enemy side's AI-director tactic can claim them (one
+  that joined the rescued side was parked by a hold-position tactic and never moved). A side with
+  no leader counts as defeated (`defeat_condition = no_leader_left`, `game_board.cpp`), so it never
+  blocks victory but still takes its turns, like the final boss side. They hold no villages: a
+  "capture" by them is handed back to the previous owner (`owner_side`). The AI director, the
+  map-start enemy village grab and the rescue pick skip the side; it stays in LotI's
+  `$enemy_sides`, so LotI drops still apply. Saves from before 0.18.0 have no such side, so there
+  Dawnbreakers join the rescued side until the next map. They give leader-level kill XP (8 × level) but cost far more to beat, so
   stalling a won map is a real fight rather than a farm. Neutral sides and the final boss side
   are never rescued. LotI's drop chance applies to them like any enemy.
 

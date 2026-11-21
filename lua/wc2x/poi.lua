@@ -715,7 +715,8 @@ function poi.capture_villages_for_enemies()
 	local enemy_sides = {}
 	for i = player_count + 1, #wesnoth.sides do
 		local s = wesnoth.sides[i]
-		if s and s.controller == "ai" and not s.variables["wc2x_is_neutral"] then
+		if s and s.controller == "ai" and not s.variables["wc2x_is_neutral"]
+			and not s.variables["wc2x_is_dawnbreaker"] then
 			table.insert(enemy_sides, i)
 		end
 	end
