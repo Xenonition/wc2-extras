@@ -355,9 +355,8 @@ function poi.ruins_reward(side_num, x, y)
 	local config = poi.config
 	local scenario_num = wc2_scenario.scenario_num()
 	if mathx.random(2) == 1 and wc2_artifacts then
-		local artifact_list = wc2_artifacts.get_artifact_list()
-		if #artifact_list > 0 then
-			local artifact_id = mathx.random(#artifact_list)
+		local artifact_id = wc2_artifacts.random_artifact()
+		if artifact_id then
 			wesnoth.wml_actions.message {
 				speaker = "narrator", caption = _ "Ancient Ruins",
 				message = _ "Among the rubble, you discover a relic of power!",
@@ -600,9 +599,8 @@ on_event("moveto", function()
 			image = "units/human-peasants/ruffian.png",
 		}
 	elseif roll <= weights.gold + weights.artifact and wc2_artifacts then
-		local artifact_list = wc2_artifacts.get_artifact_list()
-		if #artifact_list > 0 then
-			local artifact_id = mathx.random(#artifact_list)
+		local artifact_id = wc2_artifacts.random_artifact()
+		if artifact_id then
 			wesnoth.wml_actions.message {
 				speaker = "narrator", caption = _ "Caravan Arrived!",
 				message = _ "The caravan reached safety! The merchants reward you with a rare artifact.",

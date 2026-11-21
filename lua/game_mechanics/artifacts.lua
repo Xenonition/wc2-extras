@@ -227,14 +227,29 @@ on_event("wc2_drop_pickup", function(ec)
 end)
 
 -- returns a list of artifact ids, suitable for  the give type ('enemy' for example).
+-- WC3: artifacts marked not_available=retired never roll from any source; they stay in the list
+-- because saves refer to artifacts by index.
 function artifacts.fresh_artifacts_list(for_type)
 	local res = {}
 	for i,v in ipairs(artifacts.get_artifact_list()) do
-		if not for_type or not stringx.map_split(v.not_available or "")[for_type] then
+		local not_available = stringx.map_split(v.not_available or "")
+		if not not_available.retired and (not for_type or not not_available[for_type]) then
 			table.insert(res, i)
 		end
 	end
 	return res
+end
+
+-- WC3: a random artifact id that may still roll (see fresh_artifacts_list), or nil if none
+function artifacts.random_artifact(for_type)
+	local ids = artifacts.fresh_artifacts_list(for_type)
+	if #ids == 0 then return nil end
+	return ids[mathx.random(#ids)]
+end
+
+function artifacts.is_retired(id)
+	local a = artifacts.get_artifact(id)
+	return a ~= nil and stringx.map_split(a.not_available or "").retired ~= nil
 end
 
 

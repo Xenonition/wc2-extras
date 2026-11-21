@@ -12,6 +12,9 @@
   an artifact) comes when the guardian dies — no walking back to the ruins. The player who lands
   the kill gets it.
 - **Ancient Shrines** no longer have guards.
+- **Thunder Maul** and WC2's **Azure pearl** no longer turn up anywhere (shop, ruins, caravans,
+  legends, bonus points, enemies, invest); replacements are coming. Units already carrying one
+  keep it. Ruins, caravans and legendary leaders now roll only from items that can still drop.
 
 ## 0.16.0 — 2026-11-03
 

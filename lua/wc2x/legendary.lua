@@ -166,9 +166,9 @@ function legendary.init()
 		local ec = wesnoth.current.event_context
 		local u = wesnoth.units.get(ec.x1, ec.y1)
 		if not (u and u.variables.wc2x_legendary) then return end
-		local artifacts = wc2_artifacts.get_artifact_list()
 		-- owner defaults to the killer's side (see artifacts.place_item), so carryover returns it
-		wc2_artifacts.place_item(ec.x1, ec.y1, mathx.random(#artifacts))
+		local artifact_id = wc2_artifacts.random_artifact()
+		if artifact_id then wc2_artifacts.place_item(ec.x1, ec.y1, artifact_id) end
 		wml.variables["wc2x_legendary.slain"] = true
 		wesnoth.interface.float_label(ec.x1, ec.y1, _ "Legend slain!", "255,215,0")
 		wesnoth.wml_actions.wc2_objectives {}

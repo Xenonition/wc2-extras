@@ -33,8 +33,7 @@ function shop.build_consumable_list(side_num)
 
 	if wc2_artifacts then
 		local all_artifacts = wc2_artifacts.get_artifact_list()
-		local indices = {}
-		for i = 1, #all_artifacts do table.insert(indices, i) end
+		local indices = wc2_artifacts.fresh_artifacts_list()
 		mathx.shuffle(indices)
 		local offset = ((side_num - 1) * slots) % #indices
 		for i = 1, math.min(slots, #indices) do

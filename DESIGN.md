@@ -296,11 +296,19 @@ removed once picked up, so the downside is the decision of *who* carries it.
 | Gambler's Die | All attacks: fixed 50% to hit, +50% damage | Every strike is a coin flip |
 | Plague Banner | Adjacent enemies −15% resistances | Adjacent allies −10% resistances |
 | Hive Crown | Melee +2 strikes | Melee gains swarm (strikes shrink with HP) |
-| Thunder Maul | Melee stun | Bearer has no zone of control |
+| Thunder Maul (retired 0.17.0) | Melee stun | Bearer has no zone of control |
 | Aegis of the Stubborn | Melee absorb (×0.75 incoming) and deflect | −2 moves |
 | Jester's Bells | Diversion | −20% all resistances |
 | Parrying Dagger | Melee parry: −20% enemy chance to hit when defending | None |
 | Marshal's Baton | Adjacent allies +15% chance to hit | Bearer deals half damage |
+
+**Retired items.** An artifact can't be deleted (saves index the list), so it is retired with
+`not_available=retired` (plus `enemy,player` for WC2's own filters). `fresh_artifacts_list` drops
+retired items for every caller, and every artifact roll goes through it or
+`wc2_artifacts.random_artifact()`: shop, ruins, caravans, legendary drops, bonus points, enemy
+items and invest. `migrations.lua` strips retired ids from the pick lists WC2 persists in saves
+(`wc2.random_items`, `wc2_enemy_army.artifacts`, each side's `wc2.items_left` / `wc2.items`).
+Units already carrying one keep it. Retired: Thunder Maul and WC2's Azure pearl (0.17.0).
 
 Bloodprice's per-turn loss is the only item effect that needs Lua (`item_curses.lua`),
 since item effects can't express recurring damage. Icons are in `images/items/wc3-*.png`
