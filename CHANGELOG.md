@@ -8,6 +8,10 @@
   about the same as before.
 - Fixed: spending war chest gold in the shop lowered every player's carryover gold. War chest
   gold is now ordinary gold and counts toward carryover like the rest.
+- **Ancient Ruins** now raise a single guardian instead of 1–4 ambushers, and the reward (gold or
+  an artifact) comes when the guardian dies — no walking back to the ruins. The player who lands
+  the kill gets it.
+- **Ancient Shrines** no longer have guards.
 
 ## 0.16.0 — 2026-11-03
 

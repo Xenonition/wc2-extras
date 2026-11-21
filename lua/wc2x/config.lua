@@ -150,20 +150,13 @@ config.ai_tactic_spend_modifier = {
 	fighting_retreat = 0.8,   -- spend moderately while pulling back
 }
 
--- POI guard scaling by scenario
-config.poi_guard_scaling = {
-	shrine = {
-		{ scenario = 1, count = { 1, 1 }, types = { "Footpad", "Poacher", "Thug", "Orcish Grunt", "Troll Whelp" } },
-		{ scenario = 2, count = { 1, 2 }, types = { "Orcish Warrior", "Troll", "Ogre", "Bandit", "Mage", "Wolf Rider" } },
-		{ scenario = 3, count = { 2, 3 }, types = { "Orcish Crossbowman", "Troll Warrior", "Swordsman", "White Mage", "Rogue" } },
-		{ scenario = 5, count = { 2, 4 }, types = { "Orcish Slurbow", "Troll Hero", "Knight", "Red Mage", "Assassin" } },
-	},
-	ruins = {
-		{ scenario = 1, count = { 1, 1 }, types = { "Skeleton", "Walking Corpse", "Wolf", "Mudcrawler" } },
-		{ scenario = 2, count = { 1, 2 }, types = { "Ghoul", "Orcish Archer", "Thief", "Giant Scorpion", "Troll Whelp" } },
-		{ scenario = 3, count = { 2, 3 }, types = { "Revenant", "Chocobone", "Troll", "Orcish Warrior", "Ghost" } },
-		{ scenario = 5, count = { 2, 4 }, types = { "Bone Shooter", "Wraith", "Troll Warrior", "Orcish Crossbowman", "Ogre" } },
-	},
+-- Ancient ruins: the one guardian raised on the first visit is picked from the latest tier at or
+-- below the scenario
+config.ruin_guardian_types = {
+	{ scenario = 1, types = { "Skeleton", "Walking Corpse", "Wolf", "Mudcrawler" } },
+	{ scenario = 2, types = { "Ghoul", "Orcish Archer", "Thief", "Giant Scorpion", "Troll Whelp" } },
+	{ scenario = 3, types = { "Revenant", "Chocobone", "Troll", "Orcish Warrior", "Ghost" } },
+	{ scenario = 5, types = { "Bone Shooter", "Wraith", "Troll Warrior", "Orcish Crossbowman", "Ogre" } },
 }
 
 -- Shrine buff table (weight = relative chance)
