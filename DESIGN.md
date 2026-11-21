@@ -58,7 +58,10 @@ Enemy strength also scales by scenario:
   (`config.dawnbreakers_tiers`): under 50%, 1 unit with 1 affix; 50–74%, 2 with 1; 75%+, 3 with
   2. They enter on free edge hexes hidden from every player, nearest the rescued leader (visible
   edge hexes only when no hidden one is free), skipping hexes the unit can't enter; chat names the
-  size and the side rescued. They give leader-level kill XP (8 × level) but cost far more to beat, so
+  size and the side rescued. The AI director never assigns them to a tactic (`ai_director.lua`
+  `directable`): its tactics park units as stationed guardians, hang-out groups or forest
+  ambushers, and a Dawnbreaker picked for one sat still, so the side's normal AI always moves
+  them. They give leader-level kill XP (8 × level) but cost far more to beat, so
   stalling a won map is a real fight rather than a farm. Neutral sides and the final boss side
   are never rescued. LotI's drop chance applies to them like any enemy.
 

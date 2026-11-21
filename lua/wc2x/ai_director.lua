@@ -281,10 +281,16 @@ local function assess(side_num)
 	}
 end
 
+-- Dawnbreakers are a relief force sent to attack: never tie them to a hold-position tactic
+-- (stationed guardian, hang out, ambush), so the side's normal AI always moves them
+local function directable(u)
+	return not u.variables.wc2x_dawnbreaker
+end
+
 local function available_units(sit)
 	local out = {}
 	for _, u in ipairs(sit.units) do
-		if not sit.assigned_ids[u.id] then
+		if not sit.assigned_ids[u.id] and directable(u) then
 			table.insert(out, u)
 		end
 	end
@@ -705,7 +711,7 @@ local function find_ambush_candidates(side_num, assigned_ids, forest_hexes)
 	local natural, fast = {}, {}
 	local all = wesnoth.units.find_on_map({ side = side_num, canrecruit = false })
 	for _, u in ipairs(all) do
-		if not assigned_ids[u.id] then
+		if not assigned_ids[u.id] and directable(u) then
 			local near_forest = false
 			for _, h in ipairs(forest_hexes) do
 				if wesnoth.map.distance_between(u.x, u.y, h[1], h[2]) <= MAX_DIST_TO_HIDING then

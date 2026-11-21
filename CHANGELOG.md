@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed a Dawnbreaker that sometimes stood still: the enemy AI's hold-position tactics (guard
+  the keep, ambush from forest…) could claim it. Dawnbreakers are now always left to attack.
 - Dawnbreakers start arriving at half the map's turn limit (turn 13 of 25, for example) instead
   of turn 8, and their chat message no longer quotes your share of the villages.
 - Dawnbreakers no longer arrive on a hex with an item lying on it, where they looked like they
