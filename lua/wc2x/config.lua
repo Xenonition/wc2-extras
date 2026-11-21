@@ -62,6 +62,9 @@ config.enemy_village_safe_radius = 4
 config.shop_discount_ceiling = 90
 config.shop_discount_half_turns = 12  -- 12 turns left = half the ceiling
 config.shop_slots_per_category = 2
+-- LotI items in the shop (only when LotI is loaded): rolled from this LotI drop group by its weights
+config.loti_shop_group = "drop"
+config.loti_shop_slots = 3
 
 -- Permanent upgrade base prices
 config.upgrade_prices = {

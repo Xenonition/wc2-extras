@@ -26,6 +26,31 @@ function shop.discounted_price(base_price, discount)
 	return math.ceil(base_price * (1 - discount / 100))
 end
 
+-- LotI items the shop can offer, rolled with LotI's drop weights. Built from item numbers sorted by
+-- LotI's numbers_between (not pairs(), whose order can differ between clients), so every client
+-- makes the same mathx.random calls and gets the same picks.
+local function roll_loti_items(count)
+	if not (loti and loti.item and loti.item.type and loti.item.storage) then return {} end
+	local group = shop.config.loti_shop_group
+	local weighted = {}
+	for _i, number in ipairs(loti.item.type.numbers_between()) do
+		for _j = 1, tonumber(loti.item.type[number][group]) or 0 do
+			table.insert(weighted, number)
+		end
+	end
+	local picks = {}
+	while #picks < count and #weighted > 0 do
+		local number = weighted[mathx.random(#weighted)]
+		table.insert(picks, number)
+		local rest = {}
+		for _i, n in ipairs(weighted) do
+			if n ~= number then table.insert(rest, n) end
+		end
+		weighted = rest
+	end
+	return picks
+end
+
 function shop.build_consumable_list(side_num)
 	local consumables = {}
 	local slots = shop.config.shop_slots_per_category
@@ -47,6 +72,17 @@ function shop.build_consumable_list(side_num)
 				price = 30 + (scenario_num * 10),
 			})
 		end
+	end
+
+	for _i, number in ipairs(roll_loti_items(shop.config.loti_shop_slots)) do
+		local item = loti.item.type[number]
+		table.insert(consumables, {
+			category = "loti", id = number,
+			name = item.name, description = item.description or "",
+			icon = item.image or "items/chest.png",
+			info = tostring(_ "Goes to the shared item storage; equip it from a unit's LotI items menu."),
+			price = 30 + (scenario_num * 10),
+		})
 	end
 
 	if wc2_training then
@@ -252,6 +288,8 @@ function shop.show_for_side(side_num)
 
 		if category == "artifact" then
 			wc2x.placement.queue_artifact(side_num, id)
+		elseif category == "loti" then
+			if loti and loti.item and loti.item.storage then loti.item.storage.add(id) end
 		elseif category == "training" then
 			if wc2_training and wc2_training.available(side_num, id) then
 				wc2_training.inc_level(side_num, id, 1)

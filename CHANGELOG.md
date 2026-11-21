@@ -15,6 +15,8 @@
 - **Thunder Maul** and WC2's **Azure pearl** no longer turn up anywhere (shop, ruins, caravans,
   legends, bonus points, enemies, invest); replacements are coming. Units already carrying one
   keep it. Ruins, caravans and legendary leaders now roll only from items that can still drop.
+- With LotI loaded, the shop also offers three LotI items (from LotI's normal drop pool) at
+  the artifact price. Bought items go to the shared item storage, ready to equip.
 
 ## 0.16.0 — 2026-11-03
 
