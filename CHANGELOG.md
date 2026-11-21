@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- With LotI loaded, the shop also offers three LotI items (from LotI's normal drop pool) at
+  the artifact price. Bought items go to the shared item storage, ready to equip.
+
 ## 0.16.0 — 2026-11-03
 
 - **War chest:** winning a map pays each player 60% of their income for every turn left, before

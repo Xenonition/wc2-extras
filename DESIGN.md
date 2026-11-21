@@ -196,6 +196,14 @@ the player whose leader is nearest. LotI items are not affected.
 are placed next to the leader at the start of the next map — on a free castle hex if there
 is one, otherwise the nearest free hex outside the castle.
 
+**LotI items** (only when LotI is loaded): `config.loti_shop_slots` (3) items from LotI's
+`config.loti_shop_group` drop group (`drop`, LotI's normal kill drops), weighted as LotI weights
+them, no duplicates, at the artifact price. A purchase goes into LotI's shared item storage
+(`loti.item.storage.add`), from which any unit can equip it. LotI's own roller
+(`on_the_ground.generate`) builds its list in `pairs()` order, which can differ between clients,
+so the shop builds the weighted list from `loti.item.type.numbers_between()` (sorted) and rolls it
+with `mathx.random`.
+
 **Permanent upgrades** (always available; price ×1.6 per purchase):
 
 | Upgrade | Base price | Effect |

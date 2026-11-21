@@ -32,6 +32,9 @@ globals = {
 	-- WC3 global (set by campaign_main.lua)
 	"wc2x",
 
+	-- LotI's global; nil unless the LotI modification is loaded, so always check before use
+	"loti",
+
 	-- Common aliases
 	"T",
 	"on_event",

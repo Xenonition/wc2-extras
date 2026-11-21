@@ -13,7 +13,8 @@ and buffs, and a final boss. 1–4 players, five random maps.
   that grant a unit a permanent random buff, mercenary camps with off-faction units, and
   merchant caravans to escort.
 - **After each victory:** Build a Hero — roll a random hero with 2–3 random buffs and
-  reroll it for gold — then a shop with artifacts, training, heroes and permanent upgrades
+  reroll it for gold — then a shop with artifacts, LotI items (when LotI is loaded), training, heroes and
+  permanent upgrades
   (extra castle hexes, supply villages, income, barracks, training grounds…).
 - **Finish fast, pay less.** Every turn left on the clock cuts shop and gacha prices, a
   little for a narrow win (13% off with 5 turns left) and a lot for a fast one (54% with 15,
