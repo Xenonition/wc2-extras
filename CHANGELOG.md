@@ -17,6 +17,10 @@
   keep it. Ruins, caravans and legendary leaders now roll only from items that can still drop.
 - With LotI loaded, the shop also offers three LotI items (from LotI's normal drop pool) at
   the artifact price. Bought items go to the shared item storage, ready to equip.
+- New item **Mender's Ankh**: at the start of your turn it heals one random wounded unit next
+  to the bearer for 16 HP (after normal healing, stacking with healers).
+- New item **Deadeye Quiver**: ranged attacks get +1 strike and +25% damage, but the bearer
+  loses its melee attacks.
 
 ## 0.16.0 — 2026-11-03
 

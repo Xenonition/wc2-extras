@@ -294,7 +294,7 @@ as a rare jackpot combo.
 
 ### WC3 items
 
-Nine items are appended after the WC2 artifact list in `resources/data/artifacts.cfg`
+Eleven items are appended after the WC2 artifact list in `resources/data/artifacts.cfg`
 (saves reference artifacts by index, so new items always go at the end). Items can't be
 removed once picked up, so the downside is the decision of *who* carries it.
 
@@ -309,6 +309,8 @@ removed once picked up, so the downside is the decision of *who* carries it.
 | Jester's Bells | Diversion | −20% all resistances |
 | Parrying Dagger | Melee parry: −20% enemy chance to hit when defending | None |
 | Marshal's Baton | Adjacent allies +15% chance to hit | Bearer deals half damage |
+| Mender's Ankh | Start of turn: heals one wounded adjacent ally 16 HP (twice heals +8, stacks with healers) | The target is random |
+| Deadeye Quiver | Ranged +1 strike, +25% damage | Bearer loses its melee attacks (no melee retaliation) |
 
 **Retired items.** An artifact can't be deleted (saves index the list), so it is retired with
 `not_available=retired` (plus `enemy,player` for WC2's own filters). `fresh_artifacts_list` drops
@@ -318,8 +320,12 @@ items and invest. `migrations.lua` strips retired ids from the pick lists WC2 pe
 (`wc2.random_items`, `wc2_enemy_army.artifacts`, each side's `wc2.items_left` / `wc2.items`).
 Units already carrying one keep it. Retired: Thunder Maul and WC2's Azure pearl (0.17.0).
 
-Bloodprice's per-turn loss is the only item effect that needs Lua (`item_curses.lua`),
-since item effects can't express recurring damage. Icons are in `images/items/wc3-*.png`
+Bloodprice's per-turn loss and the Mender's Ankh heal are the item effects that need Lua
+(`item_curses.lua`), since item effects can't express recurring damage or a single random
+target. The ankh is a `[dummy]` ability (`wc2x_lone_mender`) that the Lua finds by id; it runs
+on "turn refresh", which fires after start-of-turn healing (`play_controller::do_init_side`), so
+it only picks allies still wounded after normal healing. Ankh and Quiver icons are spritegen
+`wesnoth-item` art (FLUX.2 Klein, seeds 1248660969 and 2009925922). Icons are in `images/items/wc3-*.png`
 (72×72); source art lives outside the repo.
 
 ### Final boss (scenario 5)
