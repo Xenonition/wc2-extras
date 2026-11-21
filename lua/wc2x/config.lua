@@ -114,9 +114,10 @@ config.enemy_leader_level = {
 
 -- Enemy recruit expansion (add higher-level units to recruit list in later scenarios)
 config.enemy_recruit_tiers = {
-	{ level = 2, start_scenario = 2, count = 3 },
-	{ level = 3, start_scenario = 4, count = 2 },
-	{ level = 4, start_scenario = 6, count = 1 },
+	-- counts[map] = how many types of that level get added on that map (none if missing)
+	{ level = 2, counts = { [2] = 4, [3] = 5, [4] = 6, [5] = 6 } },
+	{ level = 3, counts = { [3] = 1, [4] = 3, [5] = 4 } },
+	{ level = 4, counts = { [5] = 1 } },
 }
 
 -- Assassin spawns (enemy units that target player leaders)

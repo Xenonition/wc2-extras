@@ -81,7 +81,8 @@ function enemy_scaling.expand_recruits(side_num)
 	local to_add = {}
 
 	for _, tier in ipairs(config.enemy_recruit_tiers or {}) do
-		if scenario >= tier.start_scenario then
+		local count = tier.counts[scenario] or 0
+		if count > 0 then
 			local pool = {}
 			if recall then
 				local explicit = stringx.split(recall["level" .. tier.level] or "")
@@ -97,7 +98,7 @@ function enemy_scaling.expand_recruits(side_num)
 			for t in pairs(pool) do table.insert(sorted, t) end
 			table.sort(sorted)
 			mathx.shuffle(sorted)
-			for i = 1, math.min(tier.count, #sorted) do
+			for i = 1, math.min(count, #sorted) do
 				table.insert(to_add, sorted[i])
 			end
 		end

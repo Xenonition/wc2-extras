@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Enemies can recruit more kinds of higher-level units: up to 6 level-2 and 4 level-3 types
+  on later maps (was 3 and 2), and a level-4 type on map 5 where the faction has one.
 - Dawnbreakers arrive from 60% of the turn limit on maps 2–5 (turn 18 of 30, for example);
   map 1 keeps 70%.
 

@@ -39,7 +39,12 @@ already contests villages and recruits from income, so territory matters without
 Enemy strength also scales by scenario:
 - **Leaders** spawn at level 2 (S1), 3 (S2–3), 4 (S4) and 5 (S5), walking up their
   advancement tree.
-- **Recruit lists** gain level-2 units from S2 and level-3 units from S4.
+- **Recruit lists** gain random higher-level types from the faction's `recall` lists
+  (`enemy_scaling.expand_recruits`, `config.enemy_recruit_tiers`): level 2 — 4 types on S2, 5 on
+  S3, 6 on S4–S5; level 3 — 1 on S3, 3 on S4, 4 on S5; level 4 — 1 on S5. Factions have no
+  level-4 list, so that tier follows the upgrade paths of the base recruits and adds nothing when
+  none reaches level 4. (Until 0.18.1: 3 level-2 types from S2, 2 level-3 from S4, and a level-4
+  tier set to start on a nonexistent S6.)
 - **Assassins:** from S2, each enemy recruit has a 12% chance to become an assassin that
   hunts the nearest player leader (Micro AI `assassin`).
 - **Personality:** each AI side rolls aggression, caution, village focus, leader
