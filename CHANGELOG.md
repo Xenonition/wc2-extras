@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- New faction **The Outriders**, built for speed: Cavalryman / Wolf Rider, Dune Rider /
+  Elvish Scout, Horseman / Gryphon Rider, Drake Glider / Saurian Skirmisher, Ghost / Skeleton
+  Rider, Falcon / Vampire Bat, Elvish Shaman / Saurian Augur and Mage / Dark Adept. Leaders:
+  Dragoon, Elvish Rider, Goblin Knight, Gryphon Master or Dune Sunderer. Its heavy line units
+  (Heavy Infantryman, Troll Whelp, dwarves…) come only as heroes, deserters and commanders.
+
 ## 0.17.0 — 2026-11-21
 
 - **War chest** now pays on the income you would have if you took every village you don't hold
