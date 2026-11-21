@@ -340,7 +340,8 @@ function wesnoth.wml_actions.wc2_enemy(cfg)
 		side = side_num,
 		canrecruit = true,
 		generate_name = true,
-		max_moves = 0,
+		-- WC2X: WC2 set max_moves = 0 here. LotI's stat rebuild restored the type's moves, but only
+		-- in networked MP (see DESIGN.md, LotI compatibility), so leaders in local games stayed put
 		wml.tag.modifications { wml.tag.trait(wc2_heroes.trait_heroic) },
 	}
 	if unit.name == "" then

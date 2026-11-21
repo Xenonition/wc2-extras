@@ -27,6 +27,10 @@
   (+25% HP, +25% damage, +2 moves, no upkeep) and a legendary affix, but drop no artifact. The more
   villages you hold, the bigger the force: 1 below 50%, 2 below 75%, 3 (with two affixes)
   above. Enemy recruits no longer get stronger as turns pass.
+- Fixed enemy leaders that couldn't move (0 max moves). WC2 creates them immobile; LotI's
+  stat rebuild happened to restore their moves, but only in networked multiplayer, so in
+  single-player or hotseat games they stayed on their keep. Enemy leaders now always have their
+  normal moves.
 
 ## 0.16.0 — 2026-11-03
 
