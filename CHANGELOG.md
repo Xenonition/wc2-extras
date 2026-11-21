@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **War chest** now pays on the income you would have if you took every village you don't hold
+  yet (your income plus an even share of the rest), at 40% instead of 60% per turn left. Grabbing
+  the last villages before finishing no longer pays; a team holding two thirds of the map gets
+  about the same as before.
+- Fixed: spending war chest gold in the shop lowered every player's carryover gold. War chest
+  gold is now ordinary gold and counts toward carryover like the rest.
+
 ## 0.16.0 — 2026-11-03
 
 - **War chest:** winning a map pays each player 60% of their income for every turn left, before

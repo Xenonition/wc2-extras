@@ -19,9 +19,10 @@ config.harden_start_turn = 6
 config.harden_divisor = 2
 config.harden_cap_pct = 100
 config.harden_announce_pct = 10
--- War chest: at victory (maps 1-4) each player gets this % of their income (base + villages,
--- before upkeep) for every turn left, before the gacha and shop, so finishing beats stalling
-config.war_chest_income_pct = 60
+-- War chest: at victory (maps 1-4) each player gets this % of their theoretical income for every
+-- turn left, before the gacha and shop, so finishing beats stalling. Theoretical income = own income
+-- (base + villages, before upkeep) + an even share of the villages the players don't hold.
+config.war_chest_income_pct = 40
 
 -- XP bottle: finishing a map early leaves one next to each player's leader on the next map
 -- XP = M * t // (t + k), t = turns left at victory: rises about M/k per turn, then flattens
