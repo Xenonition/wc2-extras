@@ -58,10 +58,11 @@ function dawnbreakers.trait()
 	return {
 		id = "wc2x_dawnbreaker", male_name = _ "dawnbreaker", female_name = _ "female^dawnbreaker",
 		description = string.format(tostring(
-			_ "One of the Dawnbreakers, sent to rescue a losing side: +%s hitpoints, +%s damage on all attacks, no upkeep."),
-			config.dawnbreakers_hp_bonus, config.dawnbreakers_damage_bonus),
+			_ "One of the Dawnbreakers, sent to rescue a losing side: +%s hitpoints, +%s damage on all attacks, +%d moves, no upkeep."),
+			config.dawnbreakers_hp_bonus, config.dawnbreakers_damage_bonus, config.legendary_moves),
 		wml.tag.effect { apply_to = "hitpoints", increase_total = config.dawnbreakers_hp_bonus },
 		wml.tag.effect { apply_to = "attack", increase_damage = config.dawnbreakers_damage_bonus },
+		wml.tag.effect { apply_to = "movement", increase = config.legendary_moves },
 		wml.tag.effect { apply_to = "loyal" },
 	}
 end

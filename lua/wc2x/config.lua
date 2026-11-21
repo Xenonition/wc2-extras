@@ -14,7 +14,7 @@ config.enemy_income_growth_pct = 20
 -- Dawnbreakers (dawnbreakers.lua): from dawnbreakers_start_turn, every dawnbreakers_interval
 -- turns, enemy units march in from the map edge to rescue the enemy side with the fewest
 -- villages. They are near-legendaries: leader-level units from that faction's leader list, with
--- the dawnbreaker trait (+HP, +damage, no upkeep) and legendary affixes, but no artifact drop.
+-- the dawnbreaker trait (+HP, +damage, legendary_moves, no upkeep) and legendary affixes, but no artifact drop.
 -- The tier is the first whose max_pct is above the % of villages the players hold.
 config.dawnbreakers_start_turn = 8
 config.dawnbreakers_interval = 3

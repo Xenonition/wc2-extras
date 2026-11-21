@@ -51,8 +51,8 @@ Enemy strength also scales by scenario:
   that faction's WC2 leader list and resolved like its leader (`wc2_enemy.resolve_leader_type`);
   the list is read, not consumed, and if the faction is unknown the shared unit pool at that
   level is used (`unit_pool.synced_sample`). They get the "dawnbreaker" trait (+25% HP, +25%
-  damage, loyal: no upkeep) and legendary affixes (`legendary.roll_affixes`), but no +2 moves and
-  no artifact drop. The wave grows with the % of villages players hold
+  damage, +2 moves as `config.legendary_moves`, loyal: no upkeep) and legendary affixes
+  (`legendary.roll_affixes`), but no artifact drop. The wave grows with the % of villages players hold
   (`config.dawnbreakers_tiers`): under 50%, 1 unit with 1 affix; 50–74%, 2 with 1; 75%+, 3 with
   2. They enter on free edge hexes hidden from every player, nearest the rescued leader (visible
   edge hexes only when no hidden one is free), skipping hexes the unit can't enter; chat names the
