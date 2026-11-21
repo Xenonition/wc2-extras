@@ -45,10 +45,38 @@ local function convert_scout_network()
 	if converted then wesnoth.wml_actions.wc2_set_recall_cost {} end
 end
 
+-- 0.17.0 retired Thunder Maul and Azure pearl (not_available=retired). Saves made earlier may
+-- still hold them in the remaining-pick lists that WC2 persists; strip them so they can't roll.
+-- Units already carrying one keep it.
+local function strip_retired_artifacts()
+	if not wc2_artifacts then return end
+	local function strip(get, set)
+		local value = get()
+		if value == nil or value == "" then return end
+		local kept = {}
+		for _i, id in ipairs(stringx.split(tostring(value))) do
+			if not wc2_artifacts.is_retired(tonumber(id)) then table.insert(kept, id) end
+		end
+		local new_value = table.concat(kept, ",")
+		if new_value ~= tostring(value) then set(new_value) end
+	end
+	local function global(name)
+		strip(function() return wml.variables[name] end, function(v) wml.variables[name] = v end)
+	end
+	global("wc2.random_items")             -- bonus points
+	global("wc2_enemy_army.artifacts")     -- enemy items
+	for _i, side in ipairs(wesnoth.sides) do
+		for _j, name in ipairs({ "wc2.items_left", "wc2.items" }) do  -- invest
+			strip(function() return side.variables[name] end, function(v) side.variables[name] = v end)
+		end
+	end
+end
+
 function migrations.init()
 	wesnoth.game_events.add_repeating("preload", function()
 		repair_backstab()
 		convert_scout_network()
+		strip_retired_artifacts()
 	end)
 end
 

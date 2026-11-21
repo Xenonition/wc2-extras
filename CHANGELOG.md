@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Thunder Maul** and WC2's **Azure pearl** no longer turn up anywhere (shop, ruins, caravans,
+  legends, bonus points, enemies, invest); replacements are coming. Units already carrying one
+  keep it. Ruins, caravans and legendary leaders now roll only from items that can still drop.
+
 ## 0.16.0 — 2026-11-03
 
 - **War chest:** winning a map pays each player 60% of their income for every turn left, before

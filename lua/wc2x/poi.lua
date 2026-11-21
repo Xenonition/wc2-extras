@@ -400,9 +400,8 @@ function poi.activate(unit, poi_type)
 		local gold_scale = type(per_sc) == "table" and mathx.random(per_sc[1], per_sc[2]) or per_sc
 		local gold = gold_base + (scenario_num * gold_scale)
 		if mathx.random(2) == 1 and wc2_artifacts then
-			local artifact_list = wc2_artifacts.get_artifact_list()
-			if #artifact_list > 0 then
-				local artifact_id = mathx.random(#artifact_list)
+			local artifact_id = wc2_artifacts.random_artifact()
+			if artifact_id then
 				local drop_hex = nil
 				for _, hex in ipairs(adjacent_hexes(unit)) do
 					if not wesnoth.units.get(hex.x, hex.y) then
@@ -637,9 +636,8 @@ on_event("moveto", function()
 			image = "units/human-peasants/ruffian.png",
 		}
 	elseif roll <= weights.gold + weights.artifact and wc2_artifacts then
-		local artifact_list = wc2_artifacts.get_artifact_list()
-		if #artifact_list > 0 then
-			local artifact_id = mathx.random(#artifact_list)
+		local artifact_id = wc2_artifacts.random_artifact()
+		if artifact_id then
 			wesnoth.wml_actions.message {
 				speaker = "narrator", caption = _ "Caravan Arrived!",
 				message = _ "The caravan reached safety! The merchants reward you with a rare artifact.",
