@@ -23,9 +23,8 @@ and buffs, and a final boss. 1–4 players, five random maps.
   income you'd have with the whole map taken, and enemy Dawnbreakers (near-legendary leader-level
   units) march in from the map edge as the map drags on, bigger the more of the map you hold, so
   stalling to farm doesn't pay.
-- **Legendary leaders:** from map two, one enemy leader per map is a legend with
-  extra HP and damage, plus affixes like Ironclad, Colossal or Forcebound. Unlike other
-  leaders it leaves its keep to fight. Kill it for an artifact.
+- **Legendary leaders:** from map two, every enemy leader is a legend with extra HP,
+  damage and moves, plus affixes like Ironclad, Colossal or Forcebound.
 - **New buffs** you can only get in WC3: supercharge, bulwark, sunder, duelist, pack
   hunter, flurry and anchor.
 - **70 shrine buffs**, from stats to rare abilities you rarely see otherwise:

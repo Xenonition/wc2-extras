@@ -1,7 +1,7 @@
--- Legendary leaders: from config.legendary_from_scenario, one random enemy leader per map gets
--- the legendary trait (HP, damage, laurel overlay) and affixes from config.legendary_affixes (built from shrine
--- buffs), each its own trait. Killing it drops a WC2 artifact. State: unit variable wc2x_legendary, and the WML
--- variable wc2x_legendary (name, desc, slain) for the objectives note.
+-- Legendary leaders: from config.legendary_from_scenario, every enemy leader gets the legendary
+-- trait (HP, damage, moves, laurel overlay) and affixes from config.legendary_affixes (built from
+-- shrine buffs), each its own trait. No drop. State: unit variable wc2x_legendary, and the WML array
+-- wc2x_legends (id, name, desc, slain) for the objectives note.
 
 local _ = wesnoth.textdomain 'wesnoth-wc'
 local on_event = wesnoth.game_events.add_repeating
@@ -103,65 +103,71 @@ function legendary.make(u, count)
 	end
 	u.hitpoints = u.max_hitpoints
 	u.variables.wc2x_legendary = true
-
-	-- a legend fights: raise the side's rolled leader aggression (enemy_scaling) to at least the
-	-- legendary floor. Stored in the side variable too, which ai_director restores after castle_defense
-	local side = wesnoth.sides[u.side]
-	local la = math.max(tonumber(side.variables["wc2x_ai_leader_aggression"] or "0"),
-		wc2x.config.legendary_leader_aggression)
-	side.variables["wc2x_ai_leader_aggression"] = string.format("%.1f", la)
-	wesnoth.wml_actions.modify_side { side = u.side, wml.tag.ai { leader_aggression = la } }
-	wml.variables.wc2x_legendary = {
-		name = u.name,
-		desc = table.concat(descs, "; "),
-	}
+	-- the side keeps its own rolled leader aggression (enemy_scaling); until 0.18.1 a legend was
+	-- forced to at least 1.0 and kept walking out of its keep to die
+	return { id = u.id, name = u.name, desc = table.concat(descs, "; ") }
 end
 
-local function pick_leader()
+-- every enemy leader on the map (not the neutral, Dawnbreaker or boss sides, which have none at
+-- start), in side order
+local function make_all()
 	local scenario_num = wc2_scenario.scenario_num()
 	local config = wc2x.config
 	if scenario_num < config.legendary_from_scenario then return end
 	local count = config.legendary_affix_count[scenario_num] or 0
-	local candidates = {}
-	for i, u in ipairs(wesnoth.units.find_on_map { canrecruit = true }) do
-		local side = wesnoth.sides[u.side]
-		if not wc2_scenario.is_human_side(u.side) and not side.variables["wc2x_is_neutral"] then
-			table.insert(candidates, u)
+	local leaders = wesnoth.units.find_on_map { canrecruit = true }
+	table.sort(leaders, function(a, b) return a.side < b.side end)
+	local legends, lines = {}, {}
+	for _i, u in ipairs(leaders) do
+		local vars = wesnoth.sides[u.side].variables
+		if not wc2_scenario.is_human_side(u.side) and not vars["wc2x_is_neutral"]
+			and not vars["wc2x_is_dawnbreaker"] then
+			local legend = legendary.make(u, count)
+			table.insert(legends, legend)
+			table.insert(lines, string.format("%s: %s", tostring(legend.name), legend.desc))
 		end
 	end
-	if #candidates == 0 then return end
-	local u = candidates[mathx.random(#candidates)]
-	legendary.make(u, count)
+	if #legends == 0 then return end
+	wml.array_access.set("wc2x_legends", legends)
 	wesnoth.wml_actions.message {
 		speaker = "narrator",
-		caption = _ "A Legend Rises",
-		image = wesnoth.unit_types[u.type].image,
-		message = string.format(tostring(
-			_ "%s leads the enemy here: %s. Slay them and an artifact is yours."),
-			tostring(u.name), wml.variables["wc2x_legendary.desc"]),
+		caption = _ "Legends Rise",
+		image = "misc/laurel.png",
+		message = tostring(_ "Every enemy leader here is a legend:") .. "\n" .. table.concat(lines, "\n"),
 	}
 end
 
--- objectives note, or nil when this map has no legendary leader
+-- objectives note, or nil when this map has no legendary leaders
 function legendary.status_text()
-	local legend = wml.variables.wc2x_legendary
-	if not legend then return nil end
-	if legend.slain then
-		return string.format(tostring(_ "Legendary leader %s: slain."), tostring(legend.name))
+	local lines = {}
+	for _i, legend in ipairs(wml.array_access.get("wc2x_legends")) do
+		if legend.slain then
+			table.insert(lines, string.format(tostring(_ "Legendary leader %s: slain."), tostring(legend.name)))
+		else
+			table.insert(lines, string.format(tostring(_ "Legendary leader %s (%s)."),
+				tostring(legend.name), legend.desc))
+		end
 	end
-	return string.format(tostring(_ "Legendary leader %s (%s). Drops an artifact when slain."),
-		tostring(legend.name), legend.desc)
+	-- a map started before 0.18.1 has one legend, stored as a single record
+	local old = wml.variables.wc2x_legendary
+	if old and old.name then
+		table.insert(lines, old.slain and string.format(tostring(_ "Legendary leader %s: slain."), tostring(old.name))
+			or string.format(tostring(_ "Legendary leader %s (%s)."), tostring(old.name), old.desc))
+	end
+	if #lines == 0 then return nil end
+	return table.concat(lines, "\n")
 end
 
 function legendary.init()
 	-- the variable outlives the map; clear it before this map's leaders are made
 	on_event("prestart", function()
 		wml.variables.wc2x_legendary = nil
+		wml.variables.wc2x_legends = nil
 	end)
 
 	-- after prestart, where [wc2_enemy] creates the leaders
 	on_event("start", function()
-		pick_leader()
+		make_all()
 		wesnoth.wml_actions.wc2_objectives {}
 	end)
 
@@ -169,10 +175,10 @@ function legendary.init()
 		local ec = wesnoth.current.event_context
 		local u = wesnoth.units.get(ec.x1, ec.y1)
 		if not (u and u.variables.wc2x_legendary) then return end
-		-- owner defaults to the killer's side (see artifacts.place_item), so carryover returns it
-		local artifact_id = wc2_artifacts.random_artifact()
-		if artifact_id then wc2_artifacts.place_item(ec.x1, ec.y1, artifact_id) end
-		wml.variables["wc2x_legendary.slain"] = true
+		for i, legend in ipairs(wml.array_access.get("wc2x_legends")) do
+			if legend.id == u.id then wml.variables[("wc2x_legends[%d].slain"):format(i - 1)] = true end
+		end
+		if wml.variables.wc2x_legendary then wml.variables["wc2x_legendary.slain"] = true end
 		wesnoth.interface.float_label(ec.x1, ec.y1, _ "Legend slain!", "255,215,0")
 		wesnoth.wml_actions.wc2_objectives {}
 	end)

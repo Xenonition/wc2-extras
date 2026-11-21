@@ -84,23 +84,28 @@ Enemy strength also scales by scenario:
   every enemy recruit tougher whether the players were winning or not. That replaced the rout
   (cutting a beaten side's income at ≤1 village), which players dodged by holding the enemy just
   above the line. Dawnbreakers scale with how far ahead the players are instead.
-- **Legendary leader** (`lua/wc2x/legendary.lua`): from S2, one random enemy leader per
-  map loses WC2's heroic trait and gets the "legendary" trait instead (+25% HP, +25% damage
-  on all attacks, +2 moves, laurel overlay) and affixes (1 in S2–3, 2 in S4–5), and
-  killing it drops a random WC2 artifact (owned by the killer's side, so item carryover
-  returns it if left on the ground). Picked on "start", after prestart's `[wc2_enemy]`
-  made the leaders; a narrator line and an objectives note name it and its affixes. It gets
+- **Legendary leaders** (`lua/wc2x/legendary.lua`): from S2, every enemy leader (not the
+  neutral, Dawnbreaker or boss sides) loses WC2's heroic trait and gets the "legendary" trait
+  instead (+25% HP, +25% damage on all attacks, +2 moves, laurel overlay) and affixes (1 in
+  S2–3, 2 in S4–5). No drop. Made on "start", after prestart's `[wc2_enemy]` made the leaders;
+  one narrator message lists them all, and the objectives note has a line per legend (WML
+  array `wc2x_legends`: id, name, desc, slain). A map saved before 0.18.1 keeps its single
+  legend in the old `wc2x_legendary` record, which the note still reads. It gets
   no title of its own: LotI already gives every AI leader one when it is placed
   (`check_unit_title`), and stacking ours on top read as two titles.
 
-  The legend is meant to step out and fight: its side's AI `leader_aggression` (rolled per
-  side from -5 to 1) is raised to at least `config.legendary_leader_aggression` (1.0), and
-  the +2 moves are a trait effect on top of the unit type's moves, because LotI's
+  Legends keep their side's rolled AI `leader_aggression` (-5 to 1, `enemy_scaling`). The
+  +2 moves are a trait effect on top of the unit type's moves, because LotI's
   `update_stats` recreates units from their type and modifications and drops directly set
   stats. Enemy leaders have their type's moves: WC2 created them with `max_moves = 0`, which
   LotI's rebuild undid only in networked MP (see the `controller=` row under LotI
   compatibility), so leaders in single-player, hotseat or LotI-less games never moved. WC3
   dropped the `max_moves = 0` in 0.17.0 so leaders move the same everywhere.
+
+  History: until 0.18.1 one random leader per map was legendary, dropped a WC2 artifact when
+  killed, and had its leader aggression raised to at least 1.0 so it would come out and fight.
+  That got legends assassinated far from their keep; every leader is now a legend, and none
+  drops anything or is pushed out.
 
   Affixes (`config.legendary_affixes`) are data only: each is a list of shrine buff names
   or inline effects, and parts the leader already has or can't use are skipped
@@ -354,7 +359,7 @@ removed once picked up, so the downside is the decision of *who* carries it.
 **Retired items.** An artifact can't be deleted (saves index the list), so it is retired with
 `not_available=retired` (plus `enemy,player` for WC2's own filters). `fresh_artifacts_list` drops
 retired items for every caller, and every artifact roll goes through it or
-`wc2_artifacts.random_artifact()`: shop, ruins, caravans, legendary drops, bonus points, enemy
+`wc2_artifacts.random_artifact()`: shop, ruins, caravans, bonus points, enemy
 items and invest. `migrations.lua` strips retired ids from the pick lists WC2 persists in saves
 (`wc2.random_items`, `wc2_enemy_army.artifacts`, each side's `wc2.items_left` / `wc2.items`).
 Units already carrying one keep it. Retired: Thunder Maul and WC2's Azure pearl (0.17.0).
