@@ -89,7 +89,7 @@ function legendary.trait()
 	}
 end
 
--- relief forces (relief.lua) roll from the same affix table
+-- Keepers (keepers.lua) roll from the same affix table
 legendary.roll_affixes = roll_affixes
 
 function legendary.make(u, count)

@@ -11,16 +11,16 @@ config.enemy_min_gold_per_turn = 10
 -- then +growth_pct per map after the first, so it keeps pace with players' between-map gains
 config.enemy_income_per_player = 10
 config.enemy_income_growth_pct = 20
--- Relief forces (relief.lua): from relief_start_turn, every relief_interval turns, enemy units
+-- Keepers (keepers.lua): from keepers_start_turn, every keepers_interval turns, enemy units
 -- march in from the map edge to rescue the enemy side with the fewest villages. Each is one of
--- that side's recruits with the relief trait (+HP, +damage, no upkeep) and legendary affixes; at
+-- that side's recruits with the keeper trait (+HP, +damage, no upkeep) and legendary affixes; at
 -- their normal level they give ordinary kill XP. The tier is the first whose max_pct is above
 -- the % of villages the players hold: count = base + per_scenario × map number.
-config.relief_start_turn = 8
-config.relief_interval = 3
-config.relief_hp_bonus = "25%"
-config.relief_damage_bonus = "15%"
-config.relief_tiers = {
+config.keepers_start_turn = 8
+config.keepers_interval = 3
+config.keepers_hp_bonus = "25%"
+config.keepers_damage_bonus = "15%"
+config.keepers_tiers = {
 	{ max_pct = 50,  base = 1, per_scenario = 0, affixes = 1 },
 	{ max_pct = 75,  base = 2, per_scenario = 1, affixes = 1 },
 	{ max_pct = 101, base = 3, per_scenario = 1, affixes = 2 },

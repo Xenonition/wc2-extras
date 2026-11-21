@@ -1,6 +1,6 @@
--- Relief forces: from config.relief_start_turn, every config.relief_interval turns a few enemy
+-- Keepers: from config.keepers_start_turn, every config.keepers_interval turns a few enemy
 -- units march in from the map edge to rescue the enemy side that is losing worst (fewest
--- villages). They are that side's ordinary recruits made tougher by the "relief" trait and one
+-- villages). They are that side's ordinary recruits made tougher by the "keeper" trait and one
 -- or two legendary affixes, at their normal level, so they give ordinary kill XP for a much
 -- harder fight: stalling a won map gets more dangerous without becoming an XP farm. The wave
 -- grows with how much of the map the players hold. Replaced hardened reinforcements (0.17.0).
@@ -8,7 +8,7 @@
 local _ = wesnoth.textdomain 'wesnoth-wc'
 local on_event = wesnoth.game_events.add_repeating
 
-local relief = {}
+local keepers = {}
 
 local function is_enemy_side(side_num)
 	if wc2_scenario.is_human_side(side_num) then return false end
@@ -25,7 +25,7 @@ local function human_sides()
 end
 
 -- % of the map's villages held by players (whole number, so every client agrees)
-function relief.player_village_pct()
+function keepers.player_village_pct()
 	local total = #wesnoth.map.find { gives_income = true }
 	if total == 0 then return 0 end
 	local held = 0
@@ -47,21 +47,21 @@ end
 
 -- the first tier whose max_pct is above the players' village share
 local function pick_tier(pct)
-	for _i, tier in ipairs(wc2x.config.relief_tiers) do
+	for _i, tier in ipairs(wc2x.config.keepers_tiers) do
 		if pct < tier.max_pct then return tier end
 	end
-	return wc2x.config.relief_tiers[#wc2x.config.relief_tiers]
+	return wc2x.config.keepers_tiers[#wc2x.config.keepers_tiers]
 end
 
-function relief.trait()
+function keepers.trait()
 	local config = wc2x.config
 	return {
-		id = "wc2x_relief", male_name = _ "relief", female_name = _ "female^relief",
+		id = "wc2x_keeper", male_name = _ "keeper", female_name = _ "female^keeper",
 		description = string.format(tostring(
-			_ "Part of a relief force sent to rescue a losing side: +%s hitpoints, +%s damage on all attacks, no upkeep."),
-			config.relief_hp_bonus, config.relief_damage_bonus),
-		wml.tag.effect { apply_to = "hitpoints", increase_total = config.relief_hp_bonus },
-		wml.tag.effect { apply_to = "attack", increase_damage = config.relief_damage_bonus },
+			_ "One of the Keepers, sent to rescue a losing side: +%s hitpoints, +%s damage on all attacks, no upkeep."),
+			config.keepers_hp_bonus, config.keepers_damage_bonus),
+		wml.tag.effect { apply_to = "hitpoints", increase_total = config.keepers_hp_bonus },
+		wml.tag.effect { apply_to = "attack", increase_damage = config.keepers_damage_bonus },
 		wml.tag.effect { apply_to = "loyal" },
 	}
 end
@@ -103,7 +103,7 @@ local function spawn_wave()
 	local side = pick_rescued_side()
 	if not side then return end
 	local leader = wesnoth.units.find_on_map({ side = side.side, canrecruit = true })[1]
-	local pct = relief.player_village_pct()
+	local pct = keepers.player_village_pct()
 	local tier = pick_tier(pct)
 	local count = tier.base + wc2_scenario.scenario_num() * tier.per_scenario
 
@@ -118,10 +118,10 @@ local function spawn_wave()
 		local u = wesnoth.units.create {
 			type = types[mathx.random(#types)], side = side.side, generate_name = true,
 		}
-		u:add_modification("trait", relief.trait())
+		u:add_modification("trait", keepers.trait())
 		wc2x.legendary.roll_affixes(u, tier.affixes)
 		u.hitpoints = u.max_hitpoints
-		u.variables.wc2x_relief = true
+		u.variables.wc2x_keeper = true
 		local spot
 		for _i, hex in ipairs(hexes) do
 			local key = hex.x .. "," .. hex.y
@@ -133,24 +133,32 @@ local function spawn_wave()
 		end
 		if spot then
 			u:to_map(spot.x, spot.y)
-			wesnoth.interface.float_label(spot.x, spot.y, _ "Relief!", "255,140,0")
+			wesnoth.interface.float_label(spot.x, spot.y, _ "Keepers!", "255,140,0")
 			spawned = spawned + 1
 		end
 	end
 	if spawned > 0 then
-		wesnoth.interface.add_chat_message("WC3", string.format(tostring(
-			_ "A relief force of %d marches in from the map edge to rescue side %d (players hold %d%% of the villages)."),
-			spawned, side.side, pct))
+		local msg
+		if spawned == 1 then
+			msg = string.format(tostring(
+				_ "A Keeper marches in from the map edge to rescue side %d (players hold %d%% of the villages)."),
+				side.side, pct)
+		else
+			msg = string.format(tostring(
+				_ "%d Keepers march in from the map edge to rescue side %d (players hold %d%% of the villages)."),
+				spawned, side.side, pct)
+		end
+		wesnoth.interface.add_chat_message("WC3", msg)
 	end
 end
 
-function relief.init()
+function keepers.init()
 	on_event("new turn", function()
 		local config = wc2x.config
-		local t = wesnoth.current.turn - config.relief_start_turn
-		if t < 0 or t % config.relief_interval ~= 0 then return end
+		local t = wesnoth.current.turn - config.keepers_start_turn
+		if t < 0 or t % config.keepers_interval ~= 0 then return end
 		spawn_wave()
 	end)
 end
 
-return relief
+return keepers
