@@ -86,12 +86,7 @@ local function edge_hexes(side_num, leader)
 				side = table.concat(human_sides(), ","), visible = false,
 			})
 		end
-		-- skip hexes with anything lying on them (artifacts, LotI drops, POIs): a Dawnbreaker
-		-- standing there looks like it carries the item and blocks it from players
-		local hexes = {}
-		for _i, hex in ipairs(wesnoth.map.find(filter)) do
-			if #wesnoth.interface.get_items(hex.x, hex.y) == 0 then table.insert(hexes, hex) end
-		end
+		local hexes = wesnoth.map.find(filter)
 		table.sort(hexes, function(a, b)
 			local da = wesnoth.map.distance_between(a, leader)
 			local db = wesnoth.map.distance_between(b, leader)
