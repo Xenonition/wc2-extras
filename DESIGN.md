@@ -301,8 +301,8 @@ Bloodprice's per-turn loss and the Mender's Ankh heal are the item effects that 
 (`item_curses.lua`), since item effects can't express recurring damage or a single random
 target. The ankh is a `[dummy]` ability (`wc2x_lone_mender`) that the Lua finds by id; it runs
 on "turn refresh", which fires after start-of-turn healing (`play_controller::do_init_side`), so
-it only picks allies still wounded after normal healing. Ankh and Quiver use core placeholder
-icons until their art is made. Icons are in `images/items/wc3-*.png`
+it only picks allies still wounded after normal healing. Ankh and Quiver icons are spritegen
+`wesnoth-item` art (FLUX.2 Klein, seeds 2038407343 and 550605654). Icons are in `images/items/wc3-*.png`
 (72×72); source art lives outside the repo.
 
 ### Final boss (scenario 5)
