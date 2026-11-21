@@ -421,7 +421,7 @@ training regardless of cost. Magnoshutadt and The Swarm were removed in
 0.15.0. A save that used them still plays (pairs and hero lists live in side variables) but
 loses the faction lookup, e.g. the recruit-info dialog.
 
-**The Outriders** (`era/factions/The_Outriders.cfg`, 0.18.0) is the mobile faction: twelve
+**The Outriders** (`era/factions/The_Outriders.cfg`, 0.18.0) is the mobile faction: eleven
 of its sixteen recruits move 7 or more. Pairs: skirmish (Cavalryman / Wolf Rider), ranged
 riders (Dune Rider / Elvish Scout), shock (Horseman / Gryphon Rider), fire support (Drake
 Glider / Saurian Skirmisher), undead raiders (Ghost / Skeleton Rider), level-0 flyers (Falcon /
