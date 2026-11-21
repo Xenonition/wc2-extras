@@ -158,13 +158,18 @@ strongest lever in the mod, which is the anti-farming mechanism.
 **War chest** (`lua/wc2x/war_chest.lua`). Holding a won map open earns about one income per
 turn, which beat the discount's shrinkage (playtest: a team kept a beaten leader alive to
 farm). So at victory (maps 1–4) each player with a leader gets
-`total_income × t × 60 // 100` gold, t = turns left (`config.war_chest_income_pct`).
-`side.total_income` is the engine's base income + villages × village gold, before upkeep.
-Paid at victory priority 10, before the gacha and shop, with a chat line showing the sum.
-The amount is stored in the side variable `wc2x_war_chest_paid`, and `wc2_store_carryover`
-subtracts it so it isn't also counted into carryover. 60% (not 100%) because finishing
-also earns the discount, carryover and bottle, and hardened reinforcements make stalling
-riskier, so near-parity on gold is enough.
+`(total_income + share × village_gold) × t × 40 // 100` gold, t = turns left
+(`config.war_chest_income_pct`). `side.total_income` is the engine's base income + villages ×
+village gold, before upkeep; `share` is the villages on the map that no player side holds
+(enemy-owned or neutral), split evenly between players with a leader, rounded down. Paying on
+this theoretical income means taking the last villages before finishing earns nothing extra.
+Paid at victory priority 10, before the gacha and shop (priority 0.5), with a chat line showing
+the sum. It is ordinary gold afterwards, so what isn't spent counts toward carryover like any
+other gold (0.16.0 kept it out by subtracting it, which went negative when it was spent in the
+shop and cut everyone's carryover). 40% (not 100%) because finishing also earns the discount,
+carryover and bottle, and hardened reinforcements make stalling riskier, so near-parity on gold
+is enough; it was 60% of actual income in 0.16.0, which pays about the same for a team holding
+two thirds of the villages.
 
 **XP bottle** (`lua/wc2x/xp_bottle.lua`). The discount is one-off gold while farmed XP
 compounds across maps, so finishing also pays in XP: at victory, each player still in the

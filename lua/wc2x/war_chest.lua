@@ -1,46 +1,67 @@
--- War chest: winning a map early pays each player config.war_chest_income_pct of their income
--- (side.total_income: base income + villages, before upkeep) for every turn left. Stalling a won
--- map earns about one income per turn; this makes finishing worth most of that in gold, on top of
--- the shop discount, XP bottle and carryover. Paid before the gacha and shop so it can be spent
--- at the discounted prices.
+-- War chest: winning a map early pays each player config.war_chest_income_pct of their
+-- theoretical income for every turn left. Theoretical income = the side's own income
+-- (side.total_income: base income + its villages, before upkeep) plus an even share of every
+-- village the players don't hold yet, as if they had gone on to take the whole map. So grabbing
+-- the last villages before finishing earns nothing extra. Paid before the gacha and shop; it is
+-- ordinary gold afterwards and counts toward carryover like any other.
 
 local _ = wesnoth.textdomain 'wesnoth-wc'
 local on_event = wesnoth.game_events.add_repeating
 
 local war_chest = {}
 
-local PAID_VAR = "wc2x_war_chest_paid"
-
--- whole-number maths so every client pays the same
-function war_chest.amount(side_num)
-	local turns_left = math.max(wesnoth.scenario.turns - wesnoth.current.turn, 0)
-	return wesnoth.sides[side_num].total_income * turns_left * wc2x.config.war_chest_income_pct // 100
+local function player_sides()
+	local last_side = wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
+	local res = {}
+	for side_num = 1, last_side do
+		table.insert(res, wesnoth.sides[side_num])
+	end
+	return res
 end
 
--- gold paid at the last victory; wc2_store_carryover leaves it out so it isn't counted twice
-function war_chest.paid(side_num)
-	return wesnoth.sides[side_num].variables[PAID_VAR] or 0
+local function has_leader(side_num)
+	return wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1] ~= nil
+end
+
+-- villages each player with a leader would gain if the players took every one they don't hold
+-- (enemy-owned or neutral); whole-number maths so every client pays the same
+function war_chest.village_share()
+	local held, paid_sides = 0, 0
+	for _i, side in ipairs(player_sides()) do
+		held = held + side.num_villages
+		if has_leader(side.side) then paid_sides = paid_sides + 1 end
+	end
+	if paid_sides == 0 then return 0 end
+	local unheld = math.max(#wesnoth.map.find { gives_income = true } - held, 0)
+	return unheld // paid_sides
+end
+
+function war_chest.theoretical_income(side_num, share)
+	local side = wesnoth.sides[side_num]
+	return side.total_income + share * side.village_gold
+end
+
+function war_chest.amount(side_num, share)
+	local turns_left = math.max(wesnoth.scenario.turns - wesnoth.current.turn, 0)
+	return war_chest.theoretical_income(side_num, share) * turns_left
+		* wc2x.config.war_chest_income_pct // 100
 end
 
 function war_chest.init()
-	-- Priority 10: before scenario.lua's victory handler (priority 0) opens the shop and moves
-	-- wc2_scenario on, and before the carryover event. Scenario 5's victory ends the campaign.
+	-- Priority 10: before scenario.lua's victory handler (default priority 0.5) opens the gacha and
+	-- shop. Scenario 5's victory ends the campaign.
 	on_event("victory", function()
 		if wml.variables.wc2_scenario >= 5 then return end
 		local turns_left = math.max(wesnoth.scenario.turns - wesnoth.current.turn, 0)
-		local last_side = wml.variables.wc2_highest_player_side or wml.variables.wc2_player_count or 1
-		for side_num = 1, last_side do
-			local side = wesnoth.sides[side_num]
-			local amount = 0
-			if wesnoth.units.find_on_map({ side = side_num, canrecruit = true })[1] then
-				amount = war_chest.amount(side_num)
-			end
-			side.variables[PAID_VAR] = amount
+		local share = war_chest.village_share()
+		for _i, side in ipairs(player_sides()) do
+			local amount = has_leader(side.side) and war_chest.amount(side.side, share) or 0
 			if amount > 0 then
 				side.gold = side.gold + amount
 				wesnoth.interface.add_chat_message("WC3", string.format(tostring(
-					_ "War chest for side %d: %d turns left × %d income × %d%% = %d gold."),
-					side_num, turns_left, side.total_income, wc2x.config.war_chest_income_pct, amount))
+					_ "War chest for side %d: %d turns left × %d income (counting %d villages not yet held) × %d%% = %d gold."),
+					side.side, turns_left, war_chest.theoretical_income(side.side, share), share,
+					wc2x.config.war_chest_income_pct, amount))
 			end
 		end
 	end, 10)
