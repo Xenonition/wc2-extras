@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- New item **Mender's Ankh**: at the start of your turn it heals one random wounded unit next
+  to the bearer for 16 HP (after normal healing, stacking with healers).
+- New item **Deadeye Quiver**: ranged attacks get +1 strike and +25% damage, but the bearer
+  loses its melee attacks.
+
 ## 0.16.0 — 2026-11-03
 
 - **War chest:** winning a map pays each player 60% of their income for every turn left, before
