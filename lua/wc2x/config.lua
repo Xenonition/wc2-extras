@@ -16,7 +16,8 @@ config.enemy_income_growth_pct = 20
 -- villages. They are near-legendaries: leader-level units from that faction's leader list, with
 -- the dawnbreaker trait (+HP, +damage, legendary_moves, no upkeep) and legendary affixes, but no artifact drop.
 -- The tier is the first whose max_pct is above the % of villages the players hold.
-config.dawnbreakers_start_pct = 70
+config.dawnbreakers_start_pct = 60
+config.dawnbreakers_start_pct_first = 70 -- map 1 only
 config.dawnbreakers_interval = 3
 config.dawnbreakers_hp_bonus = "25%"
 config.dawnbreakers_damage_bonus = "25%"

@@ -185,10 +185,13 @@ local function spawn_wave()
 	end
 end
 
--- first wave: config.dawnbreakers_start_pct of the turn limit, rounded up (whole numbers, so
--- every client agrees)
+-- first wave: config.dawnbreakers_start_pct of the turn limit (dawnbreakers_start_pct_first on
+-- map 1), rounded up (whole numbers, so every client agrees)
 function dawnbreakers.start_turn()
-	return math.max(1, (wesnoth.scenario.turns * wc2x.config.dawnbreakers_start_pct + 99) // 100)
+	local config = wc2x.config
+	local pct = wc2_scenario.scenario_num() == 1 and config.dawnbreakers_start_pct_first
+		or config.dawnbreakers_start_pct
+	return math.max(1, (wesnoth.scenario.turns * pct + 99) // 100)
 end
 
 function dawnbreakers.init()

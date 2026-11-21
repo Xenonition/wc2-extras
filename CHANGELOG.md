@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Dawnbreakers arrive from 60% of the turn limit on maps 2–5 (turn 18 of 30, for example);
+  map 1 keeps 70%.
+
 ## 0.18.0 — 2026-11-21
 
 - New faction **The Outriders**, built for speed: Cavalryman / Wolf Rider, Dune Rider /
