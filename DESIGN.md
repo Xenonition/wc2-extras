@@ -14,7 +14,7 @@ playtest defaults, not final balance.
 1. **Territory matters.** Enemies earn income from villages like a normal MP side, so
    leaving the map to them makes the game harder.
 2. **Finish, don't farm.** Finishing a map early is rewarded (war chest, shop discount and
-   an XP bottle), and enemy recruits harden as the map goes on, so sitting on the last enemy
+   an XP bottle), and enemy relief forces march in as the map goes on, so sitting on the last enemy
    to farm XP costs gold and gets riskier every turn.
 3. **Every run is different.** Heroes, shop stock, shrine buffs and the final boss are rolled
    from large pools, so no two campaigns play the same.
@@ -44,14 +44,25 @@ Enemy strength also scales by scenario:
   hunts the nearest player leader (Micro AI `assassin`).
 - **Personality:** each AI side rolls aggression, caution, village focus, leader
   aggression and recruitment habits from ranges, so enemies behave differently per map.
-- **Hardened reinforcements** (`enemy_scaling.harden`): an enemy unit recruited on turn T
-  gets an object (`wc2x_hardened`) with +p% HP and +p% damage, p = (T − 6)² // 2, capped at
-  100% (`config.harden_*`): +2% at turn 8, +18% at 12, +50% at 16, +98% at 20. Kill XP is
-  8 × the victim's level, so late recruits give the same XP for more risk. This replaced the
-  rout (0.16.0), which cut a beaten side's income once it was down to its leader and ≤1
-  village; players could hold the enemy just above that line, and an income floor buys a
-  beaten leader a recruit every turn. A turn-based curve has no line to stay above. Neutral
-  sides and the final boss side are exempt. Chat announces it on "new turn" from +10%.
+- **Relief forces** (`lua/wc2x/relief.lua`): from turn 8, every 3 turns (on "new turn"), a few
+  enemy units march in from the map edge to rescue the enemy side with a living leader and the
+  fewest villages (ties: lowest side number). Each is a random pick from that side's recruit list
+  (so the map's usual levels), with the "relief" trait (+25% HP, +15% damage, loyal: no upkeep)
+  and legendary affixes rolled from `config.legendary_affixes` (`legendary.roll_affixes`). The
+  wave grows with the % of villages players hold (`config.relief_tiers`): under 50%, 1 unit with
+  1 affix; 50–74%, 2 + map number with 1 affix; 75%+, 3 + map number with 2 affixes. They enter
+  on free edge hexes hidden from every player, nearest the rescued leader (visible edge hexes only
+  when no hidden one is free), skipping hexes the unit can't enter; chat names the size and
+  share. Kill XP is 8 × the victim's level, so a relief unit is worth an ordinary recruit's XP for
+  a much harder fight: stalling a won map gets more dangerous, not more profitable. Neutral sides
+  and the final boss side are never rescued. They drop no WC2 artifact (LotI's drop chance still
+  applies to them like any enemy).
+
+  History: 0.16.0's hardened reinforcements gave every enemy recruit +HP/damage growing with the
+  turn number ((T − 6)² // 2 %, capped at 100%), which made late recruits poor XP but also made
+  every enemy recruit tougher whether the players were winning or not. That replaced the rout
+  (cutting a beaten side's income at ≤1 village), which players dodged by holding the enemy just
+  above the line. Relief forces scale with how far ahead the players are instead.
 - **Legendary leader** (`lua/wc2x/legendary.lua`): from S2, one random enemy leader per
   map loses WC2's heroic trait and gets the "legendary" trait instead (+25% HP, +25% damage
   on all attacks, +2 moves, laurel overlay) and affixes (1 in S2–3, 2 in S4–5), and
@@ -163,7 +174,7 @@ farm). So at victory (maps 1–4) each player with a leader gets
 Paid at victory priority 10, before the gacha and shop, with a chat line showing the sum.
 The amount is stored in the side variable `wc2x_war_chest_paid`, and `wc2_store_carryover`
 subtracts it so it isn't also counted into carryover. 60% (not 100%) because finishing
-also earns the discount, carryover and bottle, and hardened reinforcements make stalling
+also earns the discount, carryover and bottle, and relief forces make stalling
 riskier, so near-parity on gold is enough.
 
 **XP bottle** (`lua/wc2x/xp_bottle.lua`). The discount is one-off gold while farmed XP
@@ -401,7 +412,7 @@ loses the faction lookup, e.g. the recruit-info dialog.
 
 | Path | Contents |
 |---|---|
-| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `xp_bottle`, `war_chest`, `legendary`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `boss_scaling`, `unit_finder`, `debug_panel`, `dialog_utils` |
+| `lua/wc2x/` | WC3 systems: `config`, `ai_director`, `enemy_scaling`, `poi`, `shop`, `upgrades`, `gacha_hero`, `unit_pool`, `placement`, `item_curses`, `burning`, `item_carryover`, `xp_bottle`, `war_chest`, `legendary`, `relief`, `retrain`, `migrations`, `final_boss`, `boss_roster`, `boss_scaling`, `unit_finder`, `debug_panel`, `dialog_utils` |
 | `units/` | WC3 unit types (final bosses, phylactery) |
 | `lua/campaign_main.lua` | Loads WC3 modules and LotI workarounds |
 | `lua/campaign/`, `lua/game_mechanics/`, `lua/map/` | Forked WC2 code (scenario flow, invest, artifacts, map generation) |

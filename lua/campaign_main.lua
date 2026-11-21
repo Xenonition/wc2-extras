@@ -50,6 +50,8 @@ wc2x.war_chest = wesnoth.dofile("./wc2x/war_chest.lua")
 wc2x.war_chest.init()
 wc2x.legendary = wesnoth.dofile("./wc2x/legendary.lua")
 wc2x.legendary.init()
+wc2x.relief = wesnoth.dofile("./wc2x/relief.lua")
+wc2x.relief.init()
 wc2x.migrations = wesnoth.dofile("./wc2x/migrations.lua")
 wc2x.migrations.init()
 

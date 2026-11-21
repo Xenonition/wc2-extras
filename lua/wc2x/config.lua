@@ -11,14 +11,20 @@ config.enemy_min_gold_per_turn = 10
 -- then +growth_pct per map after the first, so it keeps pace with players' between-map gains
 config.enemy_income_per_player = 10
 config.enemy_income_growth_pct = 20
--- Hardened reinforcements: enemy units recruited on turn T get +HP% and +damage% of
--- (T - start_turn)² // divisor, capped. Kill XP doesn't grow with it, so late recruits are poor
--- XP targets (+2% at turn 8, +18% at 12, +50% at 16, +98% at 20). Chat announces it each turn
--- from announce_pct.
-config.harden_start_turn = 6
-config.harden_divisor = 2
-config.harden_cap_pct = 100
-config.harden_announce_pct = 10
+-- Relief forces (relief.lua): from relief_start_turn, every relief_interval turns, enemy units
+-- march in from the map edge to rescue the enemy side with the fewest villages. Each is one of
+-- that side's recruits with the relief trait (+HP, +damage, no upkeep) and legendary affixes; at
+-- their normal level they give ordinary kill XP. The tier is the first whose max_pct is above
+-- the % of villages the players hold: count = base + per_scenario × map number.
+config.relief_start_turn = 8
+config.relief_interval = 3
+config.relief_hp_bonus = "25%"
+config.relief_damage_bonus = "15%"
+config.relief_tiers = {
+	{ max_pct = 50,  base = 1, per_scenario = 0, affixes = 1 },
+	{ max_pct = 75,  base = 2, per_scenario = 1, affixes = 1 },
+	{ max_pct = 101, base = 3, per_scenario = 1, affixes = 2 },
+}
 -- War chest: at victory (maps 1-4) each player gets this % of their income (base + villages,
 -- before upkeep) for every turn left, before the gacha and shop, so finishing beats stalling
 config.war_chest_income_pct = 60

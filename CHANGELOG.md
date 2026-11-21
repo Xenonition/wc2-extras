@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **Relief forces** replace hardened reinforcements: from turn 8, every 3 turns, a few tough
+  enemy units march in from the map edge to rescue the enemy side holding the fewest villages.
+  Each has the "relief" trait (+25% HP, +15% damage, no upkeep) and a legendary affix (two when
+  you hold 75%+ of the map). The more villages you hold, the bigger the force: 1 unit below
+  50%, 2 + map number below 75%, 3 + map number above. They give ordinary kill XP. Enemy
+  recruits no longer get stronger as turns pass.
+
 ## 0.16.0 — 2026-11-03
 
 - **War chest:** winning a map pays each player 60% of their income for every turn left, before
