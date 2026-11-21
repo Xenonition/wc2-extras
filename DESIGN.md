@@ -44,19 +44,21 @@ Enemy strength also scales by scenario:
   hunts the nearest player leader (Micro AI `assassin`).
 - **Personality:** each AI side rolls aggression, caution, village focus, leader
   aggression and recruitment habits from ranges, so enemies behave differently per map.
-- **Dawnbreakers** (`lua/wc2x/dawnbreakers.lua`): from turn 8, every 3 turns (on "new turn"), a few
-  enemy units march in from the map edge to rescue the enemy side with a living leader and the
-  fewest villages (ties: lowest side number). Each is a random pick from that side's recruit list
-  (so the map's usual levels), with the "dawnbreaker" trait (+25% HP, +15% damage, loyal: no upkeep)
-  and legendary affixes rolled from `config.legendary_affixes` (`legendary.roll_affixes`). The
-  wave grows with the % of villages players hold (`config.dawnbreakers_tiers`): under 50%, 1 unit with
-  1 affix; 50–74%, 2 + map number with 1 affix; 75%+, 3 + map number with 2 affixes. They enter
-  on free edge hexes hidden from every player, nearest the rescued leader (visible edge hexes only
-  when no hidden one is free), skipping hexes the unit can't enter; chat names the size and
-  share. Kill XP is 8 × the victim's level, so a Dawnbreaker is worth an ordinary recruit's XP for
-  a much harder fight: stalling a won map gets more dangerous, not more profitable. Neutral sides
-  and the final boss side are never rescued. They drop no WC2 artifact (LotI's drop chance still
-  applies to them like any enemy).
+- **Dawnbreakers** (`lua/wc2x/dawnbreakers.lua`): from turn 8, every 3 turns (on "new turn"),
+  near-legendary enemy units march in from the map edge to rescue the enemy side with a living
+  leader and the fewest villages (ties: lowest side number). Each is a leader-level unit (level 2
+  on map 1, 3 on maps 2–3, 4 on map 4, 5 on map 5, as `config.enemy_leader_level`) drawn from
+  that faction's WC2 leader list and resolved like its leader (`wc2_enemy.resolve_leader_type`);
+  the list is read, not consumed, and if the faction is unknown the shared unit pool at that
+  level is used (`unit_pool.synced_sample`). They get the "dawnbreaker" trait (+25% HP, +25%
+  damage, loyal: no upkeep) and legendary affixes (`legendary.roll_affixes`), but no +2 moves and
+  no artifact drop. The wave grows with the % of villages players hold
+  (`config.dawnbreakers_tiers`): under 50%, 1 unit with 1 affix; 50–74%, 2 with 1; 75%+, 3 with
+  2. They enter on free edge hexes hidden from every player, nearest the rescued leader (visible
+  edge hexes only when no hidden one is free), skipping hexes the unit can't enter; chat names the
+  size and share. They give leader-level kill XP (8 × level) but cost far more to beat, so
+  stalling a won map is a real fight rather than a farm. Neutral sides and the final boss side
+  are never rescued. LotI's drop chance applies to them like any enemy.
 
   History: 0.16.0's hardened reinforcements gave every enemy recruit +HP/damage growing with the
   turn number ((T − 6)² // 2 %, capped at 100%), which made late recruits poor XP but also made

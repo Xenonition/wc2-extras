@@ -11,19 +11,19 @@ config.enemy_min_gold_per_turn = 10
 -- then +growth_pct per map after the first, so it keeps pace with players' between-map gains
 config.enemy_income_per_player = 10
 config.enemy_income_growth_pct = 20
--- Dawnbreakers (dawnbreakers.lua): from dawnbreakers_start_turn, every dawnbreakers_interval turns, enemy units
--- march in from the map edge to rescue the enemy side with the fewest villages. Each is one of
--- that side's recruits with the dawnbreaker trait (+HP, +damage, no upkeep) and legendary affixes; at
--- their normal level they give ordinary kill XP. The tier is the first whose max_pct is above
--- the % of villages the players hold: count = base + per_scenario × map number.
+-- Dawnbreakers (dawnbreakers.lua): from dawnbreakers_start_turn, every dawnbreakers_interval
+-- turns, enemy units march in from the map edge to rescue the enemy side with the fewest
+-- villages. They are near-legendaries: leader-level units from that faction's leader list, with
+-- the dawnbreaker trait (+HP, +damage, no upkeep) and legendary affixes, but no artifact drop.
+-- The tier is the first whose max_pct is above the % of villages the players hold.
 config.dawnbreakers_start_turn = 8
 config.dawnbreakers_interval = 3
 config.dawnbreakers_hp_bonus = "25%"
-config.dawnbreakers_damage_bonus = "15%"
+config.dawnbreakers_damage_bonus = "25%"
 config.dawnbreakers_tiers = {
-	{ max_pct = 50,  base = 1, per_scenario = 0, affixes = 1 },
-	{ max_pct = 75,  base = 2, per_scenario = 1, affixes = 1 },
-	{ max_pct = 101, base = 3, per_scenario = 1, affixes = 2 },
+	{ max_pct = 50,  count = 1, affixes = 1 },
+	{ max_pct = 75,  count = 2, affixes = 1 },
+	{ max_pct = 101, count = 3, affixes = 2 },
 }
 -- War chest: at victory (maps 1-4) each player gets this % of their income (base + villages,
 -- before upkeep) for every turn left, before the gacha and shop, so finishing beats stalling

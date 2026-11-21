@@ -62,6 +62,9 @@ local function resolve_leader_type(leader_cfg, scenario_num)
 	local base_type = leader_cfg.level3
 	return advance_type_to(base_type, target_level)
 end
+-- WC2X: Dawnbreakers (dawnbreakers.lua) are drawn from the faction's leader list at leader level
+enemy.resolve_leader_type = resolve_leader_type
+enemy.get_target_leader_level = get_target_leader_level
 
 function enemy.pick_suitable_enemy_item(unit)
 	local enemy_items = stringx.split(wml.variables["wc2_enemy_army.artifacts"] or "")

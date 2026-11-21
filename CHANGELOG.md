@@ -2,12 +2,12 @@
 
 ## Unreleased
 
-- **Dawnbreakers** replace hardened reinforcements: from turn 8, every 3 turns, a few tough
+- **Dawnbreakers** replace hardened reinforcements: from turn 8, every 3 turns, near-legendary
   enemy units march in from the map edge to rescue the enemy side holding the fewest villages.
-  Each has the "dawnbreaker" trait (+25% HP, +15% damage, no upkeep) and a legendary affix (two when
-  you hold 75%+ of the map). The more villages you hold, the bigger the force: 1 unit below
-  50%, 2 + map number below 75%, 3 + map number above. They give ordinary kill XP. Enemy
-  recruits no longer get stronger as turns pass.
+  They are leader-level units from that faction's leader list with the "dawnbreaker" trait
+  (+25% HP, +25% damage, no upkeep) and a legendary affix, but drop no artifact. The more
+  villages you hold, the bigger the force: 1 below 50%, 2 below 75%, 3 (with two affixes)
+  above. Enemy recruits no longer get stronger as turns pass.
 
 ## 0.16.0 — 2026-11-03
 

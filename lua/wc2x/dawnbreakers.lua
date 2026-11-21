@@ -1,9 +1,9 @@
--- Dawnbreakers: from config.dawnbreakers_start_turn, every config.dawnbreakers_interval turns a few enemy
--- units march in from the map edge to rescue the enemy side that is losing worst (fewest
--- villages). They are that side's ordinary recruits made tougher by the "dawnbreaker" trait and one
--- or two legendary affixes, at their normal level, so they give ordinary kill XP for a much
--- harder fight: stalling a won map gets more dangerous without becoming an XP farm. The wave
--- grows with how much of the map the players hold. Replaced hardened reinforcements (0.17.0).
+-- Dawnbreakers: from config.dawnbreakers_start_turn, every config.dawnbreakers_interval turns,
+-- near-legendary enemy units march in from the map edge to rescue the enemy side that is losing
+-- worst (fewest villages): leader-level units from that faction's leader list with the
+-- "dawnbreaker" trait and legendary affixes, but no artifact drop. They give leader-level XP but
+-- cost far more to beat, so stalling a won map is a fight, not a farm. The wave grows with how
+-- much of the map the players hold. Replaced hardened reinforcements (0.17.0).
 
 local _ = wesnoth.textdomain 'wesnoth-wc'
 local on_event = wesnoth.game_events.add_repeating
@@ -99,24 +99,45 @@ local function edge_hexes(side_num, leader)
 	return hexes
 end
 
+-- `count` unit types at this map's enemy leader level: drawn (with repeats) from the rescued
+-- faction's WC2 leader list, resolved like its leader (enemy.resolve_leader_type). The list is read,
+-- not consumed (WC2's own pick removes entries). Falls back to the shared unit pool at that level,
+-- rolled on one machine (unit_pool.synced_sample), when the faction is unknown.
+local function leader_types(side, count)
+	local scenario = wc2_scenario.scenario_num()
+	local group_id = side.variables["wc2x_enemy_group"]
+	local leaders = group_id and wml.array_access.get(("wc2_enemy_army.group[%d].leader"):format(group_id)) or {}
+	local types = {}
+	if #leaders > 0 then
+		for _i = 1, count do
+			local t = wc2_enemy.resolve_leader_type(leaders[mathx.random(#leaders)], scenario)
+			if t and wesnoth.unit_types[t] then table.insert(types, t) end
+		end
+	end
+	if #types == 0 and wc2x.unit_pool then
+		local level = wc2_enemy.get_target_leader_level(scenario)
+		local ids = wc2x.unit_pool.synced_sample(level, level, count)
+		for _i, t in ipairs(ids) do table.insert(types, t) end
+	end
+	return types
+end
+
 local function spawn_wave()
 	local side = pick_rescued_side()
 	if not side then return end
 	local leader = wesnoth.units.find_on_map({ side = side.side, canrecruit = true })[1]
 	local pct = dawnbreakers.player_village_pct()
 	local tier = pick_tier(pct)
-	local count = tier.base + wc2_scenario.scenario_num() * tier.per_scenario
-
-	local types = {}
-	for _i, t in ipairs(side.recruit) do table.insert(types, t) end
-	table.sort(types)
+	local count = tier.count
+	local types = leader_types(side, count)
+	if #types == 0 then return end
 
 	local hexes = edge_hexes(side.side, leader)
 	local used = {}
 	local spawned = 0
-	for _n = 1, count do
+	for _n = 1, #types do
 		local u = wesnoth.units.create {
-			type = types[mathx.random(#types)], side = side.side, generate_name = true,
+			type = types[_n], side = side.side, generate_name = true,
 		}
 		u:add_modification("trait", dawnbreakers.trait())
 		wc2x.legendary.roll_affixes(u, tier.affixes)
@@ -131,7 +152,7 @@ local function spawn_wave()
 				break
 			end
 		end
-		if spot then
+		if spot and #wesnoth.units.find_on_map { x = spot.x, y = spot.y } == 0 then
 			u:to_map(spot.x, spot.y)
 			wesnoth.interface.float_label(spot.x, spot.y, _ "Dawnbreakers!", "255,140,0")
 			spawned = spawned + 1
