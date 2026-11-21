@@ -44,7 +44,9 @@ Enemy strength also scales by scenario:
   hunts the nearest player leader (Micro AI `assassin`).
 - **Personality:** each AI side rolls aggression, caution, village focus, leader
   aggression and recruitment habits from ranges, so enemies behave differently per map.
-- **Dawnbreakers** (`lua/wc2x/dawnbreakers.lua`): from turn 8, every 3 turns (on "new turn"),
+- **Dawnbreakers** (`lua/wc2x/dawnbreakers.lua`): from half the map's turn limit (rounded
+  up, `config.dawnbreakers_start_pct`; turn 13 of 25 on a 2-player map 1, 28 of 56 on a
+  1-player map 5), every 3 turns (on "new turn"),
   near-legendary enemy units march in from the map edge to rescue the enemy side with a living
   leader and the fewest villages (ties: lowest side number). Each is a leader-level unit (level 2
   on map 1, 3 on maps 2–3, 4 on map 4, 5 on map 5, as `config.enemy_leader_level`) drawn from
@@ -56,7 +58,7 @@ Enemy strength also scales by scenario:
   (`config.dawnbreakers_tiers`): under 50%, 1 unit with 1 affix; 50–74%, 2 with 1; 75%+, 3 with
   2. They enter on free edge hexes hidden from every player, nearest the rescued leader (visible
   edge hexes only when no hidden one is free), skipping hexes the unit can't enter; chat names the
-  size and share. They give leader-level kill XP (8 × level) but cost far more to beat, so
+  size and the side rescued. They give leader-level kill XP (8 × level) but cost far more to beat, so
   stalling a won map is a real fight rather than a farm. Neutral sides and the final boss side
   are never rescued. LotI's drop chance applies to them like any enemy.
 

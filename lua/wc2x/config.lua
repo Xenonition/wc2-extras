@@ -11,12 +11,12 @@ config.enemy_min_gold_per_turn = 10
 -- then +growth_pct per map after the first, so it keeps pace with players' between-map gains
 config.enemy_income_per_player = 10
 config.enemy_income_growth_pct = 20
--- Dawnbreakers (dawnbreakers.lua): from dawnbreakers_start_turn, every dawnbreakers_interval
--- turns, enemy units march in from the map edge to rescue the enemy side with the fewest
+-- Dawnbreakers (dawnbreakers.lua): from dawnbreakers_start_pct of the map's turn limit, every
+-- dawnbreakers_interval turns, enemy units march in from the map edge to rescue the enemy side with the fewest
 -- villages. They are near-legendaries: leader-level units from that faction's leader list, with
 -- the dawnbreaker trait (+HP, +damage, legendary_moves, no upkeep) and legendary affixes, but no artifact drop.
 -- The tier is the first whose max_pct is above the % of villages the players hold.
-config.dawnbreakers_start_turn = 8
+config.dawnbreakers_start_pct = 50
 config.dawnbreakers_interval = 3
 config.dawnbreakers_hp_bonus = "25%"
 config.dawnbreakers_damage_bonus = "25%"

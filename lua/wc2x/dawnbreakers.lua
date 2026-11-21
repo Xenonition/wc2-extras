@@ -1,4 +1,5 @@
--- Dawnbreakers: from config.dawnbreakers_start_turn, every config.dawnbreakers_interval turns,
+-- Dawnbreakers: from config.dawnbreakers_start_pct of the map's turn limit, every
+-- config.dawnbreakers_interval turns,
 -- near-legendary enemy units march in from the map edge to rescue the enemy side that is losing
 -- worst (fewest villages): leader-level units from that faction's leader list with the
 -- "dawnbreaker" trait and legendary affixes, but no artifact drop. They give leader-level XP but
@@ -168,21 +169,27 @@ local function spawn_wave()
 		local msg
 		if spawned == 1 then
 			msg = string.format(tostring(
-				_ "A Dawnbreaker marches in from the map edge to rescue side %d (players hold %d%% of the villages)."),
-				side.side, pct)
+				_ "A Dawnbreaker marches in from the map edge to rescue side %d."),
+				side.side)
 		else
 			msg = string.format(tostring(
-				_ "%d Dawnbreakers march in from the map edge to rescue side %d (players hold %d%% of the villages)."),
-				spawned, side.side, pct)
+				_ "%d Dawnbreakers march in from the map edge to rescue side %d."),
+				spawned, side.side)
 		end
 		wesnoth.interface.add_chat_message("WC3", msg)
 	end
 end
 
+-- first wave: config.dawnbreakers_start_pct of the turn limit, rounded up (whole numbers, so
+-- every client agrees)
+function dawnbreakers.start_turn()
+	return math.max(1, (wesnoth.scenario.turns * wc2x.config.dawnbreakers_start_pct + 99) // 100)
+end
+
 function dawnbreakers.init()
 	on_event("new turn", function()
 		local config = wc2x.config
-		local t = wesnoth.current.turn - config.dawnbreakers_start_turn
+		local t = wesnoth.current.turn - dawnbreakers.start_turn()
 		if t < 0 or t % config.dawnbreakers_interval ~= 0 then return end
 		spawn_wave()
 	end)
