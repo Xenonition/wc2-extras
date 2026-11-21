@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Fixed enemy leaders that couldn't move (0 max moves). WC2 creates them immobile; LotI's
+  stat rebuild happened to restore their moves, but only in networked multiplayer, so in
+  single-player or hotseat games they stayed on their keep. Enemy leaders now always have their
+  normal moves.
+
 ## 0.16.0 — 2026-11-03
 
 - **War chest:** winning a map pays each player 60% of their income for every turn left, before

@@ -63,10 +63,12 @@ Enemy strength also scales by scenario:
 
   The legend is meant to step out and fight: its side's AI `leader_aggression` (rolled per
   side from -5 to 1) is raised to at least `config.legendary_leader_aggression` (1.0), and
-  the +2 moves are a trait effect on top of the unit type's moves. WC2 creates enemy leaders
-  with `max_moves = 0`, but with LotI that never sticks: LotI's `update_stats` recreates
-  every unit from its type and modifications, so all enemy leaders actually have their
-  type's moves, and only effects inside modifications survive.
+  the +2 moves are a trait effect on top of the unit type's moves, because LotI's
+  `update_stats` recreates units from their type and modifications and drops directly set
+  stats. Enemy leaders have their type's moves: WC2 created them with `max_moves = 0`, which
+  LotI's rebuild undid only in networked MP (see the `controller=` row under LotI
+  compatibility), so leaders in single-player, hotseat or LotI-less games never moved. WC3
+  dropped the `max_moves = 0` in 0.17.0 so leaders move the same everywhere.
 
   Affixes (`config.legendary_affixes`) are data only: each is a list of shrine buff names
   or inline effects, and parts the leader already has or can't use are skipped
@@ -458,7 +460,7 @@ runtime workarounds; none modify LotI's files.
 
 | Issue | Root cause | WC3 workaround | File |
 |---|---|---|---|
-| `controller=` SSF warnings (~1700/session) | LotI uses `controller=human` in `[filter_side]` blocks; Wesnoth 1.18 ignores this in SSFs and logs a warning each time | Cannot fix without patching LotI. Harmless log noise — the filter is ignored identically on all clients | LotI `global_events.cfg` lines 121, 152, 485, 538, 552, 1724; `utils.cfg` line 70 |
+| `controller=` SSF warnings (~1700/session) | LotI uses `controller=human` in `[filter_side]` blocks. Wesnoth 1.18 ignores `controller=` in SSFs **only in networked MP synced code** (`src/side_filter.cpp`), logging an error each time; in single-player and hotseat it is applied | Cannot fix without patching LotI. In networked MP the filter is ignored identically on all clients, so LotI's human-only events (turn-refresh stat rebuild, item pick) also run for AI sides; locally they don't. WC3 code must not rely on either behaviour (enemy leader moves did, until 0.17.0) | LotI `global_events.cfg` lines 121, 152, 485, 538, 552, 1724; `utils.cfg` line 70 |
 | Player recruits get elite mods (reflect, temptation) | LotI's `DROPS` macro hardcodes `$enemy_sides` to `1,2,...,12`, including the player side | WC3 overwrites `$enemy_sides` at prestart to only include non-human, non-neutral AI sides | `campaign_main.lua` prestart event |
 | Item pickup dialog fires for AI units | LotI's `item_pick` event uses `controller=human` filter (ignored by engine), so `[item_pick_menu]` fires for all sides | WC3 wraps `wesnoth.wml_actions.item_pick_menu` to skip non-human sides | `campaign_main.lua` item_pick_menu wrapper |
 | Player can't pick up items from own fallen units | `DROPS` die event includes player side; `on_the_ground.add` sets `dropping_side` = player, and the pickup filter excludes that side | WC3 wraps `loti.item.on_the_ground.add` to clear `dropping_side` when it's a human side | `campaign_main.lua` on_the_ground.add wrapper |
