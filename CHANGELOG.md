@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.18.0 — 2026-11-21
 
 - New faction **The Outriders**, built for speed: Cavalryman / Wolf Rider, Dune Rider /
   Elvish Scout, Horseman / Gryphon Rider, Drake Glider / Saurian Skirmisher, Ghost / Skeleton
