@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.19.0 — 2026-11-22
 
 - **Every enemy leader is now legendary** from map 2 (was one per map). Legends no longer
   drop an artifact, and they're no longer pushed to leave their keep and fight, so they stop

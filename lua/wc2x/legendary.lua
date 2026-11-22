@@ -103,7 +103,7 @@ function legendary.make(u, count)
 	end
 	u.hitpoints = u.max_hitpoints
 	u.variables.wc2x_legendary = true
-	-- the side keeps its own rolled leader aggression (enemy_scaling); until 0.18.1 a legend was
+	-- the side keeps its own rolled leader aggression (enemy_scaling); until 0.19.0 a legend was
 	-- forced to at least 1.0 and kept walking out of its keep to die
 	return { id = u.id, name = u.name, desc = table.concat(descs, "; ") }
 end
@@ -148,7 +148,7 @@ function legendary.status_text()
 				tostring(legend.name), legend.desc))
 		end
 	end
-	-- a map started before 0.18.1 has one legend, stored as a single record
+	-- a map started before 0.19.0 has one legend, stored as a single record
 	local old = wml.variables.wc2x_legendary
 	if old and old.name then
 		table.insert(lines, old.slain and string.format(tostring(_ "Legendary leader %s: slain."), tostring(old.name))

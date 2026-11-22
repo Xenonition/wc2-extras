@@ -43,7 +43,7 @@ Enemy strength also scales by scenario:
   (`enemy_scaling.expand_recruits`, `config.enemy_recruit_tiers`): level 2 — 4 types on S2, 5 on
   S3, 6 on S4–S5; level 3 — 1 on S3, 3 on S4, 4 on S5; level 4 — 1 on S5. Factions have no
   level-4 list, so that tier follows the upgrade paths of the base recruits and adds nothing when
-  none reaches level 4. (Until 0.18.1: 3 level-2 types from S2, 2 level-3 from S4, and a level-4
+  none reaches level 4. (Until 0.19.0: 3 level-2 types from S2, 2 level-3 from S4, and a level-4
   tier set to start on a nonexistent S6.)
 - **Assassins:** from S2, each enemy recruit has a 12% chance to become an assassin that
   hunts the nearest player leader (Micro AI `assassin`).
@@ -89,7 +89,7 @@ Enemy strength also scales by scenario:
   instead (+25% HP, +25% damage on all attacks, +2 moves, laurel overlay) and affixes (1 in
   S2–3, 2 in S4–5). No drop. Made on "start", after prestart's `[wc2_enemy]` made the leaders;
   one narrator message lists them all, and the objectives note has a line per legend (WML
-  array `wc2x_legends`: id, name, desc, slain). A map saved before 0.18.1 keeps its single
+  array `wc2x_legends`: id, name, desc, slain). A map saved before 0.19.0 keeps its single
   legend in the old `wc2x_legendary` record, which the note still reads. It gets
   no title of its own: LotI already gives every AI leader one when it is placed
   (`check_unit_title`), and stacking ours on top read as two titles.
@@ -102,7 +102,7 @@ Enemy strength also scales by scenario:
   compatibility), so leaders in single-player, hotseat or LotI-less games never moved. WC3
   dropped the `max_moves = 0` in 0.17.0 so leaders move the same everywhere.
 
-  History: until 0.18.1 one random leader per map was legendary, dropped a WC2 artifact when
+  History: until 0.19.0 one random leader per map was legendary, dropped a WC2 artifact when
   killed, and had its leader aggression raised to at least 1.0 so it would come out and fight.
   That got legends assassinated far from their keep; every leader is now a legend, and none
   drops anything or is pushed out.
