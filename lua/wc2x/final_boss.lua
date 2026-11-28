@@ -467,6 +467,7 @@ function boss.init(config)
 		if scenario_num ~= 5 then return end
 
 		local ec = wesnoth.current.event_context
+		if not ec.x1 then return end -- [fire_event] without a unit (LotI zombies)
 		local dying = wesnoth.units.get(ec.x1, ec.y1)
 		if not dying then return end
 

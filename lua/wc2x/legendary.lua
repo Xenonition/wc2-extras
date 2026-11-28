@@ -173,6 +173,7 @@ function legendary.init()
 
 	on_event("die", function()
 		local ec = wesnoth.current.event_context
+		if not ec.x1 then return end -- [fire_event] without a unit (LotI zombies)
 		local u = wesnoth.units.get(ec.x1, ec.y1)
 		if not (u and u.variables.wc2x_legendary) then return end
 		for i, legend in ipairs(wml.array_access.get("wc2x_legends")) do

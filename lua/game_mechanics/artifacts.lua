@@ -255,6 +255,7 @@ end
 
 -- drop all items a dying unit carries.
 on_event("die", function(event_context)
+	if not event_context.x1 then return end -- [fire_event] without a unit (LotI zombies)
 	local unit = wesnoth.units.get(event_context.x1, event_context.y1)
 	if not unit then
 		return

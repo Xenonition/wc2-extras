@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Fixed Lua error messages (from the final boss, legend, item-drop, commander and terrain
+  scripts) when a LotI infected unit turns into a zombie. LotI re-announces the death without
+  saying which unit died, and those scripts now ignore that echo; the real death was already
+  handled.
+
 ## 0.19.0 — 2026-11-22
 
 - **Every enemy leader is now legendary** from map 2 (was one per map). Legends no longer

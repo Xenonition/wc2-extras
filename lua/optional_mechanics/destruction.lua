@@ -29,6 +29,7 @@ local function wct_map_custom_ruin_village(loc)
 end
 
 on_event("die", function(cx)
+	if not cx.x1 then return end -- [fire_event] without a unit (LotI zombies)
 	local map = wesnoth.current.map
 	local loc = wesnoth.map.get(cx.x1, cx.y1)
 	if wml.variables.wc2_config_enable_terrain_destruction == false then
