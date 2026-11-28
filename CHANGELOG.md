@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.19.1 — 2026-11-28
 
 - Fixed Lua error messages (from the final boss, legend, item-drop, commander and terrain
   scripts) when a LotI infected unit turns into a zombie. LotI re-announces the death without
